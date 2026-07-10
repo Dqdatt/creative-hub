@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AuthError, Session, User } from '@supabase/supabase-js';
+import type { AuthChangeEvent, AuthError, Session, User } from '@supabase/supabase-js';
 import { normalizeRole, ROLE_LABELS } from '../config/permissions';
 import { supabase, supabaseConfigError } from '../lib/supabase';
 import { AuthContext } from './authContext';
@@ -27,9 +27,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [backgroundAuthRefreshing, setBackgroundAuthRefreshing] = useState(false);
   const [authError, setAuthError] = useState<string | null>(mapConfigError(supabaseConfigError));
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profile, setProfile] = useState<AuthProfile | null>(null);
+  const sessionRef = useRef<Session | null>(null);
+  const profileRequestIdRef = useRef(0);
+  const authEventRequestIdRef = useRef(0);
+  const initialProfileResolvedRef = useRef(false);
+
+  const markInitialProfileResolved = useCallback(() => {
+    initialProfileResolvedRef.current = true;
+  }, []);
+
+  const applySession = useCallback((nextSession: Session | null) => {
+    sessionRef.current = nextSession;
+    setSession(nextSession);
+  }, []);
 
   const buildFallbackProfile = useCallback((user: User): AuthProfile => {
     const fallbackName = typeof user.user_metadata?.full_name === 'string'
@@ -50,13 +64,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const refreshProfile = useCallback(async () => {
-    const currentUser = session?.user;
+  const loadProfileForUser = useCallback(async (
+    currentUser: User | null | undefined,
+    options?: { silent?: boolean },
+  ) => {
+    const requestId = profileRequestIdRef.current + 1;
+    profileRequestIdRef.current = requestId;
+    const isInitialProfileLoad = !initialProfileResolvedRef.current;
+    const showInitialProfileGate = isInitialProfileLoad && !options?.silent;
 
     if (!currentUser) {
       setProfile(null);
       setProfileError(null);
       setProfileLoading(false);
+      setBackgroundAuthRefreshing(false);
+      markInitialProfileResolved();
       return;
     }
 
@@ -64,10 +86,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(buildFallbackProfile(currentUser));
       setProfileError('Không thể tải hồ sơ. Tạm dùng quyền Editor.');
       setProfileLoading(false);
+      setBackgroundAuthRefreshing(false);
+      markInitialProfileResolved();
       return;
     }
 
-    setProfileLoading(true);
+    if (showInitialProfileGate) {
+      setProfileLoading(true);
+    } else {
+      setBackgroundAuthRefreshing(true);
+    }
     setProfileError(null);
 
     try {
@@ -78,10 +106,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (error) throw error;
+      if (requestId !== profileRequestIdRef.current) return;
 
       if (!data) {
         await supabase.auth.signOut();
-        setSession(null);
+        applySession(null);
         setProfile(null);
         setProfileError('Tài khoản không còn hoạt động. Vui lòng đăng nhập lại.');
         return;
@@ -89,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if ((data.is_active ?? data.active ?? true) === false) {
         await supabase.auth.signOut();
-        setSession(null);
+        applySession(null);
         setProfile(null);
         setProfileError('Tài khoản đã bị tạm khóa. Vui lòng liên hệ quản trị viên.');
         return;
@@ -110,60 +139,86 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         rawRole: data.role,
       });
     } catch {
+      if (requestId !== profileRequestIdRef.current) return;
       setProfile(buildFallbackProfile(currentUser));
       setProfileError('Không thể tải hồ sơ người dùng. Tạm dùng quyền Editor.');
     } finally {
-      setProfileLoading(false);
+      if (requestId === profileRequestIdRef.current) {
+        markInitialProfileResolved();
+        setProfileLoading(false);
+        setBackgroundAuthRefreshing(false);
+      }
     }
-  }, [buildFallbackProfile, session?.user]);
+  }, [applySession, buildFallbackProfile, markInitialProfileResolved]);
+
+  const refreshProfile = useCallback(async () => {
+    await loadProfileForUser(sessionRef.current?.user, { silent: true });
+  }, [loadProfileForUser]);
+
+  const handleAuthEvent = useCallback(async (event: AuthChangeEvent, nextSession: Session | null) => {
+    if (import.meta.env.DEV) {
+      console.info(`[Auth] ${event}`);
+    }
+
+    const requestId = authEventRequestIdRef.current + 1;
+    authEventRequestIdRef.current = requestId;
+    const previousSession = sessionRef.current;
+    const previousUserId = previousSession?.user.id;
+    const nextUserId = nextSession?.user.id;
+    const sameAuthenticatedUser = Boolean(previousUserId && nextUserId && previousUserId === nextUserId);
+
+    if (!nextSession) {
+      applySession(null);
+      setProfile(null);
+      setProfileError(null);
+      setProfileLoading(false);
+      setBackgroundAuthRefreshing(false);
+      markInitialProfileResolved();
+      setLoading(false);
+      return;
+    }
+
+    applySession(nextSession);
+    setAuthError(null);
+
+    if (
+      sameAuthenticatedUser &&
+      initialProfileResolvedRef.current &&
+      (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN')
+    ) {
+      setBackgroundAuthRefreshing(false);
+      setLoading(false);
+      return;
+    }
+
+    const isSilentProfileRefresh = initialProfileResolvedRef.current ||
+      event === 'TOKEN_REFRESHED' ||
+      (sameAuthenticatedUser && event === 'USER_UPDATED');
+
+    await loadProfileForUser(nextSession.user, { silent: isSilentProfileRefresh });
+    if (requestId !== authEventRequestIdRef.current) return;
+    setLoading(false);
+  }, [applySession, loadProfileForUser, markInitialProfileResolved]);
 
   useEffect(() => {
     if (!supabase) {
       setLoading(false);
+      markInitialProfileResolved();
       return;
     }
 
     let mounted = true;
 
-    supabase.auth.getSession()
-      .then(({ data, error }) => {
-        if (!mounted) return;
-        if (error) {
-          setAuthError(mapAuthError(error));
-          setSession(null);
-          return;
-        }
-        setSession(data.session);
-      })
-      .catch((error: Error) => {
-        if (!mounted) return;
-        setAuthError(mapAuthError(error));
-        setSession(null);
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setLoading(false);
-      if (!nextSession) {
-        setProfile(null);
-        setProfileError(null);
-        setProfileLoading(false);
-      }
-      if (nextSession) setAuthError(null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!mounted) return;
+      void handleAuthEvent(event, nextSession);
     });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
-
-  useEffect(() => {
-    void refreshProfile();
-  }, [refreshProfile]);
+  }, [handleAuthEvent, markInitialProfileResolved]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     if (!supabase) {
@@ -188,17 +243,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       const mappedError = mapAuthError(error);
       setAuthError(mappedError);
-      setSession(null);
+      applySession(null);
       return { error: mappedError };
     }
 
-    setSession(data.session);
+    applySession(data.session);
+    await loadProfileForUser(data.session?.user, { silent: true });
     return { error: null };
-  }, []);
+  }, [applySession, loadProfileForUser]);
 
   const signOut = useCallback(async () => {
     if (!supabase) {
-      setSession(null);
+      applySession(null);
       return { error: null };
     }
 
@@ -209,13 +265,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: mappedError };
     }
 
-    setSession(null);
+    applySession(null);
     setProfile(null);
     setProfileError(null);
     setProfileLoading(false);
+    setBackgroundAuthRefreshing(false);
     setAuthError(null);
     return { error: null };
-  }, []);
+  }, [applySession]);
 
   const clearAuthError = useCallback(() => {
     setAuthError(mapConfigError(supabaseConfigError));
@@ -226,6 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: session?.user ?? null,
     loading,
     profileLoading,
+    backgroundAuthRefreshing,
     authError,
     profileError,
     configError: mapConfigError(supabaseConfigError),
@@ -236,7 +294,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     clearAuthError,
     refreshProfile,
-  }), [authError, clearAuthError, loading, profile, profileError, profileLoading, refreshProfile, session, signIn, signOut]);
+  }), [authError, backgroundAuthRefreshing, clearAuthError, loading, profile, profileError, profileLoading, refreshProfile, session, signIn, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -18,6 +18,7 @@ export interface AuthContextValue {
   user: User | null;
   loading: boolean;
   profileLoading: boolean;
+  backgroundAuthRefreshing: boolean;
   authError: string | null;
   profileError: string | null;
   configError: string | null;
