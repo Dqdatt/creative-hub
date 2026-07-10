@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Video Ops — Quản lý task video</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
+        colors: {
+          brand:'#7C5CFF', success:'#10B981', danger:'#EF4444', warning:'#F59E0B',
+          purple:'#8B5CF6', sky:'#5B8CFF', ink:'#14151C', sub:'#6B7280',
+          line:'rgba(17,24,39,.07)', canvas:'#F6F7FB', navy:'#1E2030'
+        },
+        borderRadius: { xl2:'20px' },
+        boxShadow: { soft:'0 10px 30px rgba(21,26,58,.08)' }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     DESIGN SYSTEM — Video Ops (SaaS redesign)
+     ============================================================ */
+  :root{
+    --bg:#EAECF5; --bg2:#F6F7FB;
+    --surface:#FFFFFF; --sidebar:#FFFFFF;
+    --card:#FFFFFF; --card-2:#FFFFFF;
+    --border:rgba(17,24,39,.07); --border-strong:rgba(17,24,39,.11);
+    --text:#14151C; --text-2:#6B7280; --muted:#9AA1AE;
+    --accent:#7C5CFF; --accent-2:#5B8CFF;
+    --success:#10B981; --danger:#EF4444; --warning:#F59E0B;
+    --chip:rgba(17,24,39,.05); --chip-2:rgba(124,92,255,.10);
+    --shadow-card:0 22px 48px rgba(21,26,58,.10);
+    --shadow-soft:0 12px 30px rgba(21,26,58,.07);
+    --shadow-btn:0 12px 30px rgba(92,115,255,.35);
+    --grad:linear-gradient(130deg,#7C5CFF 0%,#5B8CFF 100%);
+    --grad-soft:linear-gradient(130deg,rgba(124,92,255,.14),rgba(91,140,255,.12));
+    --sb-w:272px; --sb-rail:70px;
+  }
+  html.dark{
+    --bg:#0E0E14; --bg2:#13131A;
+    --surface:#1C1C26; --sidebar:#18181B;
+    --card:rgba(255,255,255,.03); --card-2:#1C1C26;
+    --border:rgba(255,255,255,.06); --border-strong:rgba(255,255,255,.11);
+    --text:#FFFFFF; --text-2:#A1A1AA; --muted:#71717A;
+    --accent:#8B5CF6; --accent-2:#5B8CFF;
+    --chip:rgba(255,255,255,.06); --chip-2:rgba(139,92,246,.18);
+    --shadow-card:0 24px 55px rgba(0,0,0,.42);
+    --shadow-soft:0 16px 36px rgba(0,0,0,.34);
+    --shadow-btn:0 14px 34px rgba(92,115,255,.4);
+  }
+
+  *{ -webkit-tap-highlight-color:transparent; }
+  html,body{ background:var(--bg); }
+  body{
+    font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+    color:var(--text);
+    letter-spacing:-.01em;
+    transition:background .35s ease,color .35s ease;
+  }
+  ::-webkit-scrollbar{height:10px;width:10px}
+  ::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:8px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+  ::selection{ background:rgba(124,92,255,.22); }
+  /* SAFETY NET: createIcons() drops style attrs, so bare icons could render huge.
+     Give every lucide svg a sane default; component rules below override as needed. */
+  svg[viewBox="0 0 24 24"]{ width:17px; height:17px; flex:none; }
+
+  /* ---------- token overrides so JS-emitted utilities theme ---------- */
+  .text-sub{ color:var(--text-2)!important; }
+  .text-ink{ color:var(--text)!important; }
+  .text-ink\/90{ color:color-mix(in srgb,var(--text) 90%,transparent)!important; }
+  .text-ink\/80{ color:color-mix(in srgb,var(--text) 80%,transparent)!important; }
+  .text-ink\/70{ color:color-mix(in srgb,var(--text) 68%,transparent)!important; }
+  .text-sub\/50,.text-sub\/40{ color:var(--muted)!important; }
+  .text-brand{ color:var(--accent)!important; }
+  .text-danger{ color:var(--danger)!important; }
+  .border-line{ border-color:var(--border)!important; }
+  .bg-canvas{ background:var(--bg2)!important; }
+  .bg-canvas\/60{ background:color-mix(in srgb,var(--bg2) 60%,transparent)!important; }
+  .bg-brand{ background:var(--accent)!important; }
+  .shadow-soft{ box-shadow:var(--shadow-soft)!important; }
+  .rounded-xl2{ border-radius:20px!important; }
+  #view .bg-white{ background:var(--card-2)!important; }
+  #view .bg-white\/60{ background:var(--chip)!important; }
+  #view .bg-gray-50{ background:var(--bg2)!important; }
+  #view .bg-gray-100{ background:var(--chip)!important; }
+
+  /* ---------- app frame ---------- */
+  .app-bg{
+    background:
+      radial-gradient(1100px 520px at 88% -10%, color-mix(in srgb,var(--accent) 12%,transparent), transparent 60%),
+      radial-gradient(900px 480px at -8% 8%, color-mix(in srgb,var(--accent-2) 10%,transparent), transparent 55%),
+      var(--bg);
+    min-height:100vh;
+  }
+
+  /* ---------- CARD ---------- */
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:24px;
+    box-shadow:var(--shadow-card);
+    transition:transform .3s cubic-bezier(.2,.7,.2,1), box-shadow .3s ease, border-color .3s ease;
+  }
+  html.dark .card{ backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
+  .card-h:hover{ transform:translateY(-4px); box-shadow:0 30px 60px rgba(21,26,58,.14); border-color:var(--border-strong); }
+  html.dark .card-h:hover{ box-shadow:0 32px 66px rgba(0,0,0,.5); }
+
+  /* ---------- icon-in-circle ---------- */
+  .icoc{
+    width:34px;height:34px;border-radius:50%;
+    display:grid;place-items:center;flex:none;
+    background:var(--chip); color:var(--text);
+    transition:background .25s ease,color .25s ease,transform .25s ease;
+  }
+  .icoc svg{ width:18px;height:18px; }
+  .icoc-lg{ width:44px;height:44px; }
+  .icoc-lg svg{ width:20px;height:20px; }
+
+  /* ---------- buttons ---------- */
+  .btn{
+    height:44px;padding:0 20px;border-radius:999px;
+    display:inline-flex;align-items:center;gap:8px;justify-content:center;
+    font-weight:700;font-size:13.5px;color:#fff;
+    background:var(--grad);
+    box-shadow:var(--shadow-btn);
+    border:none;cursor:pointer;
+    transition:transform .22s cubic-bezier(.2,.7,.2,1), filter .22s ease, box-shadow .22s ease;
+  }
+  .btn:hover{ filter:brightness(1.1); transform:scale(1.02); }
+  .btn:active{ transform:scale(.98); }
+  .btn-sm{ height:40px;padding:0 16px;font-size:13px; }
+  .btn-ghost{
+    height:40px;padding:0 16px;border-radius:999px;
+    display:inline-flex;align-items:center;gap:8px;justify-content:center;
+    font-weight:600;font-size:13px;color:var(--text-2);
+    background:var(--chip);border:1px solid var(--border);cursor:pointer;
+    transition:transform .2s ease,color .2s ease,background .2s ease;
+  }
+  .btn-ghost:hover{ color:var(--text); transform:translateY(-1px); }
+  .icon-btn{
+    width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+    background:var(--chip);border:1px solid var(--border);color:var(--text-2);cursor:pointer;
+    transition:transform .2s ease,color .2s ease,box-shadow .2s ease;
+  }
+  .icon-btn:hover{ color:var(--text); transform:translateY(-2px); box-shadow:var(--shadow-soft); }
+  .icon-btn svg{ width:18px;height:18px; }
+
+  /* ---------- fields ---------- */
+  .field{
+    width:100%;height:44px;padding:0 14px;border-radius:14px;
+    background:var(--bg2);border:1px solid var(--border);
+    color:var(--text);font-size:13.5px;font-family:inherit;
+    outline:none;transition:border-color .2s ease,box-shadow .2s ease,background .2s ease;
+  }
+  .field::placeholder{ color:var(--muted); }
+  .field:focus{ border-color:var(--accent); box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent); }
+  select.field{ appearance:none; background-image:
+    linear-gradient(45deg,transparent 50%,var(--text-2) 50%),
+    linear-gradient(135deg,var(--text-2) 50%,transparent 50%);
+    background-position:calc(100% - 18px) 19px, calc(100% - 13px) 19px;
+    background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:36px; }
+  .flabel{ display:block;font-size:11.5px;font-weight:600;color:var(--text-2);margin-bottom:6px;letter-spacing:0; }
+
+  /* ---------- chips / badges (themeable) ---------- */
+  .badge{ display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 11px;border-radius:999px;font-size:12px;font-weight:600; }
+  .badge .dot{ width:6px;height:6px;border-radius:50%; }
+  .badge--done{ background:color-mix(in srgb,var(--success) 14%,transparent); color:var(--success); }
+  .badge--done .dot{ background:var(--success); }
+  .badge--doing{ background:color-mix(in srgb,var(--accent-2) 16%,transparent); color:var(--accent-2); }
+  .badge--doing .dot{ background:var(--accent-2); }
+  .badge--wait{ background:color-mix(in srgb,var(--warning) 16%,transparent); color:var(--warning); }
+  .badge--wait .dot{ background:var(--warning); }
+  .tag{ display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:8px;font-size:12px;font-weight:600; }
+  .tag--long{ background:color-mix(in srgb,var(--accent) 15%,transparent); color:var(--accent); }
+  .tag--motion{ background:color-mix(in srgb,var(--accent-2) 15%,transparent); color:var(--accent-2); }
+  .tag--ads{ background:color-mix(in srgb,#F43F5E 15%,transparent); color:#fb7185; }
+  html:not(.dark) .tag--ads{ color:#e11d48; }
+  .mini-chip{ display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:8px;font-size:12px;font-weight:700;background:var(--chip);color:var(--text-2); }
+  .urgent{ display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:8px;font-size:12px;font-weight:800;
+    background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger); }
+
+  /* ---------- card-table ---------- */
+  .ctable{ width:100%;border-collapse:separate;border-spacing:0; }
+  .ctable thead th{ font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-2);
+    padding:14px 14px;text-align:left;border-bottom:1px solid var(--border);background:transparent; }
+  .ctable tbody td{ padding:14px 14px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle; }
+  .ctable tbody tr:last-child td{ border-bottom:none; }
+  .ctable tbody tr{ transition:background .2s ease; }
+  .ctable tbody tr:hover{ background:var(--bg2); }
+  .vrow-done{ background:color-mix(in srgb,var(--success) 7%,transparent); }
+  .vrow-done:hover{ background:color-mix(in srgb,var(--success) 13%,transparent)!important; }
+  .vrow-gap{ background:color-mix(in srgb,var(--danger) 7%,transparent); }
+  .vrow-gap:hover{ background:color-mix(in srgb,var(--danger) 13%,transparent)!important; }
+  .th-total{ color:var(--accent)!important; }
+  .ctable tr.total td{ border-top:1px solid var(--border-strong); border-bottom:none; padding-top:16px; }
+  .bar-track{ height:8px;border-radius:999px;background:var(--chip);overflow:hidden; }
+  .bar-fill{ height:100%;border-radius:999px;background:var(--grad); }
+
+  /* ---------- calendar ---------- */
+  .cal-wd{ height:46px;display:grid;place-items:center;font-size:11.5px;font-weight:700;letter-spacing:.08em;
+    color:var(--text-2);background:var(--bg2);border-right:1px solid var(--border); }
+  .cal-wd:last-child{ border-right:none; }
+  .cal-wd.wknd{ color:var(--danger); }
+  .cal-cell.wknd .cal-daynum{ color:var(--danger); }
+  .cal-cell.out.wknd .cal-daynum{ color:color-mix(in srgb,var(--danger) 55%, var(--muted)); }
+  .cal-cell.wknd{ background:color-mix(in srgb,var(--danger) 3%, transparent); }
+  .cal-cell.out.wknd{ background:color-mix(in srgb,var(--danger) 5%, var(--bg2)); }
+  .cal-cell{ min-height:132px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px; }
+  .cal-cell.out{ background:var(--bg2); }
+  .cal-daynum{ font-size:12px;font-weight:700;color:var(--text);padding:0 4px;margin-bottom:5px; }
+  .cal-cell.out .cal-daynum{ color:var(--muted); }
+  .cal-ev{ border-radius:12px;padding:7px 9px;font-size:11px;line-height:1.35;border:1px solid transparent;margin-bottom:6px; }
+  #calLegend button{ border-color:var(--border)!important;background:var(--chip)!important;color:var(--text-2)!important; }
+  #calLegend button.bg-ink{ background:var(--grad)!important;color:#fff!important;border-color:transparent!important;box-shadow:var(--shadow-btn); }
+  #calLegend button.bg-white{ background:var(--chip)!important;color:var(--text-2)!important; }
+
+  /* ---------- nav pills (built by buildNav; keeps .nav-item/.active/.nav-ic) ---------- */
+  .nav-item{
+    position:relative;width:100%;display:flex;align-items:center;gap:12px;
+    height:48px;padding:0 12px;border-radius:14px;
+    font-size:14px;font-weight:600;color:var(--text-2);
+    background:transparent;border:none;cursor:pointer;text-align:left;
+    opacity:.72;transition:opacity .25s ease,background .25s ease,color .25s ease,transform .2s ease;
+  }
+  .nav-item .nav-ic{
+    width:34px;height:34px;border-radius:10px;flex:none;
+    display:grid;place-items:center;background:var(--chip);color:var(--text-2);
+    transition:background .25s ease,color .25s ease;
+  }
+  .nav-item .nav-ic svg{ width:18px;height:18px; }
+  .nav-item:hover{ opacity:1;color:var(--text);background:var(--chip); }
+  .nav-item.active{
+    opacity:1;color:#fff;font-weight:700;
+    background:var(--grad);box-shadow:var(--shadow-btn);
+  }
+  .nav-item.active .nav-ic{ background:rgba(255,255,255,.22);color:#fff; }
+  /* trailing reveal on select/hover — chevron slides in on hover, dot pops on active */
+  .nav-item .nav-tail{ margin-left:auto; position:relative; width:22px; height:22px; flex:none; display:grid; place-items:center; }
+  .nav-item .nav-chevron{ position:absolute; inset:0; display:grid; place-items:center; color:var(--text-2);
+    opacity:0; transform:translateX(7px); transition:opacity .2s ease, transform .2s ease; }
+  .nav-item .nav-chevron svg{ width:16px; height:16px; }
+  .nav-item:hover:not(.active) .nav-chevron{ opacity:1; transform:none; }
+  .nav-item .nav-dot{ width:9px; height:9px; border-radius:50%; background:#fff;
+    box-shadow:0 0 0 3px rgba(255,255,255,.30);
+    opacity:0; transform:scale(.35); transition:opacity .22s ease, transform .32s cubic-bezier(.2,1.5,.35,1); }
+  .nav-item.active .nav-dot{ opacity:1; transform:scale(1); }
+  .nav-logout .nav-ic{ color:var(--danger); }
+  .nav-logout:hover{ opacity:1;color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent); }
+  .nav-logout:hover .nav-ic{ background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger); }
+
+  /* ---------- sidebar (floating, two-layer, collapsible) ---------- */
+  #sidebar{ padding:18px 0 18px 18px; }
+  .sb-shell{
+    position:relative;display:flex;flex-direction:column;
+    width:var(--sb-w);height:calc(100vh - 36px);
+    background:var(--sidebar);border:1px solid var(--border);
+    border-radius:28px;box-shadow:var(--shadow-card);
+    overflow:hidden;
+    transition:width .25s ease;
+  }
+  html.dark .sb-shell{ background:#18181B; }
+  .sb-brand{ display:flex;align-items:center;gap:12px;height:74px;padding:0 18px;flex:none; }
+  .sb-logo{ width:var(--sb-rail);display:flex;justify-content:center;flex:none;margin-left:-18px; }
+  .sb-mark{
+    width:40px;height:40px;border-radius:13px;display:grid;place-items:center;
+    color:#fff;background:var(--grad);box-shadow:var(--shadow-btn);
+    border:none;padding:0;cursor:pointer;flex:none;
+    transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s ease,filter .22s ease;
+  }
+  .sb-mark:hover{ filter:brightness(1.08);transform:scale(1.05); }
+  .sb-mark:active{ transform:scale(.95); }
+  .sb-mark svg{ width:20px;height:20px; }
+  .sb-brand-text .t1{ font-weight:800;font-size:15px;line-height:1;letter-spacing:-.02em; }
+  .sb-brand-text .t2{ font-size:11px;color:var(--text-2);margin-top:3px; }
+  .sb-scroll{ flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:10px 16px 4px; }
+  .sb-label{ font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:14px 12px 8px; }
+  .sb-foot{ flex:none;padding:12px 16px 16px;border-top:1px solid var(--border); }
+  .sb-user{ display:flex;align-items:center;gap:12px;padding:10px;border-radius:16px;cursor:pointer;transition:background .25s ease,transform .2s ease; }
+  .sb-user:hover{ background:var(--chip);transform:translateY(-1px); }
+  .sb-user img{ width:40px;height:40px;border-radius:50%;object-fit:cover;flex:none;margin-left:4px; }
+
+  /* collapsed state: only the 70px icon rail remains */
+  /* collapsed state: tidy centered icon rail */
+  #sidebar.is-collapsed .sb-shell{ width:86px; }
+  #sidebar.is-collapsed .sb-brand-text,
+  #sidebar.is-collapsed .sb-user-meta{ display:none; }
+  #sidebar.is-collapsed .nav-txt{ opacity:0;width:0;overflow:hidden;pointer-events:none;white-space:nowrap; }
+  #sidebar.is-collapsed .nav-tail{ display:none; }
+  #sidebar.is-collapsed .sb-brand{ flex-direction:column;justify-content:center;padding:22px 0 4px;height:auto; }
+  #sidebar.is-collapsed .sb-mark{ width:44px;height:44px;border-radius:14px; }
+  #sidebar.is-collapsed .sb-logo{ margin-left:0;width:auto; }
+  #sidebar.is-collapsed .sb-scroll{ padding:6px 0 4px;display:flex;flex-direction:column;align-items:center; }
+  #sidebar.is-collapsed #nav{ width:100%;display:flex;flex-direction:column;align-items:center;gap:10px; }
+  #sidebar.is-collapsed #nav > *{ margin-top:0 !important; }
+  #sidebar.is-collapsed .nav-item{ justify-content:center;padding:0;height:44px;opacity:1;gap:0;
+    background:transparent!important;box-shadow:none!important; }
+  #sidebar.is-collapsed .nav-item .nav-ic{ width:44px;height:44px;border-radius:14px; }
+  #sidebar.is-collapsed .nav-item.active .nav-ic{ background:var(--grad);color:#fff;box-shadow:var(--shadow-btn); }
+  #sidebar.is-collapsed .nav-item:not(.active):hover .nav-ic{ background:var(--chip-2);color:var(--text); }
+  #sidebar.is-collapsed .sb-foot{ display:flex;flex-direction:column;align-items:center;gap:4px; }
+  #sidebar.is-collapsed .sb-foot .nav-item{ width:auto; }
+  #sidebar.is-collapsed .sb-user{ justify-content:center;padding:8px;width:auto; }
+  #sidebar.is-collapsed .sb-user img{ margin-left:0; }
+  .nav-txt{ transition:opacity .2s ease; }
+
+  /* ---------- header ---------- */
+  .topbar{ position:sticky;top:0;z-index:30;display:flex;align-items:flex-start;gap:14px;
+    padding:26px 30px 16px;
+    background:var(--bg); }
+  .topbar::after{ content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--border),transparent);opacity:.7; }
+  .page-title{ font-size:30px;font-weight:800;line-height:1.05;letter-spacing:-.03em; }
+  .page-sub{ font-size:13.5px;color:var(--text-2);margin-top:6px; }
+  .date-chip{ display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 15px;border-radius:999px;
+    background:var(--card);border:1px solid var(--border);color:var(--text-2);font-size:13px;font-weight:600;box-shadow:var(--shadow-soft); }
+  .date-chip svg{ width:16px;height:16px; }
+
+  /* ---------- modal ---------- */
+  #taskModal, #shootModal, #editModal{ background:rgba(10,10,18,.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+  .modal-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:26px;box-shadow:0 40px 100px rgba(0,0,0,.4);
+    animation:pop .32s cubic-bezier(.16,1.2,.3,1);
+  }
+  @keyframes pop{ from{opacity:0;transform:translateY(18px) scale(.96)} to{opacity:1;transform:none} }
+
+  /* ---------- misc ---------- */
+  .section-eyebrow{ display:flex;align-items:center;gap:12px; }
+  .stat-row{ display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px dashed var(--border); }
+  .stat-row:last-child{ border-bottom:none; }
+  .stat-row.hl{ background:var(--grad-soft);margin:0 -10px;padding:7px 10px;border-radius:10px;border-bottom:none; }
+  .kpi-ic{ width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:#fff;flex:none; }
+  .kpi-ic svg{ width:20px;height:20px; }
+  .link-btn{ width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+    background:var(--chip-2);color:var(--accent);transition:transform .2s ease,background .2s ease,color .2s ease; }
+  .link-btn:hover{ background:var(--grad);color:#fff;transform:translateY(-2px); }
+  .link-btn svg{ width:16px;height:16px; }
+
+  [data-view]{ animation:fade .3s ease; }
+  @keyframes fade{ from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+  footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
+
+  @media (max-width:767px){
+    #sidebar{ padding:12px; background:transparent; }
+    .sb-shell{ height:calc(100vh - 24px);width:280px; }
+    .topbar{ padding:18px 18px 10px; }
+    .page-title{ font-size:24px; }
+  }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+
+  /* ============================================================
+     LOGIN GATE — light, airy splash that follows the SYSTEM theme.
+     Consumes the app's own tokens (--bg, --surface, --accent, --grad…),
+     so it matches light mode by default and adapts if the app is dark.
+     Every rule scoped under #loginGate so it never touches the app.
+     ============================================================ */
+  #loginGate{
+    position:fixed; inset:0; z-index:1000; overflow-y:auto; color:var(--text);
+    letter-spacing:-.01em;
+    background:
+      radial-gradient(820px 520px at 14% 6%, color-mix(in srgb,var(--accent) 15%, transparent), transparent 62%),
+      radial-gradient(900px 600px at 90% 92%, color-mix(in srgb,var(--accent-2) 13%, transparent), transparent 62%),
+      var(--bg);
+    animation:lgFade .35s ease;
+  }
+  #loginGate.is-hidden{ opacity:0; pointer-events:none; transform:scale(.99); transition:opacity .4s ease, transform .4s ease; }
+  @keyframes lgFade{ from{opacity:0} to{opacity:1} }
+
+  /* soft ambient blobs — gentle brand tint, low presence */
+  #loginGate .blob{ position:absolute; border-radius:42% 58% 63% 37% / 41% 44% 56% 59%; filter:blur(80px); pointer-events:none; opacity:.7; }
+  #loginGate .blob-a{ width:480px;height:400px; top:-150px; left:-150px;
+    background:linear-gradient(135deg, color-mix(in srgb,var(--accent) 34%,transparent), color-mix(in srgb,var(--accent-2) 8%,transparent)); animation:lgDrift1 22s ease-in-out infinite; }
+  #loginGate .blob-b{ width:440px;height:440px; bottom:-190px; right:-150px;
+    background:linear-gradient(135deg, color-mix(in srgb,var(--accent-2) 32%,transparent), color-mix(in srgb,var(--accent) 6%,transparent)); animation:lgDrift2 26s ease-in-out infinite; }
+  #loginGate .blob-c{ width:280px;height:280px; top:40%; right:9%;
+    background:radial-gradient(circle, color-mix(in srgb,var(--accent) 20%,transparent), transparent 70%); animation:lgDrift1 18s ease-in-out infinite reverse; }
+  html.dark #loginGate .blob{ opacity:.5; }
+  @keyframes lgDrift1{ 0%,100%{ transform:translate(0,0) rotate(0deg);} 50%{ transform:translate(24px,18px) rotate(6deg);} }
+  @keyframes lgDrift2{ 0%,100%{ transform:translate(0,0) rotate(0deg);} 50%{ transform:translate(-20px,-16px) rotate(-5deg);} }
+
+  #loginGate .sprockets{ position:absolute; display:flex; flex-direction:column; gap:14px; pointer-events:none; }
+  #loginGate .sprockets span{ width:6px;height:6px;border-radius:2px;background:color-mix(in srgb,var(--text) 12%,transparent); }
+  #loginGate .sprockets.tl{ top:64px; left:40px; } #loginGate .sprockets.br{ bottom:64px; right:40px; }
+
+  #loginGate .stage{ position:relative; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 20px; }
+  #loginGate .lg-card{
+    position:relative; z-index:2; width:100%; max-width:404px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:28px; box-shadow:var(--shadow-card);
+    padding:38px 34px 30px; animation:lgPop .5s cubic-bezier(.16,1,.3,1);
+  }
+  html.dark #loginGate .lg-card{ background:var(--card-2); }
+  @keyframes lgPop{ from{opacity:0; transform:translateY(16px) scale(.97);} to{opacity:1; transform:none;} }
+
+  #loginGate .lg-brand{ display:flex; align-items:center; gap:11px; margin-bottom:26px; }
+  #loginGate .lg-mark{ width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+    background:var(--grad); box-shadow:var(--shadow-btn); flex:none; }
+  #loginGate .lg-mark svg{ width:19px;height:19px; }
+  #loginGate .lg-wordmark{ font-weight:800; font-size:16.5px; letter-spacing:-.02em; color:var(--text); }
+  #loginGate .lg-wordmark span{ display:block; font-weight:600; font-size:10.5px; color:var(--text-2); letter-spacing:.06em; text-transform:uppercase; margin-top:1px; }
+
+  #loginGate h1{ font-size:24px; font-weight:800; letter-spacing:-.03em; margin:0 0 16px; color:var(--text); }
+  #loginGate .lg-lede{ font-size:13.5px; color:var(--text-2); margin:0 0 22px; line-height:1.5; }
+
+  #loginGate .lg-hint{ display:flex; align-items:center; gap:10px; margin:0 0 22px; padding:11px 13px;
+    border-radius:14px; background:var(--chip-2); border:1px solid color-mix(in srgb,var(--accent) 22%,transparent); }
+  #loginGate .lg-hint svg{ width:16px;height:16px; color:var(--accent); flex:none; }
+  #loginGate .lg-hint .t{ font-size:12px; line-height:1.5; color:var(--text-2); }
+  #loginGate .lg-hint b{ color:var(--text); font-weight:700; }
+  #loginGate .lg-hint .fill{ margin-left:auto; font-size:11.5px; font-weight:700; color:var(--accent);
+    background:transparent; border:none; cursor:pointer; white-space:nowrap; text-decoration:underline; text-underline-offset:2px; }
+  #loginGate .lg-hint .fill:hover{ filter:brightness(1.1); }
+
+  #loginGate .lg-flabel{ display:block; font-size:12px; font-weight:600; color:var(--text-2); margin:0 0 7px; }
+  #loginGate .field-wrap{ position:relative; margin-bottom:16px; }
+  #loginGate .lg-field{
+    width:100%; height:46px; padding:0 15px; border-radius:14px;
+    background:var(--bg2); border:1px solid var(--border);
+    color:var(--text); font-size:13.5px; font-family:inherit;
+    outline:none; transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  #loginGate .lg-field::placeholder{ color:var(--muted); }
+  #loginGate .lg-field:focus{ border-color:var(--accent);
+    box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent); }
+  #loginGate .lg-field.has-icon{ padding-right:42px; }
+  #loginGate .lg-field.err{ border-color:var(--danger); box-shadow:0 0 0 4px color-mix(in srgb,var(--danger) 15%,transparent); }
+  #loginGate .eye-btn{
+    position:absolute; right:6px; top:6px; width:34px;height:34px; border-radius:10px;
+    display:grid; place-items:center; background:transparent; border:none; color:var(--text-2);
+    cursor:pointer; transition:color .2s ease, background .2s ease;
+  }
+  #loginGate .eye-btn:hover{ color:var(--text); background:var(--chip); }
+  #loginGate .eye-btn svg{ width:17px;height:17px; }
+
+  #loginGate .lg-err{ display:none; align-items:center; gap:7px; font-size:12.5px; color:var(--danger);
+    margin:-6px 0 14px; }
+  #loginGate .lg-err.show{ display:flex; }
+  #loginGate .lg-err svg{ width:15px;height:15px;flex:none; }
+
+  #loginGate .row-between{ display:flex; align-items:center; justify-content:space-between; margin:2px 0 22px; }
+  #loginGate .remember{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-2); cursor:pointer; user-select:none; }
+  #loginGate .remember input{ width:15px;height:15px; accent-color:var(--accent); cursor:pointer; }
+  #loginGate .forgot{ font-size:12.5px; font-weight:600; color:var(--accent); text-decoration:none; background:none;border:none;cursor:pointer; }
+  #loginGate .forgot:hover{ filter:brightness(1.1); }
+
+  #loginGate .btn-primary{
+    width:100%; height:48px; border-radius:999px; border:none; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    font-weight:700; font-size:14px; color:#fff; background:var(--grad);
+    box-shadow:var(--shadow-btn);
+    transition:transform .22s cubic-bezier(.2,.7,.2,1), filter .22s ease;
+  }
+  #loginGate .btn-primary:hover{ filter:brightness(1.08); transform:scale(1.015); }
+  #loginGate .btn-primary:active{ transform:scale(.98); }
+  #loginGate .btn-primary svg{ width:16px;height:16px; }
+
+  #loginGate .divider{ display:flex; align-items:center; gap:12px; margin:24px 0 18px; }
+  #loginGate .divider::before,#loginGate .divider::after{ content:""; flex:1; height:1px; background:var(--border); }
+  #loginGate .divider span{ font-size:11.5px; color:var(--muted); white-space:nowrap; }
+
+  #loginGate .sso{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  #loginGate .sso-btn{
+    height:46px; border-radius:14px; display:inline-flex; align-items:center; justify-content:center; gap:9px;
+    background:var(--chip); border:1px solid var(--border); color:var(--text);
+    font-size:13px; font-weight:600; cursor:pointer;
+    transition:background .2s ease, transform .2s ease, border-color .2s ease;
+  }
+  #loginGate .sso-btn:hover{ background:var(--chip-2); transform:translateY(-1px); border-color:var(--border-strong); }
+  #loginGate .sso-btn svg{ width:17px;height:17px; flex:none; }
+
+  #loginGate .foot-note{ text-align:center; font-size:12.5px; color:var(--text-2); margin:24px 0 0; }
+  #loginGate .foot-note a{ color:var(--text); font-weight:700; text-decoration:none; border-bottom:1px solid var(--border-strong); }
+  #loginGate .foot-note a:hover{ border-color:var(--accent); }
+  #loginGate :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  @media (max-width:420px){
+    #loginGate .lg-card{ padding:30px 22px 24px; border-radius:22px; }
+  }
+</style>
+</head>
+<body class="min-h-screen app-bg">
+
+<!-- ============ LOGIN GATE ============ -->
+<div id="loginGate">
+  <div class="blob blob-a"></div>
+  <div class="blob blob-b"></div>
+  <div class="blob blob-c"></div>
+  <div class="sprockets tl"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="sprockets br"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+
+  <div class="stage">
+    <form class="lg-card" id="loginForm" novalidate>
+      <div class="lg-brand">
+        <div class="lg-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>
+          </svg>
+        </div>
+        <div class="lg-wordmark">Video Ops<span>Team Marketing</span></div>
+      </div>
+
+      <h1>Đăng nhập</h1>
+
+      <div class="lg-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <span class="t">Demo · <b>demo@videoops.vn</b> · <b>demo2026</b></span>
+        <button type="button" class="fill" id="fillDemo">Điền nhanh</button>
+      </div>
+
+      <label class="lg-flabel" for="lgEmail">Email</label>
+      <div class="field-wrap">
+        <input id="lgEmail" type="email" class="lg-field" placeholder="ten@congty.com" autocomplete="username" required />
+      </div>
+
+      <label class="lg-flabel" for="lgPass">Mật khẩu</label>
+      <div class="field-wrap">
+        <input id="lgPass" type="password" class="lg-field has-icon" placeholder="Nhập mật khẩu" autocomplete="current-password" required />
+        <button type="button" class="eye-btn" id="eyeBtn" aria-label="Hiện mật khẩu">
+          <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+
+      <p class="lg-err" id="lgErr">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+        <span id="lgErrText">Email hoặc mật khẩu chưa đúng.</span>
+      </p>
+
+      <div class="row-between">
+        <label class="remember"><input type="checkbox" id="lgRemember" /> Ghi nhớ đăng nhập</label>
+        <button type="button" class="forgot" id="lgForgot">Quên mật khẩu?</button>
+      </div>
+
+      <button type="submit" class="btn-primary" id="signInBtn">
+        <span id="signInLabel">Đăng nhập</span>
+      </button>
+
+      <div class="divider"><span>hoặc tiếp tục với</span></div>
+
+      <div class="sso">
+        <button type="button" class="sso-btn" data-sso="Google">
+          <svg viewBox="0 0 24 24"><path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1S8.7 6 12 6c1.9 0 3.2.8 3.9 1.5l2.7-2.6C17 3.2 14.7 2.2 12 2.2 6.9 2.2 2.7 6.4 2.7 11.5S6.9 20.8 12 20.8c6.9 0 9.3-4.8 9.3-7.3 0-.5-.05-.9-.12-1.3H12Z"/></svg>
+          Google
+        </button>
+        <button type="button" class="sso-btn" data-sso="Microsoft">
+          <svg viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" fill="#F35325"/><rect x="13" y="2" width="9" height="9" fill="#81BC06"/><rect x="2" y="13" width="9" height="9" fill="#05A6F0"/><rect x="13" y="13" width="9" height="9" fill="#FFBA08"/></svg>
+          Microsoft
+        </button>
+      </div>
+
+      <p class="foot-note">Chưa có tài khoản? <a href="#" id="lgContact">Liên hệ quản trị viên</a></p>
+    </form>
+  </div>
+</div>
+
+<div class="flex min-h-screen w-full mx-auto">
+
+  <aside id="sidebar" class="hidden md:flex shrink-0 flex-col">
+    <div class="sb-shell">
+      <div class="sb-brand">
+        <div class="sb-logo">
+          <button id="sbToggle" class="sb-mark" title="Thu gọn / mở rộng sidebar" aria-label="Thu gọn / mở rộng sidebar">
+            <i data-lucide="clapperboard"></i>
+          </button>
+        </div>
+        <div class="sb-brand-text">
+          <div class="t1">Video Ops</div>
+          <div class="t2">Team Marketing</div>
+        </div>
+      </div>
+
+      <div class="sb-scroll">
+        <nav id="nav" class="space-y-1.5"></nav>
+      </div>
+
+      <div class="sb-foot">
+        <button class="nav-item nav-logout" onclick="logout()">
+          <span class="nav-ic"><i data-lucide="log-out"></i></span>
+          <span class="nav-txt">Đăng xuất</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="flex-1 min-w-0 flex flex-col">
+    <header class="topbar">
+      <button id="menuBtn" class="md:hidden icon-btn shrink-0 mt-1">
+        <i data-lucide="menu"></i>
+      </button>
+      <div class="min-w-0">
+        <h1 id="pageTitle" class="page-title">Tổng quan</h1>
+        <p id="pageSub" class="page-sub">Báo cáo công việc tháng 7</p>
+      </div>
+      <div class="ml-auto flex items-center gap-2.5 mt-1">
+        <div class="date-chip hidden sm:inline-flex">
+          <i data-lucide="calendar"></i> Tháng 7, 2026
+        </div>
+        <button class="icon-btn hidden sm:grid"><i data-lucide="mail"></i></button>
+        <button class="icon-btn relative">
+          <i data-lucide="bell"></i>
+          <span class="absolute top-1.5 right-2 w-2 h-2 rounded-full" style="background:var(--danger)"></span>
+        </button>
+        <button id="themeToggle" class="icon-btn" title="Đổi giao diện"><i data-lucide="moon"></i></button>
+        <div class="flex items-center gap-2.5 pl-1">
+          <img src="https://i.pravatar.cc/64?img=13" class="w-10 h-10 rounded-full" style="border:1px solid var(--border)" alt="" />
+          <div class="hidden sm:block leading-tight">
+            <div class="text-[13.5px] font-bold">Đoàn Quốc Đạt</div>
+            <div class="text-[11px] text-sub">Team Lead</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="view" class="flex-1 px-5 md:px-8 pb-12"></main>
+    <footer class="px-8 py-5 text-[12px]">Video Ops · nội bộ team marketing</footer>
+  </div>
+</div>
+
+<div id="sbBackdrop" class="fixed inset-0 z-30 hidden md:hidden" style="background:rgba(10,10,18,.5);backdrop-filter:blur(4px)"></div>
+
+<div id="taskModal" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto py-10 px-4">
+  <div class="modal-card w-[90%] max-w-2xl p-7 my-auto">
+    <div class="flex justify-between items-center mb-6">
+      <div class="flex items-center gap-3">
+        <span class="icoc icoc-lg" style="background:var(--grad);color:#fff"><i data-lucide="clapperboard"></i></span>
+        <h3 id="modalTitle" class="font-extrabold text-[19px] leading-none tracking-tight">Chi tiết Task</h3>
+      </div>
+      <button onclick="closeTaskModal()" class="icon-btn"><i data-lucide="x"></i></button>
+    </div>
+
+    <div class="space-y-5">
+      <div>
+        <label class="flabel">Tên video <span style="color:var(--danger)">*</span></label>
+        <input id="mName" class="field" placeholder="Nhập tên video..." />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="flabel">Người làm (Editor)</label>
+            <select id="mEditor" class="field"></select>
+          </div>
+          <div>
+            <label class="flabel">Trạng thái</label>
+            <select id="mStatus" class="field">
+              <option value="Chờ">Chờ</option>
+              <option value="Đang làm">Đang làm</option>
+              <option value="Đã xong">Đã xong</option>
+            </select>
+          </div>
+          <div>
+            <label class="flabel">Team Order</label>
+            <select id="mOrder" class="field"></select>
+          </div>
+          <div>
+            <label class="flabel">Thể loại</label>
+            <select id="mCat" class="field">
+              <option value="Video dài">Video dài</option>
+              <option value="Motion">Motion</option>
+              <option value="Ads">Ads</option>
+            </select>
+          </div>
+          <div>
+            <label class="flabel">Độ ưu tiên</label>
+            <select id="mUutien" class="field">
+              <option value="">Bình thường</option>
+              <option value="Gấp">Gấp</option>
+            </select>
+          </div>
+          <div>
+            <label class="flabel">Resize</label>
+            <input id="mResize" class="field" placeholder="VD: 9x16 & 1x1" />
+          </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4 pt-5" style="border-top:1px solid var(--border)">
+          <div>
+            <label class="flabel">Ngày nhận</label>
+            <input id="mNhan" class="field" placeholder="VD: 01/07" />
+          </div>
+          <div>
+            <label class="flabel">Ngày trả</label>
+            <input id="mTra" class="field" placeholder="VD: 05/07" />
+          </div>
+          <div>
+            <label class="flabel">Ngày Air</label>
+            <input id="mAir" class="field" placeholder="VD: 06/07" />
+          </div>
+      </div>
+
+      <div class="pt-5" style="border-top:1px solid var(--border)">
+        <label class="flabel">Link thành phẩm</label>
+        <input id="mLink" class="field" placeholder="Nhập link (Drive, Youtube, etc.)..." />
+      </div>
+    </div>
+
+    <div class="mt-7 flex justify-end gap-3">
+      <button onclick="closeTaskModal()" class="btn-ghost">Đóng</button>
+      <button onclick="saveTask()" class="btn"><i data-lucide="circle-check" style="width:17px;height:17px"></i> Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+
+<div id="shootModal" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto py-10 px-4">
+  <div class="modal-card w-[90%] max-w-lg p-7 my-auto">
+    <div class="flex justify-between items-center mb-6">
+      <div class="flex items-center gap-3">
+        <span class="icoc icoc-lg" style="background:var(--grad);color:#fff"><i data-lucide="calendar-days"></i></span>
+        <h3 id="shootModalTitle" class="font-extrabold text-[19px] leading-none tracking-tight">Thêm lịch quay</h3>
+      </div>
+      <button onclick="closeShootModal()" class="icon-btn"><i data-lucide="x"></i></button>
+    </div>
+
+    <div class="space-y-5">
+      <div>
+        <label class="flabel">Ngày quay <span style="color:var(--danger)">*</span></label>
+        <input id="sDate" type="date" class="field" />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="flabel">Loại lịch</label>
+          <select id="sType" class="field"></select>
+        </div>
+        <div>
+          <label class="flabel">Thời gian</label>
+          <input id="sTime" class="field" placeholder="VD: BUỔI TỐI / ALL MORNING" />
+        </div>
+      </div>
+      <div>
+        <label class="flabel">Địa điểm <span style="color:var(--danger)">*</span></label>
+        <input id="sPlace" class="field" placeholder="VD: SHOWROOM HÒA BÌNH" />
+      </div>
+      <div>
+        <label class="flabel">Ekip / Nhân sự</label>
+        <input id="sCrew" class="field" placeholder="VD: KHANG + ĐẠT" />
+      </div>
+      <div>
+        <label class="flabel">Ghi chú</label>
+        <input id="sNote" class="field" placeholder="Ghi chú thêm..." />
+      </div>
+    </div>
+
+    <div class="mt-7 flex justify-between items-center">
+      <button id="sDeleteBtn" onclick="deleteShoot()" class="btn-ghost" style="color:var(--danger);display:none">
+        <i data-lucide="trash-2" style="width:16px;height:16px"></i> Xóa
+      </button>
+      <div class="flex gap-3 ml-auto">
+        <button onclick="closeShootModal()" class="btn-ghost">Đóng</button>
+        <button onclick="saveShoot()" class="btn"><i data-lucide="circle-check" style="width:17px;height:17px"></i> Lưu lịch quay</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="editModal" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto py-10 px-4">
+  <div class="modal-card w-[90%] max-w-lg p-7 my-auto">
+    <div class="flex justify-between items-center mb-6">
+      <div class="flex items-center gap-3">
+        <span class="icoc icoc-lg" style="background:var(--grad);color:#fff"><i data-lucide="user-check"></i></span>
+        <h3 id="editModalTitle" class="font-extrabold text-[19px] leading-none tracking-tight">Thêm nội dung dựng</h3>
+      </div>
+      <button onclick="closeEditModal()" class="icon-btn"><i data-lucide="x"></i></button>
+    </div>
+
+    <div class="space-y-5">
+      <div>
+        <label class="flabel">Tên video</label>
+        <input id="eName" class="field" placeholder="Nhập tên video (có thể để trống)..." />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="flabel">Thể loại</label>
+          <select id="eCat" class="field">
+            <option value="">— Chưa chọn —</option>
+            <option value="Video dài">Video dài</option>
+            <option value="Motion">Motion</option>
+            <option value="Ads">Ads</option>
+          </select>
+        </div>
+        <div>
+          <label class="flabel">Editor phụ trách</label>
+          <select id="eEditor" class="field"></select>
+        </div>
+      </div>
+      <div>
+        <label class="flabel">Ngày air</label>
+        <input id="eAir" class="field" placeholder="VD: 8/7" />
+      </div>
+      <p class="text-[12px] text-sub" style="margin-top:2px">Tất cả các trường đều không bắt buộc — cứ lưu phần bạn đã có.</p>
+    </div>
+
+    <div class="mt-7 flex justify-between items-center">
+      <button id="eDeleteBtn" onclick="deleteEdit(window.currentEditId)" class="btn-ghost" style="color:var(--danger);display:none">
+        <i data-lucide="trash-2" style="width:16px;height:16px"></i> Xóa
+      </button>
+      <div class="flex gap-3 ml-auto">
+        <button onclick="closeEditModal()" class="btn-ghost">Đóng</button>
+        <button onclick="saveEdit()" class="btn"><i data-lucide="circle-check" style="width:17px;height:17px"></i> Lưu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ helpers ============ */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const el = (t, c, h) => { const n=document.createElement(t); if(c)n.className=c; if(h!=null)n.innerHTML=h; return n; };
+const esc = s => (s??'').toString().replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+/* ---- icon set ---- */
+const ICONS = {
+  'clapperboard':'<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+  'menu':'<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>',
+  'calendar':'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+  'calendar-days':'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>',
+  'layout-dashboard':'<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+  'video':'<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>',
+  'chevron-left':'<path d="m15 18-6-6 6-6"/>',
+  'chevron-right':'<path d="m9 18 6-6-6-6"/>',
+  'search':'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  'link':'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  'circle-check':'<path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/>',
+  'clock':'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  'users':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  'building-2':'<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
+  'x':'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  'plus':'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  'settings':'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  'bell':'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  'mail':'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  'moon':'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  'sun':'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  'log-out':'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+  'user-check':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>',
+  'pencil':'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  'trash-2':'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>'
+};
+const lucide = {
+  createIcons(){
+    document.querySelectorAll('[data-lucide]').forEach(node=>{
+      const name = node.getAttribute('data-lucide');
+      const body = ICONS[name]; if(body==null) return;
+      const cls = node.getAttribute('class')||'';
+      node.outerHTML = `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+    });
+  }
+};
+
+/* ============ data ============ */
+const EDITORS = [
+  { id:'dat',  name:'Đoàn Quốc Đạt',    short:'Đạt Đoàn', role:'Video Editor', color:'#38BDF8', soft:'#E0F2FE', crewKey:'ĐẠT' },
+  { id:'hai',  name:'Nguyễn Thanh Hải', short:'Thanh Hải', role:'Video Editor', color:'#22C55E', soft:'#DCFCE7', crewKey:'HẢI' },
+  { id:'minh', name:'Hoàng Hữu Lê Minh',short:'Hữu Minh',  role:'Video Editor', color:'#F59E0B', soft:'#FEF3C7', crewKey:'MINH' },
+];
+const edById = id => EDITORS.find(e=>e.id===id);
+const shootsOf = e => SHOOTS.filter(s => s.date.startsWith('2026-07') && s.crew && s.crew.toUpperCase().includes(e.crewKey));
+
+const VIDEOS = [
+  { stt:1, name:'Video Motion Shopee sale 7.7', resize:'',           editor:'minh', order:'ECOM',    cat:'Motion',    nhan:'26/6', tra:'26/6', air:'2/7',  status:'Đã xong',  uutien:'',    link:'#' },
+  { stt:2, name:'Video Chạm vào an yên tập 9',   resize:'9x16 & 1x1', editor:'minh', order:'BRAND',   cat:'Video dài', nhan:'30/6', tra:'1/7',  air:'2/7',  status:'Đã xong',  uutien:'',    link:'#' },
+  { stt:3, name:'Video Review IKI Premium',      resize:'9x16 & 1x1', editor:'hai',  order:'BRAND',   cat:'Video dài', nhan:'30/6', tra:'6/7',  air:'8/7',  status:'Đang làm', uutien:'',    link:'#' },
+  { stt:4, name:"Video Motion Nệm L'ADOME",      resize:'',           editor:'hai',  order:'BRAND',   cat:'Motion',    nhan:'30/6', tra:'1/7',  air:'1/7',  status:'Đã xong',  uutien:'',    link:'#' },
+  { stt:5, name:'Video Motion Combo kháng khuẩn',resize:'1x1',        editor:'minh', order:'DIGITAL', cat:'Ads',       nhan:'1/7',  tra:'1/7',  air:'1/7',  status:'Đã xong',  uutien:'',    link:'#' },
+  { stt:6, name:'Video Những thứ khiến phòng ngủ đắt tiền', resize:'9x16 & 1x1', editor:'minh', order:'BRAND', cat:'Video dài', nhan:'2/7', tra:'6/7', air:'7/7', status:'Đang làm', uutien:'', link:'#' },
+  { stt:7, name:'Video Motion Nệm Cocoon Grey',  resize:'1x1',        editor:'hai',  order:'DIGITAL', cat:'Ads',       nhan:'2/7',  tra:'3/7',  air:'3/7',  status:'Đã xong',  uutien:'Gấp', link:'#' },
+  { stt:8, name:'Video COCOON - 3 Lợi ích khi sử dụng nệm lò xo túi độc lập', resize:'9x16 & 1x1', editor:'dat', order:'BRAND', cat:'Video dài', nhan:'1/7', tra:'7/7', air:'10/7', status:'Đang làm', uutien:'', link:'#' },
+  { stt:9, name:"Video Motion Nệm L'ADOME Cool", resize:'1x1',        editor:'hai',  order:'DIGITAL', cat:'Ads',       nhan:'2/7',  tra:'3/7',  air:'3/7',  status:'Đã xong',  uutien:'Gấp', link:'#' },
+];
+
+const resizeCount = r => !r ? 0 : r.split('&').filter(x=>x.trim()).length;
+
+const SHOOT_TYPES = {
+  livestream:{ label:'Livestream', bg:'#FDE8D4', bd:'#F6C99A', dot:'#F59E0B' },
+  lichquay:  { label:'Lịch quay',  bg:'#F1DEF8', bd:'#DDB8EC', dot:'#A855F7' },
+  onset:     { label:'On set',     bg:'#D6EEFB', bd:'#9FD4F2', dot:'#2563EB' },
+  other:     { label:'Khác',       bg:'#F3F4F6', bd:'#E5E7EB', dot:'#6B7280' },
+};
+
+const SHOOTS = [
+  { date:'2026-07-07', type:'livestream', crew:'KHANG + ĐẠT',        place:'LIVESTREAM SHOPEE',   time:'BUỔI TỐI',    note:'' },
+  { date:'2026-07-08', type:'lichquay',   crew:'HẰNG - ĐẠT - BUMI',  place:'SHOWROOM HÒA BÌNH',   time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { date:'2026-07-09', type:'lichquay',   crew:'LINH - MINH - BUMI', place:'SHOWROOM AN SƯƠNG',   time:'ALL MORNING', note:'THEO DẤU GIẤC NGỦ TẬP 2 - SHOWROOM TRƯỜNG CHINH' },
+  { date:'2026-07-10', type:'livestream', crew:'MINH + HẢI',         place:'LIVESTREAM SHOPEE',   time:'BUỔI TỐI',    note:'' },
+  { date:'2026-07-10', type:'onset',      crew:'ĐẠT - BUMI',         place:'ONSET TIDO',          time:'',            note:'' },
+  { date:'2026-07-13', type:'other',      crew:'',                   place:'QUAY CHỤP BELLO',     time:'',            note:'' },
+  { date:'2026-07-14', type:'lichquay',   crew:'MY - ĐẠT - BUMI',    place:'SHOWROOM HÒA BÌNH',   time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { date:'2026-07-15', type:'livestream', crew:'KHANG + MINH',       place:'LIVESTREAM SHOPEE',   time:'BUỔI TỐI',    note:'' },
+  { date:'2026-07-16', type:'lichquay',   crew:'MY - ĐẠT - BUMI',    place:'SHOWROOM AN SƯƠNG',   time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { date:'2026-07-17', type:'onset',      crew:'ĐẠT - BUMI',         place:'ON SET TIDO',         time:'',            note:'' },
+  { date:'2026-07-20', type:'livestream', crew:'HẢI + ĐẠT',          place:'LIVESTREAM SHOPEE',   time:'BUỔI TỐI',    note:'' },
+  { date:'2026-07-21', type:'lichquay',   crew:'HẰNG - ĐẠT - BUMI',  place:'SHOWROOM AN SƯƠNG',   time:'ALL MORNING', note:'CONTENT THÁNG 8' },
+  { date:'2026-07-22', type:'lichquay',   crew:'NHƯ - MINH - BUMI',  place:'SHOWROOM AN SƯƠNG',   time:'ALL MORNING', note:'CONTENT THÁNG 8' },
+  { date:'2026-07-24', type:'onset',      crew:'ĐẠT - BUMI',         place:'ON SET TIDO',         time:'',            note:'' },
+  { date:'2026-07-25', type:'lichquay',      crew:'BUMI - ĐẠT - ÂN',    place:'SCOUT SHOWROOM CẦN THƠ', time:'',         note:'' },
+  { date:'2026-07-28', type:'lichquay',   crew:'MY - ĐẠT - BUMI',    place:'SHOWROOM HÒA BÌNH',   time:'ALL MORNING', note:'CONTENT THÁNG 8 HOẶC CHỤP/QUAY DRAP MỚI PHÔNG TRẮNG' },
+  { date:'2026-07-29', type:'lichquay',   crew:'LONG - ĐẠT - BUMI',  place:'SHOWROOM AN SƯƠNG',   time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { date:'2026-07-30', type:'lichquay',   crew:'LINH - ĐẠT - BUMI',  place:'SHOWROOM HÒA BÌNH',   time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { date:'2026-07-31', type:'onset',      crew:'ĐẠT - BUMI',         place:'ON SET TIDO',         time:'',            note:'' },
+  { date:'2026-08-01', type:'lichquay',      crew:'BUMI - ĐẠT',         place:'KHAI TRƯƠNG CẦN THƠ', time:'',            note:'' },
+  { date:'2026-08-05', type:'onset',      crew:'ĐẠT - BUMI',         place:'ON SET TIDO',         time:'',            note:'' },
+];
+
+const TEAMS = ['BRAND','DIGITAL','ECOM','HR','ISD','CS','GT','PUR'];
+
+/* ============ Lịch dựng (editing schedule) — lưu theo tháng ============ */
+const EDIT_MONTH = '2026-07';               // tháng hiện tại của app
+const EDIT_KEY   = 'vo-edits-' + EDIT_MONTH; // mỗi tháng một khoá lưu riêng
+let editFilter = 'all';
+
+function seedEdits(){
+  // Khởi tạo từ danh sách video của tháng để có dữ liệu thật
+  return VIDEOS.map((v,i)=>({ id:'e'+(i+1), air:v.air||'', name:v.name, cat:v.cat, editor:v.editor||'' }));
+}
+function loadEdits(){
+  try{ const raw = localStorage.getItem(EDIT_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return seedEdits();
+}
+function saveEdits(){ try{ localStorage.setItem(EDIT_KEY, JSON.stringify(EDITS)); }catch(e){} }
+let EDITS = loadEdits();
+const airDay = a => { const d = parseInt((''+(a||'')).split(/[\/\-.]/)[0],10); return isNaN(d)?999:d; };
+
+/* ============ nav / router ============ */
+const NAV = [
+  { id:'overview', label:'Tổng quan', icon:'layout-dashboard', sub:'Báo cáo công việc tháng 7' },
+  { id:'calendar', label:'Lịch quay', icon:'calendar-days',    sub:'Lịch buổi quay theo tháng' },
+  { id:'videos',   label:'Video tháng', icon:'clapperboard',   sub:'Tổng hợp video tháng 7' },
+  { id:'editing',  label:'Lịch dựng',   icon:'user-check',     sub:'Phân bổ dựng cho thành viên' },
+];
+let current = 'overview';
+
+function buildNav(){
+  const nav = $('#nav'); nav.innerHTML='';
+  NAV.forEach(n=>{
+    const a = el('button', 'nav-item');
+    a.title = n.label;
+    a.innerHTML = `<span class="nav-ic"><i data-lucide="${n.icon}"></i></span><span class="nav-txt">${esc(n.label)}</span><span class="nav-tail"><span class="nav-chevron"><i data-lucide="chevron-right"></i></span><span class="nav-dot"></span></span>`;
+    a.onclick = ()=> go(n.id);
+    a.dataset.id = n.id;
+    nav.appendChild(a);
+  });
+  lucide.createIcons();
+  markNav();
+}
+function markNav(){ $$('.nav-item').forEach(a=>a.classList.toggle('active', a.dataset.id===current)); }
+
+function go(id){
+  current = id;
+  const meta = NAV.find(n=>n.id===id);
+  $('#pageTitle').textContent = meta.label;
+  $('#pageSub').textContent = meta.sub;
+  markNav();
+  closeSidebar();
+  const view = $('#view');
+  view.innerHTML='';
+  if(id==='overview') renderOverview(view);
+  if(id==='calendar') renderCalendar(view);
+  if(id==='videos')   renderVideos(view);
+  if(id==='editing')  renderEditing(view);
+  lucide.createIcons();
+}
+
+/* ============ atoms ============ */
+function statusBadge(s){
+  const map = {
+    'Đã xong':  'badge--done',
+    'Đang làm': 'badge--doing',
+    'Chờ':      'badge--wait',
+  };
+  return `<span class="badge ${map[s]||'badge--wait'}"><span class="dot"></span>${esc(s)}</span>`;
+}
+function catBadge(c){
+  const map = { 'Video dài':'tag--long','Motion':'tag--motion','Ads':'tag--ads' };
+  return `<span class="tag ${map[c]||'mini-chip'}">${esc(c)}</span>`;
+}
+function editorChip(id){
+  const e = edById(id); if(!e) return '';
+  return `<span class="inline-flex items-center gap-2">
+    <span class="w-7 h-7 rounded-full grid place-items-center text-[11px] font-extrabold text-white shrink-0" style="background:${e.color};box-shadow:0 6px 14px color-mix(in srgb,${e.color} 40%,transparent)">${esc(e.short[0])}</span>
+    <span class="text-[13px] font-semibold">${esc(e.short)}</span></span>`;
+}
+
+/* ============ VIEW: Overview ============ */
+function renderOverview(root){
+  const total = VIDEOS.length;
+  const done = VIDEOS.filter(v=>v.status==='Đã xong').length;
+  const doing = VIDEOS.filter(v=>v.status==='Đang làm').length;
+  const gap = VIDEOS.filter(v=>v.uutien==='Gấp').length;
+  const nShoot = SHOOTS.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  const wrap = el('div','space-y-10 pt-2');
+
+  const top = el('div','grid gap-5 sm:grid-cols-2 xl:grid-cols-4');
+  top.appendChild(kpiCard('clapperboard','#2563EB','Tổng video', total, 'Tổng hợp tháng 7 · 2026'));
+  top.appendChild(kpiCard('circle-check','#22C55E','Đã hoàn thành', done, `${pct}% khối lượng công việc`));
+  top.appendChild(kpiCard('clock','#F59E0B','Đang thực hiện', doing, gap?`${gap} việc gắn nhãn Gấp`:'Đang bám tiến độ'));
+  top.appendChild(kpiCard('video','#A855F7','Buổi quay tháng 7', nShoot, 'Lịch quay & sự kiện'));
+  wrap.appendChild(top);
+
+  wrap.appendChild(sectionTitle('users','Task theo từng người', 'Đoàn Quốc Đạt · Nguyễn Thanh Hải · Hoàng Hữu Lê Minh'));
+  const grid = el('div','grid gap-5 lg:grid-cols-3');
+  EDITORS.forEach(e=>{
+    const rows = VIDEOS.filter(v=>v.editor===e.id);
+    const dai = rows.filter(v=>v.cat==='Video dài').length;
+    const motion = rows.filter(v=>v.cat==='Motion').length;
+    const ads = rows.filter(v=>v.cat==='Ads').length;
+    const resize = rows.reduce((s,v)=>s+resizeCount(v.resize),0);
+    const shoots = shootsOf(e);
+    const totalTasks = rows.length + shoots.length;
+
+    const card = el('div','card card-h overflow-hidden flex flex-col');
+    card.innerHTML = `
+      <div class="p-5 flex items-center gap-3.5" style="background:linear-gradient(130deg, color-mix(in srgb,${e.color} 22%, transparent), transparent 75%)">
+        <span class="w-12 h-12 rounded-2xl grid place-items-center text-[16px] font-extrabold text-white shrink-0" style="background:${e.color};box-shadow:0 10px 22px color-mix(in srgb,${e.color} 45%,transparent)">${esc(e.short[0])}</span>
+        <div class="min-w-0">
+          <div class="font-extrabold text-[15px] truncate">${esc(e.name)}</div>
+          <div class="text-[12px] font-semibold" style="color:${e.color}">${esc(e.role)}</div>
+        </div>
+        <div class="ml-auto text-right shrink-0">
+          <div class="text-[30px] font-extrabold leading-none" style="color:${e.color}">${totalTasks}</div>
+          <div class="text-[11px] text-sub mt-0.5">tổng task</div>
+        </div>
+      </div>
+
+      <div class="px-5 pt-2 pb-4">
+        ${statRow('Video dài', dai)}
+        ${statRow('Motion', motion)}
+        ${statRow('Ads', ads)}
+        ${statRow('Resize', resize, true)}
+        ${statRow('Buổi quay', shoots.length)}
+      </div>`;
+    grid.appendChild(card);
+  });
+  wrap.appendChild(grid);
+
+  wrap.appendChild(sectionTitle('building-2','Tổng theo team order', 'Số video mỗi bên order, chia theo editor phụ trách'));
+  const activeTeams = TEAMS
+    .map(t=>{
+      const perEditor = EDITORS.map(e=>VIDEOS.filter(v=>v.order===t && v.editor===e.id).length);
+      const n = VIDEOS.filter(v=>v.order===t).length;
+      return { t, n, perEditor };
+    })
+    .filter(o=>o.n>0)
+    .sort((a,b)=>b.n-a.n);
+  const maxN = Math.max(1, ...activeTeams.map(o=>o.n));
+
+  const tbl = el('div','card p-3 overflow-x-auto');
+  tbl.innerHTML = `<table class="ctable min-w-[620px]">
+    <thead>
+      <tr>
+        <th>Team Order</th>
+        ${EDITORS.map(e=>`<th class="text-center" style="width:96px">${esc(e.short)}</th>`).join('')}
+        <th class="text-center" style="width:88px">Tổng</th>
+        <th style="width:190px">Tỉ trọng</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${activeTeams.map((o,i)=>`
+        <tr>
+          <td><span class="mini-chip" style="font-weight:800;color:var(--text)">${esc(o.t)}</span></td>
+          ${o.perEditor.map((n,idx)=>`<td class="text-center ${n?'font-bold':''}" style="${n?`color:${EDITORS[idx].color}`:'color:var(--muted)'}">${n||'—'}</td>`).join('')}
+          <td class="text-center font-extrabold th-total">${o.n}</td>
+          <td>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.round(o.n/maxN*100)}%"></div></div>
+          </td>
+        </tr>`).join('')}
+      <tr class="total">
+        <td class="font-extrabold">Tổng cộng</td>
+        ${EDITORS.map(e=>`<td class="text-center font-extrabold" style="color:${e.color}">${VIDEOS.filter(v=>v.editor===e.id).length}</td>`).join('')}
+        <td class="text-center font-extrabold th-total">${total}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>`;
+  wrap.appendChild(tbl);
+
+  root.appendChild(wrap);
+}
+function kpiCard(icon, color, title, value, sub){
+  const c = el('div','card card-h relative p-6 overflow-hidden');
+  c.innerHTML = `
+    <div class="absolute -top-12 -right-12 w-32 h-32 rounded-full" style="background:${color};opacity:.16;filter:blur(10px)"></div>
+    <div class="flex items-center justify-between mb-6 relative">
+      <span class="kpi-ic" style="background:${color}"><i data-lucide="${icon}"></i></span>
+      <span class="text-[11px] font-bold text-sub uppercase tracking-wider">${esc(title)}</span>
+    </div>
+    <div class="text-[40px] font-extrabold leading-none tracking-tight relative">${value}</div>
+    <div class="text-[12.5px] text-sub mt-2.5 truncate relative">${esc(sub)}</div>`;
+  return c;
+}
+function statRow(label, n, hl){
+  return `<div class="stat-row ${hl?'hl':''}">
+    <span class="text-sub font-medium">${label}</span><span class="font-bold tabular-nums">${n}</span></div>`;
+}
+function sectionTitle(icon, t, sub){
+  const w = el('div','section-eyebrow pt-2');
+  w.innerHTML = `
+    <span class="icoc" style="background:var(--chip-2);color:var(--accent)"><i data-lucide="${icon}"></i></span>
+    <div>
+      <h2 class="text-[17px] font-extrabold leading-none tracking-tight">${esc(t)}</h2>
+      ${sub?`<p class="text-[12.5px] text-sub mt-1.5">${esc(sub)}</p>`:''}
+    </div>`;
+  return w;
+}
+
+/* ============ VIEW: Calendar ============ */
+let calYear = 2026, calMonth = 6;
+let calFilter = 'all';
+
+function renderCalendar(root){
+  const wrap = el('div','space-y-4');
+
+  const bar = el('div','flex flex-wrap items-center gap-3');
+  bar.innerHTML = `
+    <div class="flex items-center gap-1 card p-1.5" style="border-radius:16px;box-shadow:var(--shadow-soft)">
+      <button id="calPrev" class="icon-btn" style="width:36px;height:36px;background:transparent;border:none"><i data-lucide="chevron-left"></i></button>
+      <div id="calLabel" class="px-3 text-[14.5px] font-extrabold min-w-[140px] text-center"></div>
+      <button id="calNext" class="icon-btn" style="width:36px;height:36px;background:transparent;border:none"><i data-lucide="chevron-right"></i></button>
+    </div>
+    <button id="calToday" class="btn-ghost">Về tháng 7</button>
+    <button id="calAddBtn" class="btn btn-sm"><i data-lucide="plus" style="width:17px;height:17px"></i> Thêm lịch quay</button>
+    <div id="calLegend" class="ml-auto flex flex-wrap items-center gap-2"></div>`;
+  wrap.appendChild(bar);
+
+  const grid = el('div','card overflow-hidden');
+  grid.id = 'calGrid';
+  wrap.appendChild(grid);
+
+  root.appendChild(wrap);
+
+  const leg = $('#calLegend', wrap);
+  const items = [['all','Tất cả','#6B7280'], ...Object.entries(SHOOT_TYPES).map(([k,v])=>[k,v.label,v.dot])];
+  items.forEach(([k,label,color])=>{
+    const b = el('button','inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full text-[12px] font-medium border transition');
+    b.innerHTML = `<span class="w-2.5 h-2.5 rounded-full" style="background:${color}"></span>${label}`;
+    b.dataset.k = k;
+    b.onclick = ()=>{ calFilter = k; drawCal(); };
+    leg.appendChild(b);
+  });
+
+  $('#calPrev',wrap).onclick = ()=>{ calMonth--; if(calMonth<0){calMonth=11;calYear--;} drawCal(); };
+  $('#calNext',wrap).onclick = ()=>{ calMonth++; if(calMonth>11){calMonth=0;calYear++;} drawCal(); };
+  $('#calToday',wrap).onclick = ()=>{ calYear=2026; calMonth=6; drawCal(); };
+  $('#calAddBtn',wrap).onclick = ()=>{
+    const d = `${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
+    openShootModal(d);
+  };
+
+  drawCal();
+}
+
+function drawCal(){
+  const MON = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+  const label = $('#calLabel'); if(label) label.textContent = `${MON[calMonth]}, ${calYear}`;
+  $$('#calLegend button').forEach(b=>{
+    const on = b.dataset.k===calFilter;
+    b.classList.toggle('bg-ink', on); b.classList.toggle('text-white', on);
+    b.classList.toggle('border-ink', on); b.classList.toggle('border-line', !on);
+    b.classList.toggle('bg-white', !on);
+  });
+
+  const grid = $('#calGrid'); if(!grid) return;
+  const WD = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const first = new Date(calYear, calMonth, 1);
+  let startDow = (first.getDay()+6)%7; 
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+
+  const cells = [];
+  for(let i=0;i<startDow;i++) cells.push({ d: prevDays-startDow+1+i, out:true });
+  for(let d=1;d<=daysInMonth;d++) cells.push({ d, out:false });
+  while(cells.length%7!==0) cells.push({ d: cells.length-(startDow+daysInMonth)+1, out:true });
+
+  const key = d => `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+  let html = `<div class="min-w-[900px]">
+    <div class="grid grid-cols-7">
+      ${WD.map((w,i)=>`<div class="cal-wd${i>=5?' wknd':''}">${w}</div>`).join('')}
+    </div>
+    <div class="grid grid-cols-7">`;
+
+  cells.forEach((c,idx)=>{
+    const cellDate = new Date(calYear, calMonth, 1 - startDow + idx);
+    const iso = `${cellDate.getFullYear()}-${String(cellDate.getMonth()+1).padStart(2,'0')}-${String(cellDate.getDate()).padStart(2,'0')}`;
+    const events = (idx < startDow) ? [] : SHOOTS.filter(s=>s.date===iso && (calFilter==='all'||s.type===calFilter));
+    const isSun = idx%7===6;
+    const wknd = idx%7>=5;
+    const clickAttr = c.out ? '' : `onclick="openShootModal('${iso}')" style="cursor:pointer;${isSun?'border-right:none;':''}"`;
+    html += `<div class="cal-cell ${c.out?'out':''}${wknd?' wknd':''}" ${clickAttr || (isSun?'style="border-right:none;"':'')}>
+      <div class="cal-daynum">${c.d}</div>
+      <div>`;
+    events.forEach(ev=>{
+      const t = SHOOT_TYPES[ev.type];
+      const realIdx = SHOOTS.indexOf(ev);
+      html += `<div class="cal-ev" onclick="event.stopPropagation(); openShootModal('${iso}', ${realIdx})" style="cursor:pointer;background:color-mix(in srgb,${t.dot} 15%, transparent);border-color:color-mix(in srgb,${t.dot} 40%, transparent)">
+        ${ev.crew?`<div class="font-bold" style="color:var(--text)">${esc(ev.crew)}</div>`:''}
+        <div class="font-semibold" style="color:var(--text)">${esc(ev.place)}</div>
+        ${ev.time?`<div class="font-medium text-sub">${esc(ev.time)}</div>`:''}
+        ${ev.note?`<div class="font-semibold mt-1" style="color:var(--danger)">${esc(ev.note)}</div>`:''}
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  html += `</div></div>`;
+  grid.innerHTML = html;
+  lucide.createIcons();
+}
+
+/* ============ VIEW: Videos table ============ */
+let vFilterEditor='all', vFilterStatus='all', vSearch='';
+
+function renderVideos(root){
+  const wrap = el('div','space-y-4');
+
+  const bar = el('div','flex flex-wrap items-center gap-3');
+  bar.innerHTML = `
+    <div class="relative">
+      <i data-lucide="search" class="text-sub absolute left-4 top-1/2 -translate-y-1/2" style="width:17px;height:17px"></i>
+      <input id="vSearch" placeholder="Tìm tên video…" class="field w-64" style="padding-left:42px" />
+    </div>
+    <select id="vEditor" class="field" style="width:auto;min-width:160px">
+      <option value="all">Tất cả editor</option>
+      ${EDITORS.map(e=>`<option value="${e.id}">${esc(e.short)}</option>`).join('')}
+    </select>
+    <select id="vStatus" class="field" style="width:auto;min-width:170px">
+      <option value="all">Tất cả trạng thái</option>
+      <option>Đã xong</option><option>Đang làm</option><option>Chờ</option>
+    </select>
+    <div id="vCount" class="ml-auto text-[13px] text-sub font-semibold flex items-center mr-1"></div>
+    <button onclick="openTaskModal(null)" class="btn btn-sm">
+      <i data-lucide="plus" style="width:17px;height:17px"></i> Thêm Task
+    </button>`;
+  wrap.appendChild(bar);
+
+  const box = el('div','card p-3 overflow-x-auto');
+  box.innerHTML = `<table class="ctable min-w-[1200px]">
+    <thead>
+      <tr>
+        <th class="text-center" style="width:48px">STT</th>
+        <th style="width:260px">Tên video</th>
+        <th style="width:112px">Resize</th>
+        <th style="width:144px">Editor</th>
+        <th style="width:80px">Order</th>
+        <th style="width:96px">Thể loại</th>
+        <th style="width:80px">Nhận</th>
+        <th style="width:80px">Trả</th>
+        <th style="width:80px">Air</th>
+        <th style="width:128px">Trạng thái</th>
+        <th style="width:80px">Ưu tiên</th>
+        <th class="text-center" style="width:64px">Link</th>
+      </tr>
+    </thead>
+    <tbody id="vBody"></tbody>
+  </table>`;
+  wrap.appendChild(box);
+  root.appendChild(wrap);
+
+  $('#vSearch',wrap).oninput = e=>{ vSearch=e.target.value.toLowerCase(); drawVideos(); };
+  $('#vEditor',wrap).onchange = e=>{ vFilterEditor=e.target.value; drawVideos(); };
+  $('#vStatus',wrap).onchange = e=>{ vFilterStatus=e.target.value; drawVideos(); };
+  drawVideos();
+}
+
+function drawVideos(){
+  const body = $('#vBody'); if(!body) return;
+  // Sắp xếp xuôi từ 1 -> 9 bằng (a.stt - b.stt)
+  let rows = VIDEOS.filter(v=>
+    (vFilterEditor==='all'||v.editor===vFilterEditor) &&
+    (vFilterStatus==='all'||v.status===vFilterStatus) &&
+    (!vSearch||v.name.toLowerCase().includes(vSearch))
+  ).sort((a, b) => a.stt - b.stt);
+  
+  const cnt = $('#vCount'); if(cnt) cnt.textContent = `${rows.length} video`;
+  
+  body.innerHTML = rows.map((v,i)=>{
+    // Logic tô màu Row: Ưu tiên gấp thì Đỏ, xong rồi thì auto Xanh
+    let rowBg = 'cursor-pointer';
+    if (v.status === 'Đã xong') rowBg = 'cursor-pointer vrow-done';
+    else if (v.uutien === 'Gấp') rowBg = 'cursor-pointer vrow-gap';
+
+    return `
+    <tr class="${rowBg}" onclick="openTaskModal(${v.stt})">
+      <td class="text-center text-sub font-bold">${v.stt}</td>
+      <td class="font-semibold whitespace-normal" style="max-width:260px">${esc(v.name)}</td>
+      <td>${v.resize?`<span class="text-sub">${esc(v.resize)}</span>`:'<span class="text-sub/40">—</span>'}</td>
+      <td>${editorChip(v.editor)}</td>
+      <td><span class="mini-chip" style="color:var(--text)">${esc(v.order)}</span></td>
+      <td>${catBadge(v.cat)}</td>
+      <td class="text-sub tabular-nums">${esc(v.nhan)}</td>
+      <td class="text-sub tabular-nums">${esc(v.tra)}</td>
+      <td class="font-bold tabular-nums" style="color:var(--accent)">${esc(v.air)}</td>
+      <td>${statusBadge(v.status)}</td>
+      <td>${v.uutien?`<span class="urgent">${esc(v.uutien)}</span>`:'<span class="text-sub/40">—</span>'}</td>
+      <td class="text-center" onclick="event.stopPropagation()">
+        ${v.link&&v.link!=='#'?`<a href="${v.link}" target="_blank" class="link-btn" title="Mở link"><i data-lucide="link"></i></a>`:'<span class="text-sub/40">—</span>'}
+      </td>
+    </tr>`
+  }).join('');
+  if(!rows.length) body.innerHTML = `<tr><td colspan="12" class="px-3 py-12 text-center text-sub">Không có video nào khớp bộ lọc.</td></tr>`;
+  lucide.createIcons();
+}
+
+/* ============ Modal Task Logic ============ */
+window.currentTaskStt = null;
+
+function setupModalOptions() {
+  const edSel = $('#mEditor');
+  if (edSel) edSel.innerHTML = EDITORS.map(e => `<option value="${e.id}">${esc(e.short)}</option>`).join('');
+  
+  const ordSel = $('#mOrder');
+  if (ordSel) ordSel.innerHTML = TEAMS.map(t => `<option value="${t}">${esc(t)}</option>`).join('');
+}
+
+function openTaskModal(stt) {
+  window.currentTaskStt = stt;
+  $('#modalTitle').textContent = stt ? 'Chỉnh sửa Task' : 'Thêm Task mới';
+  
+  // Lấy dữ liệu nếu đang Edit, nếu thêm mới thì để trống
+  let v = stt ? VIDEOS.find(x => x.stt === stt) : null;
+  
+  $('#mName').value = v ? v.name : '';
+  $('#mStatus').value = v ? v.status : 'Chờ';
+  $('#mEditor').value = v ? v.editor : EDITORS[0].id;
+  $('#mOrder').value = v ? v.order : TEAMS[0];
+  $('#mCat').value = v ? v.cat : 'Video dài';
+  $('#mNhan').value = v ? v.nhan : '';
+  $('#mTra').value = v ? v.tra : '';
+  $('#mAir').value = v ? v.air : '';
+  $('#mUutien').value = v ? v.uutien : '';
+  $('#mResize').value = v ? v.resize : '';
+  $('#mLink').value = (v && v.link && v.link !== '#') ? v.link : '';
+
+  const m = $('#taskModal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  lucide.createIcons();
+}
+
+function closeTaskModal() {
+  const m = $('#taskModal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+
+function saveTask() {
+  const nameVal = $('#mName').value.trim();
+  if(!nameVal) { alert('Vui lòng nhập Tên video!'); return; }
+
+  let stt = window.currentTaskStt;
+  let v = stt ? VIDEOS.find(x => x.stt === stt) : null;
+  let isNew = false;
+  
+  if(!v) {
+    isNew = true;
+    let maxStt = VIDEOS.reduce((max, cur) => Math.max(max, cur.stt), 0);
+    v = { stt: maxStt + 1 };
+  }
+  
+  v.name = nameVal;
+  v.status = $('#mStatus').value;
+  v.editor = $('#mEditor').value;
+  v.order = $('#mOrder').value;
+  v.cat = $('#mCat').value;
+  v.nhan = $('#mNhan').value.trim();
+  v.tra = $('#mTra').value.trim();
+  v.air = $('#mAir').value.trim();
+  v.uutien = $('#mUutien').value;
+  v.resize = $('#mResize').value.trim();
+  let link = $('#mLink').value.trim();
+  v.link = link || '#';
+
+  if (isNew) {
+    VIDEOS.push(v);
+  }
+
+  closeTaskModal();
+  if (current === 'videos') {
+    drawVideos(); // Render lại bảng
+  }
+}
+
+/* ============ Modal Lịch quay Logic ============ */
+window.currentShootIdx = null;
+
+function setupShootModalOptions(){
+  const sel = $('#sType');
+  if(sel) sel.innerHTML = Object.entries(SHOOT_TYPES).map(([k,v])=>`<option value="${k}">${esc(v.label)}</option>`).join('');
+}
+
+function openShootModal(dateIso, idx){
+  window.currentShootIdx = (idx===undefined || idx===null) ? null : idx;
+  const isEdit = window.currentShootIdx !== null;
+  const s = isEdit ? SHOOTS[window.currentShootIdx] : null;
+
+  $('#shootModalTitle').textContent = isEdit ? 'Chỉnh sửa lịch quay' : 'Thêm lịch quay';
+  $('#sDate').value = s ? s.date : dateIso;
+  $('#sType').value = s ? s.type : 'onset';
+  $('#sTime').value = s ? s.time : '';
+  $('#sPlace').value = s ? s.place : '';
+  $('#sCrew').value = s ? s.crew : '';
+  $('#sNote').value = s ? s.note : '';
+  $('#sDeleteBtn').style.display = isEdit ? 'inline-flex' : 'none';
+
+  const m = $('#shootModal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  lucide.createIcons();
+}
+
+function closeShootModal(){
+  const m = $('#shootModal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+
+function saveShoot(){
+  const place = $('#sPlace').value.trim();
+  const date = $('#sDate').value;
+  if(!date){ alert('Vui lòng chọn Ngày quay!'); return; }
+  if(!place){ alert('Vui lòng nhập Địa điểm!'); return; }
+
+  const data = {
+    date,
+    type: $('#sType').value,
+    crew: $('#sCrew').value.trim(),
+    place,
+    time: $('#sTime').value.trim(),
+    note: $('#sNote').value.trim()
+  };
+
+  if(window.currentShootIdx !== null){
+    SHOOTS[window.currentShootIdx] = data;
+  } else {
+    SHOOTS.push(data);
+  }
+
+  closeShootModal();
+  if(current === 'calendar') drawCal();
+}
+
+function deleteShoot(){
+  if(window.currentShootIdx === null) return;
+  if(!confirm('Xóa lịch quay này?')) return;
+  SHOOTS.splice(window.currentShootIdx, 1);
+  closeShootModal();
+  if(current === 'calendar') drawCal();
+}
+
+/* ============ sidebar mobile ============ */
+function openSidebar(){ $('#sidebar').classList.remove('hidden'); $('#sidebar').classList.add('flex','fixed','inset-y-0','left-0','z-40','shadow-2xl'); $('#sbBackdrop').classList.remove('hidden'); }
+function closeSidebar(){ if(window.innerWidth<768){ $('#sidebar').classList.add('hidden'); $('#sidebar').classList.remove('fixed','inset-y-0','left-0','z-40','shadow-2xl'); $('#sbBackdrop').classList.add('hidden'); } }
+$('#menuBtn').onclick = openSidebar;
+$('#sbBackdrop').onclick = closeSidebar;
+
+/* ============ VIEW: Lịch dựng ============ */
+function editorCell(id){
+  if(!id) return `<span class="mini-chip" style="opacity:.85">Chưa phân bổ</span>`;
+  return editorChip(id);
+}
+
+function renderEditing(root){
+  const wrap = el('div','space-y-8 pt-2');
+
+  // toolbar
+  const bar = el('div','flex items-center gap-3 flex-wrap');
+  bar.innerHTML = `
+    <div class="section-eyebrow">
+      <span class="icoc"><i data-lucide="user-check"></i></span>
+      <div>
+        <div class="font-extrabold text-[16px] tracking-tight">Phân bổ dựng · Tháng 7, 2026</div>
+        <div class="text-[12.5px] text-sub">Danh sách nội dung và người dựng phụ trách</div>
+      </div>
+    </div>
+    <button class="btn ml-auto" onclick="openEditModal()"><i data-lucide="plus"></i> Thêm nội dung</button>`;
+  wrap.appendChild(bar);
+
+  // allocation cards (per editor + chưa phân bổ)
+  const groups = [...EDITORS, { id:'', short:'Chưa phân bổ', color:'#94A3B8' }];
+  const alloc = el('div','grid gap-4 sm:grid-cols-2 xl:grid-cols-4');
+  groups.forEach(e=>{
+    const rows = EDITS.filter(x => (x.editor||'') === e.id);
+    const card = el('button','card card-h p-4 flex items-center gap-3.5 text-left');
+    card.type = 'button';
+    card.onclick = ()=>{ editFilter = (editFilter===(e.id||'none')) ? 'all' : (e.id||'none'); drawEdits(); markAllocActive(); };
+    card.dataset.k = e.id || 'none';
+    card.innerHTML = `
+      <span class="w-11 h-11 rounded-2xl grid place-items-center text-[15px] font-extrabold text-white shrink-0"
+        style="background:${e.color};box-shadow:0 8px 18px color-mix(in srgb,${e.color} 42%,transparent)">${esc(e.short[0])}</span>
+      <div class="min-w-0">
+        <div class="font-bold text-[13.5px] truncate">${esc(e.short)}</div>
+        <div class="text-[11.5px] text-sub">nội dung được giao</div>
+      </div>
+      <div class="ml-auto text-[26px] font-extrabold leading-none" style="color:${e.color}">${rows.length}</div>`;
+    alloc.appendChild(card);
+  });
+  wrap.appendChild(alloc);
+
+  // table card
+  const tableCard = el('div','card p-2 sm:p-3 overflow-x-auto');
+  tableCard.innerHTML = `
+    <table class="ctable min-w-[640px]">
+      <thead>
+        <tr>
+          <th style="width:96px">Ngày air</th>
+          <th>Tên video</th>
+          <th style="width:130px">Thể loại</th>
+          <th style="width:190px">Editor</th>
+          <th class="text-center" style="width:96px">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="editBody"></tbody>
+    </table>`;
+  wrap.appendChild(tableCard);
+
+  root.appendChild(wrap);
+  drawEdits();
+  markAllocActive();
+  lucide.createIcons();
+}
+
+function markAllocActive(){
+  $$('[data-k]').forEach(c=>{
+    const on = editFilter !== 'all' && c.dataset.k === editFilter;
+    c.style.outline = on ? '2px solid var(--accent)' : 'none';
+    c.style.outlineOffset = '2px';
+  });
+}
+
+function drawEdits(){
+  const body = $('#editBody'); if(!body) return;
+  let rows = EDITS.slice();
+  if(editFilter !== 'all'){
+    const key = editFilter === 'none' ? '' : editFilter;
+    rows = rows.filter(x => (x.editor||'') === key);
+  }
+  rows.sort((a,b)=> airDay(a.air) - airDay(b.air));
+
+  body.innerHTML = rows.map(x => `
+    <tr>
+      <td class="font-semibold">${x.air ? esc(x.air) : '<span class="text-sub/40">—</span>'}</td>
+      <td class="font-medium">${x.name ? esc(x.name) : '<span class="text-sub/40">(chưa đặt tên)</span>'}</td>
+      <td>${x.cat ? catBadge(x.cat) : '<span class="text-sub/40">—</span>'}</td>
+      <td>${editorCell(x.editor)}</td>
+      <td class="text-center">
+        <div class="inline-flex items-center gap-1.5">
+          <button class="icon-btn" style="width:34px;height:34px" title="Sửa" onclick="openEditModal('${x.id}')"><i data-lucide="pencil"></i></button>
+          <button class="icon-btn" style="width:34px;height:34px;color:var(--danger)" title="Xóa" onclick="deleteEdit('${x.id}')"><i data-lucide="trash-2"></i></button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  if(!rows.length){
+    body.innerHTML = `<tr><td colspan="5" class="px-3 py-12 text-center text-sub">Chưa có nội dung nào. Bấm “Thêm nội dung” để bắt đầu.</td></tr>`;
+  }
+  lucide.createIcons();
+}
+
+/* ---- modal Lịch dựng ---- */
+window.currentEditId = null;
+
+function setupEditModalOptions(){
+  const ed = $('#eEditor');
+  if(ed) ed.innerHTML = `<option value="">Chưa phân bổ</option>` + EDITORS.map(e=>`<option value="${e.id}">${esc(e.short)}</option>`).join('');
+}
+function openEditModal(id){
+  window.currentEditId = id || null;
+  const x = id ? EDITS.find(r=>r.id===id) : null;
+  $('#editModalTitle').textContent = x ? 'Chỉnh sửa nội dung' : 'Thêm nội dung dựng';
+  $('#eName').value   = x ? (x.name||'')   : '';
+  $('#eCat').value    = x ? (x.cat||'')    : '';
+  $('#eEditor').value = x ? (x.editor||'') : '';
+  $('#eAir').value    = x ? (x.air||'')    : '';
+  $('#eDeleteBtn').style.display = x ? 'inline-flex' : 'none';
+  const m = $('#editModal'); m.classList.remove('hidden'); m.classList.add('flex');
+  lucide.createIcons();
+}
+function closeEditModal(){ const m = $('#editModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+function saveEdit(){
+  // các trường KHÔNG bắt buộc — cho phép để trống
+  const data = {
+    air:    $('#eAir').value.trim(),
+    name:   $('#eName').value.trim(),
+    cat:    $('#eCat').value,
+    editor: $('#eEditor').value,
+  };
+  const id = window.currentEditId;
+  if(id){
+    const x = EDITS.find(r=>r.id===id);
+    if(x) Object.assign(x, data);
+  } else {
+    const n = EDITS.reduce((m,r)=>{ const num = parseInt((r.id||'e0').slice(1),10)||0; return Math.max(m,num); }, 0);
+    EDITS.push({ id:'e'+(n+1), ...data });
+  }
+  saveEdits();
+  closeEditModal();
+  if(current === 'editing') go('editing');
+}
+
+function deleteEdit(id){
+  if(!confirm('Xóa nội dung này khỏi lịch dựng?')) return;
+  EDITS = EDITS.filter(r=>r.id!==id);
+  saveEdits();
+  if(current === 'editing') go('editing');
+}
+
+/* ============ init ============ */
+setupModalOptions();
+setupShootModalOptions();
+setupEditModalOptions();
+buildNav();
+go('overview');
+lucide.createIcons();
+
+/* ============ UI enhancements (additive — không đổi logic cũ) ============ */
+(function(){
+  const root = document.documentElement;
+  const tBtn = document.getElementById('themeToggle');
+  function applyTheme(mode){
+    root.classList.toggle('dark', mode==='dark');
+    if(tBtn){ tBtn.innerHTML = `<i data-lucide="${mode==='dark'?'sun':'moon'}"></i>`; lucide.createIcons(); }
+  }
+  let saved = 'light';
+  try { saved = localStorage.getItem('vo-theme') || 'light'; } catch(e){}
+  applyTheme(saved);
+  if(tBtn) tBtn.addEventListener('click', ()=>{
+    const next = root.classList.contains('dark') ? 'light' : 'dark';
+    applyTheme(next);
+    try { localStorage.setItem('vo-theme', next); } catch(e){}
+  });
+
+  const sb = document.getElementById('sidebar');
+  const cBtn = document.getElementById('sbToggle');
+  if(cBtn && sb) cBtn.addEventListener('click', ()=> sb.classList.toggle('is-collapsed'));
+})();
+
+/* ============ Auth / Login gate (demo) ============ */
+(function(){
+  // Tài khoản demo — đổi tại đây nếu cần
+  const DEMO = { email:'demo@videoops.vn', pass:'demo2026', name:'Đoàn Quốc Đạt' };
+  const AUTH_KEY = 'vo-auth';
+
+  const gate    = document.getElementById('loginGate');
+  const form    = document.getElementById('loginForm');
+  const email   = document.getElementById('lgEmail');
+  const pass    = document.getElementById('lgPass');
+  const remember= document.getElementById('lgRemember');
+  const btn     = document.getElementById('signInBtn');
+  const label   = document.getElementById('signInLabel');
+  const errBox  = document.getElementById('lgErr');
+  const errText = document.getElementById('lgErrText');
+
+  const showError = (msg)=>{
+    errText.textContent = msg;
+    errBox.classList.add('show');
+    email.classList.add('err'); pass.classList.add('err');
+  };
+  const clearError = ()=>{
+    errBox.classList.remove('show');
+    email.classList.remove('err'); pass.classList.remove('err');
+  };
+  [email, pass].forEach(f => f && f.addEventListener('input', clearError));
+
+  // Đóng gate → vào app
+  function enter(){
+    gate.classList.add('is-hidden');
+    setTimeout(()=>{ gate.style.display = 'none'; }, 420);
+  }
+  // Mở lại gate (đăng xuất)
+  function open(){
+    gate.style.display = '';
+    // force reflow để animation chạy lại
+    void gate.offsetWidth;
+    gate.classList.remove('is-hidden');
+    clearError();
+    pass.value = '';
+    label.textContent = 'Đăng nhập'; btn.style.opacity = '1'; btn.disabled = false;
+    setTimeout(()=> email.focus(), 100);
+  }
+
+  // Nếu đã "ghi nhớ đăng nhập" trước đó → bỏ qua màn login
+  let authed = false;
+  try { authed = localStorage.getItem(AUTH_KEY) === '1'; } catch(e){}
+  if(authed){ gate.classList.add('is-hidden'); gate.style.display = 'none'; }
+
+  function signIn(){
+    const okEmail = email.value.trim().toLowerCase() === DEMO.email;
+    const okPass  = pass.value === DEMO.pass;
+    if(!email.value.trim() || !pass.value){ showError('Vui lòng nhập email và mật khẩu.'); return; }
+    if(!okEmail || !okPass){ showError('Email hoặc mật khẩu chưa đúng. Dùng tài khoản demo phía trên.'); pass.select(); return; }
+
+    clearError();
+    label.textContent = 'Đang đăng nhập…'; btn.style.opacity = '.85'; btn.disabled = true;
+    setTimeout(()=>{
+      try { localStorage.setItem(AUTH_KEY, remember.checked ? '1' : '0'); } catch(e){}
+      enter();
+      label.textContent = 'Đăng nhập'; btn.style.opacity = '1'; btn.disabled = false;
+    }, 850);
+  }
+
+  form.addEventListener('submit', (e)=>{ e.preventDefault(); signIn(); });
+
+  // Điền nhanh tài khoản demo
+  const fillBtn = document.getElementById('fillDemo');
+  if(fillBtn) fillBtn.addEventListener('click', ()=>{
+    email.value = DEMO.email; pass.value = DEMO.pass; clearError(); pass.focus();
+  });
+
+  // Ẩn/hiện mật khẩu
+  const eyeBtn = document.getElementById('eyeBtn');
+  const eyeIcon = document.getElementById('eyeIcon');
+  const EYE = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+  const EYE_OFF = '<path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-2.4 3.4"/><path d="M6.6 6.6C4 8.3 2 11 2 11s3.5 7 10 7a9 9 0 0 0 3.9-.9"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><line x1="2" y1="2" x2="22" y2="22"/>';
+  if(eyeBtn) eyeBtn.addEventListener('click', ()=>{
+    const show = pass.type === 'password';
+    pass.type = show ? 'text' : 'password';
+    eyeIcon.innerHTML = show ? EYE_OFF : EYE;
+    eyeBtn.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+  });
+
+  // SSO demo → đăng nhập luôn bằng tài khoản demo
+  document.querySelectorAll('#loginGate .sso-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      email.value = DEMO.email; pass.value = DEMO.pass; signIn();
+    });
+  });
+
+  const forgot = document.getElementById('lgForgot');
+  if(forgot) forgot.addEventListener('click', ()=> showError('Bản demo — dùng mật khẩu: demo2026'));
+  const contact = document.getElementById('lgContact');
+  if(contact) contact.addEventListener('click', (e)=>{ e.preventDefault(); showError('Bản demo — liên hệ Team Lead để cấp tài khoản.'); });
+
+  // Đăng xuất (gọi từ nút Đăng xuất trong sidebar)
+  window.logout = function(){
+    if(!confirm('Đăng xuất khỏi Video Ops?')) return;
+    try { localStorage.setItem(AUTH_KEY, '0'); } catch(e){}
+    open();
+  };
+
+  if(!authed) setTimeout(()=> email.focus(), 200);
+})();
+</script>
+</body>
+</html>

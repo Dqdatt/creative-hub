@@ -1,0 +1,138 @@
+/* Login specific styles extracted from video-ops_3.html */
+
+#loginGate {
+  position: fixed; inset: 0; z-index: 1000; overflow: hidden; color: var(--text);
+  letter-spacing: -.01em;
+  background:
+    radial-gradient(820px 520px at 14% 6%, color-mix(in srgb,var(--accent) 15%, transparent), transparent 62%),
+    radial-gradient(900px 600px at 90% 92%, color-mix(in srgb,var(--accent-2) 13%, transparent), transparent 62%),
+    var(--bg);
+  animation: lgFade .35s ease;
+}
+#loginGate.is-hidden { opacity: 0; pointer-events: none; transform: scale(.99); transition: opacity .4s ease, transform .4s ease; }
+@keyframes lgFade { from{opacity:0} to{opacity:1} }
+
+#loginGate .blob { position: absolute; border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; filter: blur(80px); pointer-events: none; opacity: .7; }
+#loginGate .blob-a { width: 480px; height: 400px; top: -150px; left: -150px;
+  background: linear-gradient(135deg, color-mix(in srgb,var(--accent) 34%,transparent), color-mix(in srgb,var(--accent-2) 8%,transparent)); animation: lgDrift1 22s ease-in-out infinite; }
+#loginGate .blob-b { width: 440px; height: 440px; bottom: -190px; right: -150px;
+  background: linear-gradient(135deg, color-mix(in srgb,var(--accent-2) 32%,transparent), color-mix(in srgb,var(--accent) 6%,transparent)); animation: lgDrift2 26s ease-in-out infinite; }
+#loginGate .blob-c { width: 280px; height: 280px; top: 40%; right: 9%;
+  background: radial-gradient(circle, color-mix(in srgb,var(--accent) 20%,transparent), transparent 70%); animation: lgDrift1 18s ease-in-out infinite reverse; }
+html.dark #loginGate .blob { opacity: .5; }
+@keyframes lgDrift1 { 0%,100%{ transform:translate(0,0) rotate(0deg);} 50%{ transform:translate(24px,18px) rotate(6deg);} }
+@keyframes lgDrift2 { 0%,100%{ transform:translate(0,0) rotate(0deg);} 50%{ transform:translate(-20px,-16px) rotate(-5deg);} }
+
+#loginGate .sprockets { position: absolute; display: flex; flex-direction: column; gap: 14px; pointer-events: none; }
+#loginGate .sprockets span { width: 6px; height: 6px; border-radius: 2px; background: color-mix(in srgb,var(--text) 12%,transparent); }
+#loginGate .sprockets.tl { top: 64px; left: 40px; } #loginGate .sprockets.br { bottom: 64px; right: 40px; }
+
+#loginGate .stage { position: relative; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 16px 20px; }
+#loginGate .lg-card {
+  position: relative; z-index: 2; width: 100%; max-width: 392px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 28px; box-shadow: var(--shadow-card);
+  padding: 32px 32px 28px; animation: lgPop .5s cubic-bezier(.16,1,.3,1);
+}
+html.dark #loginGate .lg-card { background: var(--card-2); }
+@keyframes lgPop { from{opacity:0; transform:translateY(16px) scale(.97);} to{opacity:1; transform:none;} }
+
+#loginGate .lg-brand { display: flex; align-items: center; gap: 11px; margin-bottom: 22px; }
+#loginGate .lg-mark { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
+  background: var(--grad); box-shadow: var(--shadow-btn); flex: none; }
+#loginGate .lg-mark svg { width: 19px; height: 19px; }
+#loginGate .lg-wordmark { font-weight: 800; font-size: 16.5px; letter-spacing: -.02em; color: var(--text); }
+#loginGate .lg-wordmark span { display: block; font-weight: 600; font-size: 10.5px; color: var(--text-2); letter-spacing: .06em; text-transform: uppercase; margin-top: 1px; }
+
+#loginGate h1 { font-size: 24px; font-weight: 800; letter-spacing: -.03em; margin: 0 0 20px; color: var(--text); }
+
+#loginGate .lg-flabel { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin: 0 0 7px; }
+#loginGate .field-wrap { position: relative; margin-bottom: 16px; }
+#loginGate .lg-field {
+  width: 100%; height: 46px; padding: 0 15px; border-radius: 14px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text); font-size: 13.5px; font-family: inherit;
+  outline: none; transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+#loginGate .lg-field::placeholder { color: var(--muted); }
+#loginGate .lg-field:focus { border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent); }
+#loginGate .lg-field.has-icon { padding-right: 42px; }
+#loginGate .lg-field.err { border-color: var(--danger); box-shadow: 0 0 0 4px color-mix(in srgb,var(--danger) 15%,transparent); }
+#loginGate .eye-btn {
+  position: absolute; right: 6px; top: 6px; width: 34px; height: 34px; border-radius: 10px;
+  display: grid; place-items: center; background: transparent; border: none; color: var(--text-2);
+  cursor: pointer; transition: color .2s ease, background .2s ease;
+}
+#loginGate .eye-btn:hover { color: var(--text); background: var(--chip); }
+#loginGate .eye-btn:disabled { cursor: not-allowed; opacity: .55; }
+#loginGate .eye-btn svg { width: 17px; height: 17px; }
+
+#loginGate .lg-err { display: none; align-items: center; gap: 7px; font-size: 12.5px; color: var(--danger);
+  margin: -6px 0 14px; }
+#loginGate .lg-err.show { display: flex; }
+#loginGate .lg-err svg { width: 15px; height: 15px; flex: none; }
+
+#loginGate .row-between { display: flex; align-items: center; justify-content: space-between; margin: 2px 0 22px; }
+#loginGate .remember { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-2); cursor: pointer; user-select: none; }
+#loginGate .remember input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+#loginGate .remember.is-disabled { cursor: default; }
+#loginGate .remember input:disabled { cursor: not-allowed; opacity: .7; }
+#loginGate .forgot { font-size: 12.5px; font-weight: 600; color: var(--accent); text-decoration: none; background: none; border: none; cursor: pointer; }
+#loginGate .forgot:hover { filter: brightness(1.1); }
+
+#loginGate .btn-primary {
+  width: 100%; height: 48px; border-radius: 999px; border: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-weight: 700; font-size: 14px; color: #fff; background: var(--grad);
+  box-shadow: var(--shadow-btn);
+  transition: transform .22s cubic-bezier(.2,.7,.2,1), filter .22s ease;
+}
+#loginGate .btn-primary:hover { filter: brightness(1.08); transform: scale(1.015); }
+#loginGate .btn-primary:active { transform: scale(.98); }
+#loginGate .btn-primary:disabled { cursor: not-allowed; opacity: .62; filter: none; transform: none; box-shadow: none; }
+#loginGate .btn-primary svg { width: 16px; height: 16px; }
+
+#loginGate .divider { display: flex; align-items: center; gap: 12px; margin: 24px 0 18px; }
+#loginGate .divider::before, #loginGate .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+#loginGate .divider span { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+
+#loginGate .sso { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#loginGate .sso-btn {
+  height: 46px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  background: var(--chip); border: 1px solid var(--border); color: var(--text);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background .2s ease, transform .2s ease, border-color .2s ease;
+}
+#loginGate .sso-btn:hover { background: var(--chip-2); transform: translateY(-1px); border-color: var(--border-strong); }
+#loginGate .sso-btn:disabled { cursor: not-allowed; opacity: .5; transform: none; }
+#loginGate .sso-btn svg { width: 17px; height: 17px; flex: none; }
+
+#loginGate .foot-note { text-align: center; font-size: 12.5px; color: var(--text-2); margin: 22px 0 0; }
+#loginGate .foot-note a { color: var(--text); font-weight: 700; text-decoration: none; border-bottom: 1px solid var(--border-strong); }
+#loginGate .foot-note a:hover { border-color: var(--accent); }
+#loginGate :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.auth-pulse-dot{
+  width:9px;height:9px;border-radius:50%;background:var(--accent);flex:none;
+  box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 14%,transparent);
+  animation:authPulse 1.2s ease-in-out infinite;
+}
+.auth-loading-status{
+  display:flex;align-items:center;gap:10px;margin-top:18px;
+  color:var(--text-2);font-size:12.5px;font-weight:650;
+}
+@keyframes authPulse{ 0%,100%{ transform:scale(.78);opacity:.65; } 50%{ transform:scale(1);opacity:1; } }
+
+@media (max-height: 680px) and (min-width: 521px) {
+  #loginGate .lg-card { padding: 26px 30px 24px; }
+  #loginGate .lg-brand { margin-bottom: 18px; }
+  #loginGate h1 { margin-bottom: 16px; }
+  #loginGate .field-wrap { margin-bottom: 13px; }
+  #loginGate .row-between { margin-bottom: 18px; }
+  #loginGate .foot-note { margin-top: 18px; }
+}
+
+@media (max-width: 420px) {
+  #loginGate { overflow-y: auto; }
+  #loginGate .lg-card { padding: 30px 22px 24px; border-radius: 22px; }
+}

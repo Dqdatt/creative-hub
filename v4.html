@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Video Ops — Quản lý task video</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        colors: {
+          brand:'#2563EB', success:'#22C55E', danger:'#EF4444', warning:'#F59E0B',
+          purple:'#A855F7', sky:'#38BDF8', ink:'#111827', sub:'#6B7280',
+          line:'#E5E7EB', canvas:'#F8FAFC', navy:'#132a3e'
+        },
+        borderRadius: { xl2:'18px' },
+        boxShadow: { soft:'0 8px 30px rgba(15,23,42,.08)' }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  body{font-family:'Inter',system-ui,sans-serif;background:#F8FAFC;color:#111827}
+  ::-webkit-scrollbar{height:10px;width:10px}
+  ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}
+  ::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+  .nav-item.active{background:#EFF6FF;color:#2563EB;font-weight:600}
+  .nav-item.active .nav-ic{color:#2563EB}
+  [data-view]{animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="min-h-screen">
+<div class="flex min-h-screen w-full mx-auto">
+
+  <aside id="sidebar" class="hidden md:flex w-64 shrink-0 flex-col border-r border-line bg-white">
+    <div class="flex items-center gap-2.5 px-5 h-16 border-b border-line">
+      <div class="grid place-items-center w-9 h-9 rounded-xl2 bg-brand text-white shadow-soft">
+        <i data-lucide="clapperboard" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <div class="font-extrabold text-[15px] leading-none">Video Ops</div>
+        <div class="text-[11px] text-sub mt-0.5">Team Marketing</div>
+      </div>
+    </div>
+    <nav id="nav" class="flex-1 p-3 space-y-1"></nav>
+    <div class="p-3 border-t border-line">
+      <div class="text-[11px] text-sub px-2">Tháng 7 · 2026</div>
+    </div>
+  </aside>
+
+  <div class="flex-1 min-w-0 flex flex-col">
+    <header class="sticky top-0 z-20 flex items-center gap-3 h-16 px-4 md:px-7 bg-white/90 backdrop-blur border-b border-line">
+      <button id="menuBtn" class="md:hidden grid place-items-center w-9 h-9 rounded-lg hover:bg-canvas">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+      </button>
+      <div>
+        <h1 id="pageTitle" class="font-bold text-lg leading-none">Tổng quan</h1>
+        <p id="pageSub" class="text-[12px] text-sub mt-1">Báo cáo công việc tháng 7</p>
+      </div>
+      <div class="ml-auto flex items-center gap-2.5">
+        <div class="hidden sm:flex items-center gap-2 text-[13px] text-sub bg-canvas rounded-lg px-3 h-9 border border-line">
+          <i data-lucide="calendar" class="w-4 h-4"></i> Tháng 7, 2026
+        </div>
+        <div class="flex items-center gap-2 pl-1">
+          <img src="https://i.pravatar.cc/64?img=13" class="w-9 h-9 rounded-full border border-line" alt="" />
+          <div class="hidden sm:block leading-tight">
+            <div class="text-[13px] font-semibold">Đoàn Quốc Đạt</div>
+            <div class="text-[11px] text-sub">Team Lead</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="view" class="flex-1 p-4 md:p-7"></main>
+    <footer class="px-7 py-4 text-[12px] text-sub border-t border-line">Video Ops · nội bộ team marketing</footer>
+  </div>
+</div>
+
+<div id="sbBackdrop" class="fixed inset-0 bg-black/30 z-30 hidden md:hidden"></div>
+
+<div id="taskModal" class="fixed inset-0 bg-black/30 z-50 hidden items-center justify-center backdrop-blur-sm overflow-y-auto py-10">
+  <div class="bg-white rounded-xl2 shadow-soft w-[90%] max-w-2xl p-6 transform transition-all my-auto">
+    <div class="flex justify-between items-center mb-5">
+      <h3 id="modalTitle" class="font-bold text-lg leading-none">Chi tiết Task</h3>
+      <button onclick="closeTaskModal()" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-canvas text-sub transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    
+    <div class="space-y-4 text-[13px]">
+      <div>
+        <label class="block text-[12px] font-semibold text-sub mb-1">Tên video <span class="text-danger">*</span></label>
+        <input id="mName" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas focus:ring-2 focus:ring-brand/30 outline-none" placeholder="Nhập tên video..." />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[12px] font-semibold text-sub mb-1">Người làm (Editor)</label>
+            <select id="mEditor" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30"></select>
+          </div>
+          <div>
+            <label class="block text-[12px] font-semibold text-sub mb-1">Trạng thái</label>
+            <select id="mStatus" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30">
+              <option value="Chờ">Chờ</option>
+              <option value="Đang làm">Đang làm</option>
+              <option value="Đã xong">Đã xong</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[12px] font-semibold text-sub mb-1">Team Order</label>
+            <select id="mOrder" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30"></select>
+          </div>
+          <div>
+            <label class="block text-[12px] font-semibold text-sub mb-1">Thể loại</label>
+            <select id="mCat" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30">
+              <option value="Video dài">Video dài</option>
+              <option value="Motion">Motion</option>
+              <option value="Ads">Ads</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[12px] font-semibold text-sub mb-1">Độ ưu tiên</label>
+            <select id="mUutien" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30">
+              <option value="">Bình thường</option>
+              <option value="Gấp">Gấp</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[12px] font-semibold text-sub mb-1">Resize</label>
+            <input id="mResize" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30" placeholder="VD: 9x16 & 1x1" />
+          </div>
+      </div>
+      
+      <div class="grid grid-cols-3 gap-4 border-t border-line pt-4">
+          <div>
+            <label class="block text-[12px] font-semibold text-sub mb-1">Ngày nhận</label>
+            <input id="mNhan" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30" placeholder="VD: 01/07" />
+          </div>
+          <div>
+            <label class="block text-[12px] font-semibold text-sub mb-1">Ngày trả</label>
+            <input id="mTra" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30" placeholder="VD: 05/07" />
+          </div>
+          <div>
+            <label class="block text-[12px] font-semibold text-sub mb-1">Ngày Air</label>
+            <input id="mAir" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30" placeholder="VD: 06/07" />
+          </div>
+      </div>
+
+      <div class="border-t border-line pt-4 mt-2">
+        <label class="block text-[12px] font-semibold text-sub mb-1">Link thành phẩm</label>
+        <input id="mLink" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30" placeholder="Nhập link (Drive, Youtube, etc.)..." />
+      </div>
+    </div>
+
+    <div class="mt-6 flex justify-end gap-3">
+      <button onclick="closeTaskModal()" class="px-4 h-10 rounded-xl text-[13px] font-medium hover:bg-canvas transition">Đóng</button>
+      <button onclick="saveTask()" class="px-5 h-10 rounded-xl bg-brand text-white text-[13px] font-semibold shadow-soft hover:opacity-90 transition">Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ helpers ============ */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const el = (t, c, h) => { const n=document.createElement(t); if(c)n.className=c; if(h!=null)n.innerHTML=h; return n; };
+const esc = s => (s??'').toString().replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+/* ---- icon set ---- */
+const ICONS = {
+  'clapperboard':'<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+  'menu':'<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>',
+  'calendar':'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+  'calendar-days':'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>',
+  'layout-dashboard':'<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+  'video':'<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>',
+  'chevron-left':'<path d="m15 18-6-6 6-6"/>',
+  'chevron-right':'<path d="m9 18 6-6-6-6"/>',
+  'search':'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  'link':'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  'circle-check':'<path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/>',
+  'clock':'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  'users':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  'building-2':'<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
+  'x':'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  'plus':'<path d="M5 12h14"/><path d="M12 5v14"/>'
+};
+const lucide = {
+  createIcons(){
+    document.querySelectorAll('[data-lucide]').forEach(node=>{
+      const name = node.getAttribute('data-lucide');
+      const body = ICONS[name]; if(body==null) return;
+      const cls = node.getAttribute('class')||'';
+      node.outerHTML = `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+    });
+  }
+};
+
+/* ============ data ============ */
+const EDITORS = [
+  { id:'dat',  name:'Đoàn Quốc Đạt',    short:'Đạt Đoàn', role:'Video Editor', color:'#38BDF8', soft:'#E0F2FE', crewKey:'ĐẠT' },
+  { id:'hai',  name:'Nguyễn Thanh Hải', short:'Thanh Hải', role:'Video Editor', color:'#22C55E', soft:'#DCFCE7', crewKey:'HẢI' },
+  { id:'minh', name:'Hoàng Hữu Lê Minh',short:'Hữu Minh',  role:'Video Editor', color:'#F59E0B', soft:'#FEF3C7', crewKey:'MINH' },
+];
+const edById = id => EDITORS.find(e=>e.id===id);
+const shootsOf = e => SHOOTS.filter(s => s.date.startsWith('2026-07') && s.crew && s.crew.toUpperCase().includes(e.crewKey));
+
+const VIDEOS = [
+  { stt:1, name:'Video Motion Shopee sale 7.7', resize:'',           editor:'minh', order:'ECOM',    cat:'Motion',    nhan:'26/6', tra:'26/6', air:'2/7',  status:'Đã xong',  uutien:'',    link:'#' },
+  { stt:2, name:'Video Chạm vào an yên tập 9',   resize:'9x16 & 1x1', editor:'minh', order:'BRAND',   cat:'Video dài', nhan:'30/6', tra:'1/7',  air:'2/7',  status:'Đã xong',  uutien:'',    link:'#' },
+  { stt:3, name:'Video Review IKI Premium',      resize:'9x16 & 1x1', editor:'hai',  order:'BRAND',   cat:'Video dài', nhan:'30/6', tra:'6/7',  air:'8/7',  status:'Đang làm', uutien:'',    link:'#' },
+  { stt:4, name:"Video Motion Nệm L'ADOME",      resize:'',           editor:'hai',  order:'BRAND',   cat:'Motion',    nhan:'30/6', tra:'1/7',  air:'1/7',  status:'Đã xong',  uutien:'',    link:'#' },
+  { stt:5, name:'Video Motion Combo kháng khuẩn',resize:'1x1',        editor:'minh', order:'DIGITAL', cat:'Ads',       nhan:'1/7',  tra:'1/7',  air:'1/7',  status:'Đã xong',  uutien:'',    link:'#' },
+  { stt:6, name:'Video Những thứ khiến phòng ngủ đắt tiền', resize:'9x16 & 1x1', editor:'minh', order:'BRAND', cat:'Video dài', nhan:'2/7', tra:'6/7', air:'7/7', status:'Đang làm', uutien:'', link:'#' },
+  { stt:7, name:'Video Motion Nệm Cocoon Grey',  resize:'1x1',        editor:'hai',  order:'DIGITAL', cat:'Ads',       nhan:'2/7',  tra:'3/7',  air:'3/7',  status:'Đã xong',  uutien:'Gấp', link:'#' },
+  { stt:8, name:'Video COCOON - 3 Lợi ích khi sử dụng nệm lò xo túi độc lập', resize:'9x16 & 1x1', editor:'dat', order:'BRAND', cat:'Video dài', nhan:'1/7', tra:'7/7', air:'10/7', status:'Đang làm', uutien:'', link:'#' },
+  { stt:9, name:"Video Motion Nệm L'ADOME Cool", resize:'1x1',        editor:'hai',  order:'DIGITAL', cat:'Ads',       nhan:'2/7',  tra:'3/7',  air:'3/7',  status:'Đã xong',  uutien:'Gấp', link:'#' },
+];
+
+const resizeCount = r => !r ? 0 : r.split('&').filter(x=>x.trim()).length;
+
+const SHOOT_TYPES = {
+  livestream:{ label:'Livestream', bg:'#FDE8D4', bd:'#F6C99A', dot:'#F59E0B' },
+  showroom:  { label:'Showroom',   bg:'#F1DEF8', bd:'#DDB8EC', dot:'#A855F7' },
+  onset:     { label:'On set',     bg:'#D6EEFB', bd:'#9FD4F2', dot:'#2563EB' },
+  scout:     { label:'Scout / Sự kiện', bg:'#DCF3E1', bd:'#AEE0BA', dot:'#22C55E' },
+  other:     { label:'Khác',       bg:'#F3F4F6', bd:'#E5E7EB', dot:'#6B7280' },
+};
+
+const SHOOTS = [
+  { date:'2026-07-07', type:'livestream', crew:'KHANG + ĐẠT',        place:'LIVESTREAM SHOPEE',   time:'BUỔI TỐI',    note:'' },
+  { date:'2026-07-08', type:'showroom',   crew:'HẰNG - ĐẠT - BUMI',  place:'SHOWROOM HÒA BÌNH',   time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { date:'2026-07-09', type:'showroom',   crew:'LINH - MINH - BUMI', place:'SHOWROOM AN SƯƠNG',   time:'ALL MORNING', note:'THEO DẤU GIẤC NGỦ TẬP 2 - SHOWROOM TRƯỜNG CHINH' },
+  { date:'2026-07-10', type:'livestream', crew:'MINH + HẢI',         place:'LIVESTREAM SHOPEE',   time:'BUỔI TỐI',    note:'' },
+  { date:'2026-07-10', type:'onset',      crew:'ĐẠT - BUMI',         place:'ONSET TIDO',          time:'',            note:'' },
+  { date:'2026-07-13', type:'other',      crew:'',                   place:'QUAY CHỤP BELLO',     time:'',            note:'' },
+  { date:'2026-07-14', type:'showroom',   crew:'MY - ĐẠT - BUMI',    place:'SHOWROOM HÒA BÌNH',   time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { date:'2026-07-15', type:'livestream', crew:'KHANG + MINH',       place:'LIVESTREAM SHOPEE',   time:'BUỔI TỐI',    note:'' },
+  { date:'2026-07-16', type:'showroom',   crew:'MY - ĐẠT - BUMI',    place:'SHOWROOM AN SƯƠNG',   time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { date:'2026-07-17', type:'onset',      crew:'ĐẠT - BUMI',         place:'ON SET TIDO',         time:'',            note:'' },
+  { date:'2026-07-20', type:'livestream', crew:'HẢI + ĐẠT',          place:'LIVESTREAM SHOPEE',   time:'BUỔI TỐI',    note:'' },
+  { date:'2026-07-21', type:'showroom',   crew:'HẰNG - ĐẠT - BUMI',  place:'SHOWROOM AN SƯƠNG',   time:'ALL MORNING', note:'CONTENT THÁNG 8' },
+  { date:'2026-07-22', type:'showroom',   crew:'NHƯ - MINH - BUMI',  place:'SHOWROOM AN SƯƠNG',   time:'ALL MORNING', note:'CONTENT THÁNG 8' },
+  { date:'2026-07-24', type:'onset',      crew:'ĐẠT - BUMI',         place:'ON SET TIDO',         time:'',            note:'' },
+  { date:'2026-07-25', type:'scout',      crew:'BUMI - ĐẠT - ÂN',    place:'SCOUT SHOWROOM CẦN THƠ', time:'',         note:'' },
+  { date:'2026-07-28', type:'showroom',   crew:'MY - ĐẠT - BUMI',    place:'SHOWROOM HÒA BÌNH',   time:'ALL MORNING', note:'CONTENT THÁNG 8 HOẶC CHỤP/QUAY DRAP MỚI PHÔNG TRẮNG' },
+  { date:'2026-07-29', type:'showroom',   crew:'LONG - ĐẠT - BUMI',  place:'SHOWROOM AN SƯƠNG',   time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { date:'2026-07-30', type:'showroom',   crew:'LINH - ĐẠT - BUMI',  place:'SHOWROOM HÒA BÌNH',   time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { date:'2026-07-31', type:'onset',      crew:'ĐẠT - BUMI',         place:'ON SET TIDO',         time:'',            note:'' },
+  { date:'2026-08-01', type:'scout',      crew:'BUMI - ĐẠT',         place:'KHAI TRƯƠNG CẦN THƠ', time:'',            note:'' },
+  { date:'2026-08-05', type:'onset',      crew:'ĐẠT - BUMI',         place:'ON SET TIDO',         time:'',            note:'' },
+];
+
+const TEAMS = ['BRAND','DIGITAL','ECOM','HR','ISD','CS','GT','PUR'];
+
+/* ============ nav / router ============ */
+const NAV = [
+  { id:'overview', label:'Tổng quan', icon:'layout-dashboard', sub:'Báo cáo công việc tháng 7' },
+  { id:'calendar', label:'Lịch quay', icon:'calendar-days',    sub:'Lịch buổi quay theo tháng' },
+  { id:'videos',   label:'Video tháng', icon:'clapperboard',   sub:'Tổng hợp video tháng 7' },
+];
+let current = 'overview';
+
+function buildNav(){
+  const nav = $('#nav'); nav.innerHTML='';
+  NAV.forEach(n=>{
+    const a = el('button', 'nav-item w-full flex items-center gap-3 px-3 h-11 rounded-xl text-[14px] text-ink/80 hover:bg-canvas transition');
+    a.innerHTML = `<i data-lucide="${n.icon}" class="nav-ic w-[18px] h-[18px] text-sub"></i>${n.label}`;
+    a.onclick = ()=> go(n.id);
+    a.dataset.id = n.id;
+    nav.appendChild(a);
+  });
+  lucide.createIcons();
+  markNav();
+}
+function markNav(){ $$('.nav-item').forEach(a=>a.classList.toggle('active', a.dataset.id===current)); }
+
+function go(id){
+  current = id;
+  const meta = NAV.find(n=>n.id===id);
+  $('#pageTitle').textContent = meta.label;
+  $('#pageSub').textContent = meta.sub;
+  markNav();
+  closeSidebar();
+  const view = $('#view');
+  view.innerHTML='';
+  if(id==='overview') renderOverview(view);
+  if(id==='calendar') renderCalendar(view);
+  if(id==='videos')   renderVideos(view);
+  lucide.createIcons();
+}
+
+/* ============ atoms ============ */
+function statusBadge(s){
+  const map = {
+    'Đã xong':  'bg-green-50 text-green-600 ring-green-200',
+    'Đang làm': 'bg-blue-50 text-blue-600 ring-blue-200',
+    'Chờ':      'bg-amber-50 text-amber-600 ring-amber-200',
+  };
+  return `<span class="inline-flex items-center gap-1.5 px-2.5 h-6 rounded-full text-[12px] font-medium ring-1 ${map[s]||'bg-gray-50 text-sub ring-line'}">
+    <span class="w-1.5 h-1.5 rounded-full ${s==='Đã xong'?'bg-green-500':s==='Đang làm'?'bg-blue-500':'bg-amber-500'}"></span>${esc(s)}</span>`;
+}
+function catBadge(c){
+  const map = { 'Video dài':'bg-indigo-50 text-indigo-600','Motion':'bg-sky-50 text-sky-600','Ads':'bg-rose-50 text-rose-600' };
+  return `<span class="px-2 h-6 inline-flex items-center rounded-md text-[12px] font-medium ${map[c]||'bg-gray-50 text-sub'}">${esc(c)}</span>`;
+}
+function editorChip(id){
+  const e = edById(id); if(!e) return '';
+  return `<span class="inline-flex items-center gap-1.5">
+    <span class="w-6 h-6 rounded-full grid place-items-center text-[11px] font-bold text-white" style="background:${e.color}">${esc(e.short[0])}</span>
+    <span class="text-[13px]">${esc(e.short)}</span></span>`;
+}
+
+/* ============ VIEW: Overview ============ */
+function renderOverview(root){
+  const total = VIDEOS.length;
+  const done = VIDEOS.filter(v=>v.status==='Đã xong').length;
+  const doing = VIDEOS.filter(v=>v.status==='Đang làm').length;
+  const gap = VIDEOS.filter(v=>v.uutien==='Gấp').length;
+  const nShoot = SHOOTS.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  const wrap = el('div','space-y-8');
+
+  const top = el('div','grid gap-4 sm:grid-cols-2 xl:grid-cols-4');
+  top.appendChild(kpiCard('clapperboard','#2563EB','Tổng video', total, 'Tổng hợp tháng 7 · 2026'));
+  top.appendChild(kpiCard('circle-check','#22C55E','Đã hoàn thành', done, `${pct}% khối lượng công việc`));
+  top.appendChild(kpiCard('clock','#F59E0B','Đang thực hiện', doing, gap?`${gap} việc gắn nhãn Gấp`:'Đang bám tiến độ'));
+  top.appendChild(kpiCard('video','#A855F7','Buổi quay tháng 7', nShoot, 'Lịch quay & sự kiện'));
+  wrap.appendChild(top);
+
+  wrap.appendChild(sectionTitle('users','Task theo từng người', 'Đoàn Quốc Đạt · Nguyễn Thanh Hải · Hoàng Hữu Lê Minh'));
+  const grid = el('div','grid gap-4 lg:grid-cols-3');
+  EDITORS.forEach(e=>{
+    const rows = VIDEOS.filter(v=>v.editor===e.id);
+    const dai = rows.filter(v=>v.cat==='Video dài').length;
+    const motion = rows.filter(v=>v.cat==='Motion').length;
+    const ads = rows.filter(v=>v.cat==='Ads').length;
+    const resize = rows.reduce((s,v)=>s+resizeCount(v.resize),0);
+    const shoots = shootsOf(e);
+    const totalTasks = rows.length + shoots.length;
+
+    const card = el('div','rounded-xl2 border border-line bg-white shadow-soft overflow-hidden flex flex-col');
+    card.innerHTML = `
+      <div class="p-4 flex items-center gap-3" style="background:${e.soft}">
+        <span class="w-11 h-11 rounded-full grid place-items-center text-[15px] font-bold text-white shrink-0" style="background:${e.color}">${esc(e.short[0])}</span>
+        <div class="min-w-0">
+          <div class="font-bold text-[15px] truncate">${esc(e.name)}</div>
+          <div class="text-[12px] font-medium" style="color:${e.color}">${esc(e.role)}</div>
+        </div>
+        <div class="ml-auto text-right shrink-0">
+          <div class="text-2xl font-extrabold leading-none" style="color:${e.color}">${totalTasks}</div>
+          <div class="text-[11px] text-sub mt-0.5">tổng task</div>
+        </div>
+      </div>
+
+      <div class="px-4 pt-3 pb-4 space-y-2">
+        ${statRow('Video dài', dai)}
+        ${statRow('Motion', motion)}
+        ${statRow('Ads', ads)}
+        ${statRow('Resize', resize, true)}
+        ${statRow('Buổi quay', shoots.length)}
+      </div>`;
+    grid.appendChild(card);
+  });
+  wrap.appendChild(grid);
+
+  wrap.appendChild(sectionTitle('building-2','Tổng theo team order', 'Số video mỗi bên order, chia theo editor phụ trách'));
+  const activeTeams = TEAMS
+    .map(t=>{
+      const perEditor = EDITORS.map(e=>VIDEOS.filter(v=>v.order===t && v.editor===e.id).length);
+      const n = VIDEOS.filter(v=>v.order===t).length;
+      return { t, n, perEditor };
+    })
+    .filter(o=>o.n>0)
+    .sort((a,b)=>b.n-a.n);
+  const maxN = Math.max(1, ...activeTeams.map(o=>o.n));
+
+  const tbl = el('div','rounded-xl2 border border-line bg-white shadow-soft overflow-x-auto');
+  tbl.innerHTML = `<table class="w-full min-w-[560px] text-[13px]">
+    <thead>
+      <tr class="bg-brand text-white text-left">
+        <th class="px-4 py-2.5 font-semibold">Team Order</th>
+        ${EDITORS.map(e=>`<th class="px-3 py-2.5 font-semibold text-center w-24">${esc(e.short)}</th>`).join('')}
+        <th class="px-4 py-2.5 font-semibold text-center w-28">Tổng</th>
+        <th class="px-4 py-2.5 font-semibold w-40">Tỉ trọng</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${activeTeams.map((o,i)=>`
+        <tr class="border-t border-line ${i%2?'bg-canvas/60':'bg-white'}">
+          <td class="px-4 py-2.5 font-semibold">${esc(o.t)}</td>
+          ${o.perEditor.map((n,idx)=>`<td class="px-3 py-2.5 text-center ${n?'font-semibold':'text-sub/40'}" style="${n?`color:${EDITORS[idx].color}`:''}">${n||'—'}</td>`).join('')}
+          <td class="px-4 py-2.5 text-center font-bold text-brand">${o.n}</td>
+          <td class="px-4 py-2.5">
+            <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
+              <div class="h-full rounded-full bg-brand" style="width:${Math.round(o.n/maxN*100)}%"></div>
+            </div>
+          </td>
+        </tr>`).join('')}
+      <tr class="border-t-2 border-line bg-gray-50">
+        <td class="px-4 py-2.5 font-bold">Tổng cộng</td>
+        ${EDITORS.map(e=>`<td class="px-3 py-2.5 text-center font-bold" style="color:${e.color}">${VIDEOS.filter(v=>v.editor===e.id).length}</td>`).join('')}
+        <td class="px-4 py-2.5 text-center font-bold">${total}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>`;
+  wrap.appendChild(tbl);
+
+  root.appendChild(wrap);
+}
+function kpiCard(icon, color, title, value, sub){
+  const c = el('div','relative rounded-xl2 border border-line bg-white shadow-soft p-5 pl-6 overflow-hidden');
+  c.innerHTML = `
+    <span class="absolute inset-y-0 left-0 w-1.5" style="background:${color}"></span>
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-xl grid place-items-center text-white shrink-0" style="background:${color}">
+        <i data-lucide="${icon}" class="w-5 h-5"></i>
+      </div>
+      <div class="text-[13px] text-sub font-medium">${esc(title)}</div>
+    </div>
+    <div class="text-3xl font-extrabold leading-none">${value}</div>
+    <div class="text-[12px] text-sub mt-1.5 truncate">${esc(sub)}</div>`;
+  return c;
+}
+function statRow(label, n, hl){
+  return `<div class="flex items-center justify-between text-[13px] ${hl?'bg-yellow-50 -mx-1 px-1 rounded':''}">
+    <span class="text-ink/70">${label}</span><span class="font-semibold tabular-nums">${n}</span></div>`;
+}
+function sectionTitle(icon, t, sub){
+  const w = el('div','flex items-center gap-2.5 pt-1');
+  w.innerHTML = `
+    <span class="w-8 h-8 rounded-lg bg-ink/5 grid place-items-center text-ink/70"><i data-lucide="${icon}" class="w-4 h-4"></i></span>
+    <div>
+      <h2 class="text-[15px] font-bold text-ink leading-none">${esc(t)}</h2>
+      ${sub?`<p class="text-[12px] text-sub mt-1">${esc(sub)}</p>`:''}
+    </div>`;
+  return w;
+}
+
+/* ============ VIEW: Calendar ============ */
+let calYear = 2026, calMonth = 6;
+let calFilter = 'all';
+
+function renderCalendar(root){
+  const wrap = el('div','space-y-4');
+
+  const bar = el('div','flex flex-wrap items-center gap-3');
+  bar.innerHTML = `
+    <div class="flex items-center gap-1 bg-white border border-line rounded-xl p-1 shadow-soft">
+      <button id="calPrev" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-canvas"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+      <div id="calLabel" class="px-3 text-[14px] font-bold min-w-[130px] text-center"></div>
+      <button id="calNext" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-canvas"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+    </div>
+    <button id="calToday" class="h-9 px-3 rounded-xl bg-white border border-line text-[13px] font-medium shadow-soft hover:bg-canvas">Về tháng 7</button>
+    <div id="calLegend" class="ml-auto flex flex-wrap items-center gap-2"></div>`;
+  wrap.appendChild(bar);
+
+  const grid = el('div','rounded-xl2 border border-line bg-white shadow-soft overflow-x-auto');
+  grid.id = 'calGrid';
+  wrap.appendChild(grid);
+
+  root.appendChild(wrap);
+
+  const leg = $('#calLegend', wrap);
+  const items = [['all','Tất cả','#6B7280'], ...Object.entries(SHOOT_TYPES).filter(([k])=>k!=='other').map(([k,v])=>[k,v.label,v.dot])];
+  items.forEach(([k,label,color])=>{
+    const b = el('button','inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full text-[12px] font-medium border transition');
+    b.innerHTML = `<span class="w-2.5 h-2.5 rounded-full" style="background:${color}"></span>${label}`;
+    b.dataset.k = k;
+    b.onclick = ()=>{ calFilter = k; drawCal(); };
+    leg.appendChild(b);
+  });
+
+  $('#calPrev',wrap).onclick = ()=>{ calMonth--; if(calMonth<0){calMonth=11;calYear--;} drawCal(); };
+  $('#calNext',wrap).onclick = ()=>{ calMonth++; if(calMonth>11){calMonth=0;calYear++;} drawCal(); };
+  $('#calToday',wrap).onclick = ()=>{ calYear=2026; calMonth=6; drawCal(); };
+
+  drawCal();
+}
+
+function drawCal(){
+  const MON = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+  const label = $('#calLabel'); if(label) label.textContent = `${MON[calMonth]}, ${calYear}`;
+  $$('#calLegend button').forEach(b=>{
+    const on = b.dataset.k===calFilter;
+    b.classList.toggle('bg-ink', on); b.classList.toggle('text-white', on);
+    b.classList.toggle('border-ink', on); b.classList.toggle('border-line', !on);
+    b.classList.toggle('bg-white', !on);
+  });
+
+  const grid = $('#calGrid'); if(!grid) return;
+  const WD = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const first = new Date(calYear, calMonth, 1);
+  let startDow = (first.getDay()+6)%7; 
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+
+  const cells = [];
+  for(let i=0;i<startDow;i++) cells.push({ d: prevDays-startDow+1+i, out:true });
+  for(let d=1;d<=daysInMonth;d++) cells.push({ d, out:false });
+  while(cells.length%7!==0) cells.push({ d: cells.length-(startDow+daysInMonth)+1, out:true });
+
+  const key = d => `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+  let html = `<div class="min-w-[900px]">
+    <div class="grid grid-cols-7">
+      ${WD.map(w=>`<div class="h-11 grid place-items-center bg-navy text-white text-[13px] font-bold tracking-wide border-r border-white/10 last:border-r-0">${w}</div>`).join('')}
+    </div>
+    <div class="grid grid-cols-7">`;
+
+  cells.forEach((c,idx)=>{
+    const events = c.out ? [] : SHOOTS.filter(s=>s.date===key(c.d) && (calFilter==='all'||s.type===calFilter));
+    const isSun = idx%7===6;
+    html += `<div class="min-h-[132px] border-r border-b border-line p-1.5 ${c.out?'bg-canvas/60':''} ${isSun?'border-r-0':''} align-top">
+      <div class="text-[12px] font-semibold ${c.out?'text-sub/50':'text-ink'} px-1 mb-1">${c.d}</div>
+      <div class="space-y-1">`;
+    events.forEach(ev=>{
+      const t = SHOOT_TYPES[ev.type];
+      html += `<div class="rounded-lg px-2 py-1.5 text-[11px] leading-snug border" style="background:${t.bg};border-color:${t.bd}">
+        ${ev.crew?`<div class="font-bold text-ink">${esc(ev.crew)}</div>`:''}
+        <div class="font-semibold text-ink/90 underline decoration-ink/20">${esc(ev.place)}</div>
+        ${ev.time?`<div class="font-semibold text-ink/70">${esc(ev.time)}</div>`:''}
+        ${ev.note?`<div class="text-danger font-medium mt-0.5">${esc(ev.note)}</div>`:''}
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  html += `</div></div>`;
+  grid.innerHTML = html;
+  lucide.createIcons();
+}
+
+/* ============ VIEW: Videos table ============ */
+let vFilterEditor='all', vFilterStatus='all', vSearch='';
+
+function renderVideos(root){
+  const wrap = el('div','space-y-4');
+
+  const bar = el('div','flex flex-wrap items-center gap-2.5');
+  bar.innerHTML = `
+    <div class="relative">
+      <i data-lucide="search" class="w-4 h-4 text-sub absolute left-3 top-1/2 -translate-y-1/2"></i>
+      <input id="vSearch" placeholder="Tìm tên video…" class="h-9 pl-9 pr-3 rounded-xl border border-line bg-white text-[13px] w-56 shadow-soft focus:outline-none focus:ring-2 focus:ring-brand/30" />
+    </div>
+    <select id="vEditor" class="h-9 px-3 rounded-xl border border-line bg-white text-[13px] shadow-soft outline-none">
+      <option value="all">Tất cả editor</option>
+      ${EDITORS.map(e=>`<option value="${e.id}">${esc(e.short)}</option>`).join('')}
+    </select>
+    <select id="vStatus" class="h-9 px-3 rounded-xl border border-line bg-white text-[13px] shadow-soft outline-none">
+      <option value="all">Tất cả trạng thái</option>
+      <option>Đã xong</option><option>Đang làm</option><option>Chờ</option>
+    </select>
+    <div id="vCount" class="ml-auto text-[13px] text-sub flex items-center mr-2"></div>
+    <button onclick="openTaskModal(null)" class="h-9 px-4 rounded-xl bg-brand text-white text-[13px] font-semibold flex items-center gap-1.5 shadow-soft hover:opacity-90 transition">
+      <i data-lucide="plus" class="w-4 h-4"></i> Thêm Task
+    </button>`;
+  wrap.appendChild(bar);
+
+  const box = el('div','rounded-xl2 border border-line bg-white shadow-soft overflow-x-auto');
+  box.innerHTML = `<table class="w-full min-w-[1200px] text-[13px]">
+    <thead>
+      <tr class="bg-emerald-600 text-white text-left">
+        <th class="px-3 py-2.5 font-semibold w-12 text-center">STT</th>
+        <th class="px-3 py-2.5 font-semibold w-[260px]">Tên video</th>
+        <th class="px-3 py-2.5 font-semibold w-28">Resize</th>
+        <th class="px-3 py-2.5 font-semibold w-36">Editor</th>
+        <th class="px-3 py-2.5 font-semibold w-20">Order</th>
+        <th class="px-3 py-2.5 font-semibold w-24">Thể loại</th>
+        <th class="px-3 py-2.5 font-semibold w-24">Nhận</th>
+        <th class="px-3 py-2.5 font-semibold w-24">Trả</th>
+        <th class="px-3 py-2.5 font-semibold w-24">Air</th>
+        <th class="px-3 py-2.5 font-semibold w-32">Trạng thái</th>
+        <th class="px-3 py-2.5 font-semibold w-20">Ưu tiên</th>
+        <th class="px-3 py-2.5 font-semibold w-16 text-center">Link</th>
+      </tr>
+    </thead>
+    <tbody id="vBody"></tbody>
+  </table>`;
+  wrap.appendChild(box);
+  root.appendChild(wrap);
+
+  $('#vSearch',wrap).oninput = e=>{ vSearch=e.target.value.toLowerCase(); drawVideos(); };
+  $('#vEditor',wrap).onchange = e=>{ vFilterEditor=e.target.value; drawVideos(); };
+  $('#vStatus',wrap).onchange = e=>{ vFilterStatus=e.target.value; drawVideos(); };
+  drawVideos();
+}
+
+function drawVideos(){
+  const body = $('#vBody'); if(!body) return;
+  // Sắp xếp xuôi từ 1 -> 9 bằng (a.stt - b.stt)
+  let rows = VIDEOS.filter(v=>
+    (vFilterEditor==='all'||v.editor===vFilterEditor) &&
+    (vFilterStatus==='all'||v.status===vFilterStatus) &&
+    (!vSearch||v.name.toLowerCase().includes(vSearch))
+  ).sort((a, b) => a.stt - b.stt);
+  
+  const cnt = $('#vCount'); if(cnt) cnt.textContent = `${rows.length} video`;
+  
+  body.innerHTML = rows.map((v,i)=>{
+    // Logic tô màu Row: Ưu tiên gấp thì Đỏ, xong rồi thì auto Xanh
+    let rowBg = 'bg-white hover:bg-emerald-50/40'; 
+    if (v.status === 'Đã xong') rowBg = 'bg-green-50 hover:bg-green-100/70';
+    else if (v.uutien === 'Gấp') rowBg = 'bg-red-50 hover:bg-red-100/70';
+
+    return `
+    <tr class="border-t border-line cursor-pointer transition-colors ${rowBg}" onclick="openTaskModal(${v.stt})">
+      <td class="px-3 py-2.5 text-sub text-center">${v.stt}</td>
+      <td class="px-3 py-2.5 font-medium whitespace-normal max-w-[260px]">${esc(v.name)}</td>
+      <td class="px-3 py-2.5">${v.resize?`<span class="text-sub">${esc(v.resize)}</span>`:'<span class="text-sub/40">—</span>'}</td>
+      <td class="px-3 py-2.5">${editorChip(v.editor)}</td>
+      <td class="px-3 py-2.5"><span class="px-2 h-6 inline-flex items-center rounded-md bg-white/60 border border-line text-ink/70 text-[12px] font-semibold shadow-sm">${esc(v.order)}</span></td>
+      <td class="px-3 py-2.5">${catBadge(v.cat)}</td>
+      <td class="px-3 py-2.5 text-sub tabular-nums">${esc(v.nhan)}</td>
+      <td class="px-3 py-2.5 text-sub tabular-nums">${esc(v.tra)}</td>
+      <td class="px-3 py-2.5 font-semibold tabular-nums text-brand">${esc(v.air)}</td>
+      <td class="px-3 py-2.5">${statusBadge(v.status)}</td>
+      <td class="px-3 py-2.5">${v.uutien?`<span class="px-2 h-6 inline-flex items-center rounded-md bg-red-100 text-danger text-[12px] font-bold">${esc(v.uutien)}</span>`:'<span class="text-sub/40">—</span>'}</td>
+      <td class="px-3 py-2.5 text-center" onclick="event.stopPropagation()">
+        ${v.link&&v.link!=='#'?`<a href="${v.link}" target="_blank" class="w-8 h-8 rounded-lg inline-flex items-center justify-center bg-brand/10 text-brand hover:bg-brand hover:text-white transition-colors" title="Mở link"><i data-lucide="link" class="w-4 h-4"></i></a>`:'<span class="text-sub/40">—</span>'}
+      </td>
+    </tr>`
+  }).join('');
+  if(!rows.length) body.innerHTML = `<tr><td colspan="12" class="px-3 py-10 text-center text-sub">Không có video nào khớp bộ lọc.</td></tr>`;
+  lucide.createIcons();
+}
+
+/* ============ Modal Task Logic ============ */
+window.currentTaskStt = null;
+
+function setupModalOptions() {
+  const edSel = $('#mEditor');
+  if (edSel) edSel.innerHTML = EDITORS.map(e => `<option value="${e.id}">${esc(e.short)}</option>`).join('');
+  
+  const ordSel = $('#mOrder');
+  if (ordSel) ordSel.innerHTML = TEAMS.map(t => `<option value="${t}">${esc(t)}</option>`).join('');
+}
+
+function openTaskModal(stt) {
+  window.currentTaskStt = stt;
+  $('#modalTitle').textContent = stt ? 'Chỉnh sửa Task' : 'Thêm Task mới';
+  
+  // Lấy dữ liệu nếu đang Edit, nếu thêm mới thì để trống
+  let v = stt ? VIDEOS.find(x => x.stt === stt) : null;
+  
+  $('#mName').value = v ? v.name : '';
+  $('#mStatus').value = v ? v.status : 'Chờ';
+  $('#mEditor').value = v ? v.editor : EDITORS[0].id;
+  $('#mOrder').value = v ? v.order : TEAMS[0];
+  $('#mCat').value = v ? v.cat : 'Video dài';
+  $('#mNhan').value = v ? v.nhan : '';
+  $('#mTra').value = v ? v.tra : '';
+  $('#mAir').value = v ? v.air : '';
+  $('#mUutien').value = v ? v.uutien : '';
+  $('#mResize').value = v ? v.resize : '';
+  $('#mLink').value = (v && v.link && v.link !== '#') ? v.link : '';
+
+  const m = $('#taskModal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  lucide.createIcons();
+}
+
+function closeTaskModal() {
+  const m = $('#taskModal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+
+function saveTask() {
+  const nameVal = $('#mName').value.trim();
+  if(!nameVal) { alert('Vui lòng nhập Tên video!'); return; }
+
+  let stt = window.currentTaskStt;
+  let v = stt ? VIDEOS.find(x => x.stt === stt) : null;
+  let isNew = false;
+  
+  if(!v) {
+    isNew = true;
+    let maxStt = VIDEOS.reduce((max, cur) => Math.max(max, cur.stt), 0);
+    v = { stt: maxStt + 1 };
+  }
+  
+  v.name = nameVal;
+  v.status = $('#mStatus').value;
+  v.editor = $('#mEditor').value;
+  v.order = $('#mOrder').value;
+  v.cat = $('#mCat').value;
+  v.nhan = $('#mNhan').value.trim();
+  v.tra = $('#mTra').value.trim();
+  v.air = $('#mAir').value.trim();
+  v.uutien = $('#mUutien').value;
+  v.resize = $('#mResize').value.trim();
+  let link = $('#mLink').value.trim();
+  v.link = link || '#';
+
+  if (isNew) {
+    VIDEOS.push(v);
+  }
+
+  closeTaskModal();
+  if (current === 'videos') {
+    drawVideos(); // Render lại bảng
+  }
+}
+
+/* ============ sidebar mobile ============ */
+function openSidebar(){ $('#sidebar').classList.remove('hidden'); $('#sidebar').classList.add('flex','fixed','inset-y-0','left-0','z-40','shadow-2xl'); $('#sbBackdrop').classList.remove('hidden'); }
+function closeSidebar(){ if(window.innerWidth<768){ $('#sidebar').classList.add('hidden'); $('#sidebar').classList.remove('fixed','inset-y-0','left-0','z-40','shadow-2xl'); $('#sbBackdrop').classList.add('hidden'); } }
+$('#menuBtn').onclick = openSidebar;
+$('#sbBackdrop').onclick = closeSidebar;
+
+/* ============ init ============ */
+setupModalOptions();
+buildNav();
+go('overview');
+lucide.createIcons();
+</script>
+</body>
+</html>
