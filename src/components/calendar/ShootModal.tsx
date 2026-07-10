@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, CalendarDays, CircleCheck, Trash2 } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
 import { Avatar } from '../common/Avatar';
@@ -42,10 +43,29 @@ export function ShootModal({
   }, [canEdit, isOpen]);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    if (!isOpen) return undefined;
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isBusy) onClose();
+    };
+
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [onClose]);
+  }, [isBusy, isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [isOpen]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -82,26 +102,28 @@ export function ShootModal({
         place: '', time: 'ALL MORNING', note: '',
       };
 
-  return (
+  return createPortal(
     <div
-      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto py-10 px-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      className="shoot-modal-overlay modal-overlay fixed inset-0 z-50 flex items-center justify-center"
+      onClick={(e) => { if (e.target === e.currentTarget && !isBusy) onClose(); }}
     >
-      <div className="modal-card w-[90%] max-w-lg p-7 my-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
-            <span className="icoc icoc-lg" style={{ background: 'var(--grad)', color: '#fff' }}>
-              <CalendarDays style={{ width: '20px', height: '20px' }} />
+      <form className="modal-card shoot-modal-card" onSubmit={handleSubmit} role="dialog" aria-modal="true" aria-labelledby="shootModalTitle">
+        <div className="shoot-modal-head">
+          <div className="shoot-modal-title-wrap">
+            <span className="shoot-modal-icon" style={{ background: 'var(--grad)', color: '#fff' }}>
+              <CalendarDays />
             </span>
-            <h3 className="font-extrabold text-[19px] leading-none tracking-tight">
+            <h3 id="shootModalTitle" className="shoot-modal-title">
               {!canEdit && isEditMode ? 'Chi tiết lịch quay' : isEditMode ? 'Chỉnh sửa lịch quay' : 'Thêm lịch quay'}
             </h3>
           </div>
-          <button type="button" onClick={onClose} className="icon-btn" disabled={isBusy}><X /></button>
+          <button type="button" onClick={onClose} className="icon-btn" disabled={isBusy} aria-label="Đóng modal">
+            <X />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-5">
+        <div className="shoot-modal-body modal-scroll-body">
+          <div className="shoot-modal-stack">
             <div>
               <label className="flabel">Ngày quay <span style={{ color: 'var(--danger)' }}>*</span></label>
               <input
@@ -114,7 +136,7 @@ export function ShootModal({
               />
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="shoot-form-grid grid grid-cols-1 sm:grid-cols-2">
               <div>
                 <label className="flabel">Loại lịch</label>
                 <StyledSelect name="type" defaultValue={dv.type} disabled={isBusy || !canEdit}>
@@ -150,13 +172,13 @@ export function ShootModal({
             <div>
               <label className="flabel">Editor</label>
               <div
-                className="grid gap-2 rounded-[14px] border p-2"
+                className="shoot-editor-list grid gap-2 rounded-[14px] border p-2"
                 style={{ borderColor: 'var(--border)', background: canEdit ? 'var(--bg2)' : 'var(--chip)', opacity: canEdit ? 1 : .72 }}
               >
                 {editorOptions.length > 0 ? editorOptions.map((editor) => (
                   <label
                     key={editor.id}
-                    className="flex min-h-9 items-center gap-2 rounded-[10px] px-2 text-[13px] font-bold"
+                    className="shoot-editor-row flex min-h-9 items-center gap-2 rounded-[10px] px-2 text-[13px] font-bold"
                     style={{ cursor: canEdit ? 'pointer' : 'not-allowed' }}
                   >
                     <input
@@ -200,14 +222,16 @@ export function ShootModal({
               />
             </div>
           </div>
+        </div>
 
+        <div className="shoot-modal-footer">
           {errorMessage ? (
-            <div className="mt-5 text-[13px] font-semibold" style={{ color: 'var(--danger)' }}>
+            <div className="profile-inline-error shoot-modal-error">
               {errorMessage}
             </div>
           ) : null}
 
-          <div className="mt-7 flex justify-between items-center">
+          <div className="shoot-modal-actions">
             {canEdit && isEditMode && onDelete && shoot ? (
               <button
                 type="button"
@@ -221,7 +245,7 @@ export function ShootModal({
               </button>
             ) : <div />}
             
-            <div className="flex gap-3 ml-auto">
+            <div className="shoot-modal-action-group">
               <button type="button" onClick={onClose} className="btn-ghost" disabled={isBusy}>Đóng</button>
               {canEdit ? (
                 <button type="submit" className="btn" disabled={isBusy}>
@@ -231,8 +255,9 @@ export function ShootModal({
               ) : null}
             </div>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </div>,
+    document.body
   );
 }

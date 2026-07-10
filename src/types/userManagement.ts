@@ -1,4 +1,4 @@
-import type { AppRole } from '../config/permissions';
+import type { AppRole, PermissionAccessMode, PermissionOverrideFlags } from '../config/permissions';
 
 export interface ManagedUserProfile {
   id: string;
@@ -14,6 +14,8 @@ export interface ManagedUserProfile {
   crewKey: string;
   isEditorMember: boolean;
   isActive: boolean;
+  permissionMode: PermissionAccessMode;
+  permissionFlags: PermissionOverrideFlags;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +31,8 @@ export interface UserProfileFormData {
   crewKey: string;
   isEditorMember: boolean;
   isActive: boolean;
+  permissionMode: PermissionAccessMode;
+  permissionFlags: PermissionOverrideFlags;
 }
 
 export interface CreateMemberFormData extends UserProfileFormData {

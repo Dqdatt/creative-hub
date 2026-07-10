@@ -5,7 +5,7 @@ import { LoadingState } from '../components/common/LoadingState';
 import { ContentPlanFilters } from '../components/content-plan/ContentPlanFilters';
 import { ContentPlanModal } from '../components/content-plan/ContentPlanModal';
 import { ContentPlanTable } from '../components/content-plan/ContentPlanTable';
-import { canEditContentPlanField, hasPermission } from '../config/permissions';
+import { canEditContentPlanField } from '../config/permissions';
 import { useAuth } from '../context/authContext';
 import { useContentPlan } from '../hooks/useContentPlan';
 import type { ContentPlanCategory, ContentPlanFormData, ContentPlanItem } from '../types/contentPlan';
@@ -17,6 +17,7 @@ function toFormData(item: ContentPlanItem): ContentPlanFormData {
   return {
     air_date: item.air_date,
     video_name: item.video_name,
+    note: item.note,
     category: item.category,
     editor_id: item.editor_id,
   };
@@ -29,7 +30,7 @@ function getDefaultDate(monthValue: string) {
 type ContentPlanModalMode = 'create' | 'edit' | 'assign';
 
 export default function ContentPlan() {
-  const { role } = useAuth();
+  const { role, permissions, can } = useAuth();
   const { requestConfirm } = useConfirmDialog();
   const { showToast } = useToast();
   const { selectedMonth } = useMonth();
@@ -55,15 +56,16 @@ export default function ContentPlan() {
   const [draft, setDraft] = useState<ContentPlanFormData | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const canCreate = hasPermission(role, 'content_plan:create');
-  const canUpdate = hasPermission(role, 'content_plan:update');
-  const canAssign = hasPermission(role, 'content_plan:assign');
-  const canDelete = hasPermission(role, 'content_plan:delete');
-  const canEditAirDate = canEditContentPlanField(role, 'air_date');
-  const canEditVideoName = canEditContentPlanField(role, 'video_name');
-  const canEditCategory = canEditContentPlanField(role, 'category');
-  const canEditEditor = canEditContentPlanField(role, 'editor_id');
-  const canOpenEditor = canEditAirDate || canEditVideoName || canEditCategory || canEditEditor;
+  const canCreate = can('content_plan:create');
+  const canUpdate = can('content_plan:update');
+  const canAssign = can('content_plan:assign');
+  const canDelete = can('content_plan:delete');
+  const canEditAirDate = canEditContentPlanField(role, 'air_date', permissions);
+  const canEditVideoName = canEditContentPlanField(role, 'video_name', permissions);
+  const canEditNote = canEditContentPlanField(role, 'note', permissions);
+  const canEditCategory = canEditContentPlanField(role, 'category', permissions);
+  const canEditEditor = canEditContentPlanField(role, 'editor_id', permissions);
+  const canOpenEditor = canEditAirDate || canEditVideoName || canEditNote || canEditCategory || canEditEditor;
 
   const monthItems = useMemo(() =>
     items.filter((item) => item.air_date.startsWith(selectedMonth)),
@@ -98,6 +100,7 @@ export default function ContentPlan() {
     setDraft({
       air_date: getDefaultDate(selectedMonth),
       video_name: '',
+      note: '',
       category: 'Video dài',
       editor_id: canEditEditor ? editorOptions[0]?.id ?? '' : '',
     });
@@ -147,6 +150,7 @@ export default function ContentPlan() {
     const nextData: ContentPlanFormData = {
       air_date: canEditAirDate ? draft.air_date : sourceItem?.air_date ?? draft.air_date,
       video_name: canEditVideoName ? draft.video_name.trim() : sourceItem?.video_name ?? draft.video_name.trim(),
+      note: canEditNote ? draft.note.trim() : sourceItem?.note ?? draft.note.trim(),
       category: canEditCategory ? draft.category : sourceItem?.category ?? draft.category,
       editor_id: canEditEditor ? draft.editor_id : sourceItem?.editor_id ?? '',
     };
@@ -198,8 +202,8 @@ export default function ContentPlan() {
         <LoadingState
           variant="table"
           message="Đang tải Content Plan..."
-          colSpan={4}
-          minWidthClass="min-w-[860px]"
+          colSpan={5}
+          minWidthClass="min-w-[1040px]"
           rows={8}
         />
       );
@@ -259,6 +263,7 @@ export default function ContentPlan() {
         editorOptions={editorOptions}
         canEditAirDate={canEditAirDate && modalMode !== 'assign'}
         canEditVideoName={canEditVideoName && modalMode !== 'assign'}
+        canEditNote={canEditNote && modalMode !== 'assign'}
         canEditCategory={canEditCategory && modalMode !== 'assign'}
         canEditEditor={canEditEditor}
         canDelete={Boolean(selectedItem) && canDelete && modalMode === 'edit' && !isDeleting}

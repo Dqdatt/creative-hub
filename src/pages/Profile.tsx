@@ -5,12 +5,15 @@ import { LoadingState } from '../components/common/LoadingState';
 import { useProfile } from '../hooks/useProfile';
 import { useEffect, useState } from 'react';
 import { useToast } from '../components/common/toastContext';
+import { useAuth } from '../context/authContext';
 
 const DEFAULT_AVATAR = 'https://i.pravatar.cc/160?img=13';
 
 export default function Profile() {
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
   const { showToast } = useToast();
+  const { can } = useAuth();
+  const canEditProfile = can('profile:edit_self');
   const {
     draft,
     message,
@@ -60,6 +63,7 @@ export default function Profile() {
           onAvatarRemoved={removeAvatar}
           onOpenPassword={() => setIsPasswordOpen(true)}
           isSaving={isSaving}
+          canEdit={canEditProfile}
         />
       ) : null}
 

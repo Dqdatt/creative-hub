@@ -7,6 +7,7 @@ interface CalendarGridProps {
   filter: ShootType | 'all';
   onDayClick: (dateStr: string) => void;
   onShootClick: (shoot: ShootSchedule, e: React.MouseEvent) => void;
+  onMoreClick: (dateStr: string, events: ShootSchedule[], e: React.MouseEvent) => void;
   canCreateShoot?: boolean;
 }
 
@@ -16,6 +17,7 @@ export function CalendarGrid({
   filter,
   onDayClick,
   onShootClick,
+  onMoreClick,
   canCreateShoot = true,
 }: CalendarGridProps) {
   const WD = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -66,17 +68,17 @@ export function CalendarGrid({
               {visibleEvents.map((ev) => {
                 const t = SHOOT_TYPES_META[ev.type];
                 return (
-                  <div 
+                  <button
+                    type="button"
                     key={ev.id}
                     className="cal-ev"
                     onClick={(e) => onShootClick(ev, e)}
-                    style={{ cursor: 'pointer', background: `color-mix(in srgb, ${t.dot} 15%, transparent)`, borderColor: `color-mix(in srgb, ${t.dot} 40%, transparent)` }}
+                    style={{ background: `color-mix(in srgb, ${t.dot} 15%, transparent)`, borderColor: `color-mix(in srgb, ${t.dot} 40%, transparent)` }}
                   >
-                    {ev.displayCrew && <div className="font-bold" style={{ color: 'var(--text)' }}>{ev.displayCrew}</div>}
-                    <div className="font-semibold" style={{ color: 'var(--text)' }}>{ev.place}</div>
-                    {ev.time && <div className="font-medium text-sub">{ev.time}</div>}
-                    {ev.note && <div className="font-semibold mt-1" style={{ color: 'var(--danger)' }}>{ev.note}</div>}
-                  </div>
+                    {ev.displayCrew && <span className="cal-ev-title" style={{ color: 'var(--text)' }}>{ev.displayCrew}</span>}
+                    <span className="cal-ev-place" style={{ color: 'var(--text)' }}>{ev.place}</span>
+                    {ev.time && <span className="cal-ev-time text-sub">{ev.time}</span>}
+                  </button>
                 );
               })}
               {hiddenCount > 0 ? (
@@ -85,10 +87,10 @@ export function CalendarGrid({
                   className="cal-more"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (events[2]) onShootClick(events[2], e);
+                    onMoreClick(iso, events, e);
                   }}
                 >
-                  +{hiddenCount} lịch
+                  +{hiddenCount} lịch khác
                 </button>
               ) : null}
             </div>

@@ -30,7 +30,7 @@ export function TaskFilters({
   canAddTask = true,
 }: TaskFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="sticky-filter-bar flex flex-wrap items-center gap-3 p-3">
       <div className="relative">
         <Search className="text-sub absolute left-4 top-1/2 -translate-y-1/2" style={{ width: '17px', height: '17px' }} />
         <input

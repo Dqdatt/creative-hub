@@ -74,8 +74,6 @@ export function useDashboard(monthValue = getCurrentMonthValue()) {
   const metrics = useMemo(() => {
     const totalVideos = monthTasks.length;
     const doneVideos = monthTasks.filter((task) => task.status === 'Đã xong').length;
-    const doingVideos = monthTasks.filter((task) => task.status === 'Đang làm').length;
-    const urgentVideos = monthTasks.filter((task) => task.priority === 'Gấp').length;
     const missingResultLinks = monthTasks.filter((task) => !task.link || task.link === '#').length;
     const completionRate = totalVideos ? Math.round((doneVideos / totalVideos) * 100) : 0;
     const upcomingAirTasks = monthTasks
@@ -85,8 +83,6 @@ export function useDashboard(monthValue = getCurrentMonthValue()) {
     return {
       totalVideos,
       doneVideos,
-      doingVideos,
-      urgentVideos,
       totalShoots: shoots.length,
       completionRate,
       missingResultLinks,

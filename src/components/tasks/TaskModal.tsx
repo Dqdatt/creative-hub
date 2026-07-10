@@ -8,13 +8,30 @@ interface TaskModalProps {
   isOpen: boolean;
   task: VideoTask | null;
   editors: Editor[];
+  selectedMonth: string;
   onClose: () => void;
   onSave: (data: TaskFormData) => void | Promise<void>;
   isSaving?: boolean;
   errorMessage?: string | null;
 }
 
-export function TaskModal({ isOpen, task, editors, onClose, onSave, isSaving = false, errorMessage = null }: TaskModalProps) {
+function toDateInputValue(value: string, selectedMonth: string) {
+  const cleanValue = value.trim();
+  if (!cleanValue) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanValue)) return cleanValue;
+
+  const match = cleanValue.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+  if (!match) return '';
+
+  const [, day, month, rawYear] = match;
+  const fallbackYear = Number(selectedMonth.split('-')[0]) || new Date().getFullYear();
+  const parsedYear = rawYear ? Number(rawYear) : fallbackYear;
+  const year = parsedYear < 100 ? 2000 + parsedYear : parsedYear;
+
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
+export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSave, isSaving = false, errorMessage = null }: TaskModalProps) {
   const nameRef = useRef<HTMLInputElement>(null);
   const isEditMode = task !== null;
 
@@ -153,15 +170,30 @@ export function TaskModal({ isOpen, task, editors, onClose, onSave, isSaving = f
             <div className="grid grid-cols-3 gap-4 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
               <div>
                 <label className="flabel">Ngày nhận</label>
-                <input name="receiveDate" defaultValue={dv.receiveDate} className="field" placeholder="VD: 01/07" />
+                <input
+                  name="receiveDate"
+                  type="date"
+                  defaultValue={toDateInputValue(dv.receiveDate, selectedMonth)}
+                  className="field task-date-field"
+                />
               </div>
               <div>
                 <label className="flabel">Ngày trả</label>
-                <input name="returnDate" defaultValue={dv.returnDate} className="field" placeholder="VD: 05/07" />
+                <input
+                  name="returnDate"
+                  type="date"
+                  defaultValue={toDateInputValue(dv.returnDate, selectedMonth)}
+                  className="field task-date-field"
+                />
               </div>
               <div>
                 <label className="flabel">Ngày Air</label>
-                <input name="airDate" defaultValue={dv.airDate} className="field" placeholder="VD: 06/07" />
+                <input
+                  name="airDate"
+                  type="date"
+                  defaultValue={toDateInputValue(dv.airDate, selectedMonth)}
+                  className="field task-date-field"
+                />
               </div>
             </div>
 

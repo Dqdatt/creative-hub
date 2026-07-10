@@ -29,7 +29,7 @@ export function UserFilters({
   onCreateUser,
 }: UserFiltersProps) {
   return (
-    <section className="card user-filter-card">
+    <section className="card user-filter-card sticky-filter-bar">
       <div className="user-filter-row flex flex-col gap-2 lg:flex-row lg:items-center">
         <div className="min-w-[240px] flex-1">
           <div className="relative">

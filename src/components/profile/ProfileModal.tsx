@@ -6,6 +6,7 @@ import { ErrorState } from '../common/ErrorState';
 import { LoadingState } from '../common/LoadingState';
 import { useProfile } from '../../hooks/useProfile';
 import { useToast } from '../common/toastContext';
+import { useAuth } from '../../context/authContext';
 
 const DEFAULT_AVATAR = 'https://i.pravatar.cc/160?img=13';
 
@@ -17,6 +18,8 @@ interface ProfileModalProps {
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
   const { showToast } = useToast();
+  const { can } = useAuth();
+  const canEditProfile = can('profile:edit_self');
   const {
     draft,
     message,
@@ -99,6 +102,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               onAvatarRemoved={removeAvatar}
               onOpenPassword={() => setIsPasswordOpen(true)}
               isSaving={isSaving}
+              canEdit={canEditProfile}
             />
           )}
         </section>

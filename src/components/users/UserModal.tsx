@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, CircleCheck, Trash2, X } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
-import { ROLE_LABELS } from '../../config/permissions';
-import type { AppRole } from '../../config/permissions';
+import { ROLE_LABELS, getPermissionOverrideSummary } from '../../config/permissions';
+import type { AppRole, PermissionOverrideFlags, PermissionOverrideKey } from '../../config/permissions';
 import type { CreateMemberFormData, ManagedUserProfile, UserProfileFormData } from '../../types/userManagement';
 
 type UserModalDraft = UserProfileFormData | CreateMemberFormData;
@@ -35,12 +36,43 @@ function UserModalSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[18px] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
-      <h3 className="mb-3 text-[13px] font-extrabold text-ink">{title}</h3>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <section className="member-modal-section rounded-[18px] border" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
+      <h3 className="member-modal-section-title text-ink">{title}</h3>
+      <div className="member-form-grid grid grid-cols-1 sm:grid-cols-2">
         {children}
       </div>
     </section>
+  );
+}
+
+function updateFlag(flags: PermissionOverrideFlags, key: PermissionOverrideKey, value: boolean): PermissionOverrideFlags {
+  return {
+    ...flags,
+    [key]: value,
+  };
+}
+
+function PermissionCheck({
+  label,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="permission-check">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      <span>{label}</span>
+    </label>
   );
 }
 
@@ -57,6 +89,7 @@ export function UserModal({
   onSave,
   onDelete,
 }: UserModalProps) {
+  const titleId = useId();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
 
@@ -65,28 +98,66 @@ export function UserModal({
     setDeleteEmail('');
   }, [selectedUser?.id, isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isSaving && !isDeleting) {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDeleting, isOpen, isSaving, onClose]);
+
   if (!isOpen || !draft) return null;
 
   const isCreate = isCreateDraft(mode, draft);
   const title = mode === 'create' ? 'Thêm thành viên' : 'Sửa thành viên';
   const canDelete = mode === 'edit' && Boolean(selectedUser) && Boolean(onDelete);
+  const permissionMode = draft.permissionMode;
+  const permissionFlags = draft.permissionFlags ?? {};
+  const usersManageLocked = true;
+  const usersManageChecked = draft.role === 'admin';
   const deleteConfirmed = selectedUser
     ? deleteEmail.trim().toLowerCase() === selectedUser.email.trim().toLowerCase()
     : false;
 
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto px-4 py-6 modal-overlay">
-      <section className="modal-card my-auto w-full max-w-[680px] p-5">
-        <div className="mb-4 flex items-start justify-between gap-4">
+  return createPortal(
+    <div
+      className="member-modal-overlay modal-overlay fixed inset-0 z-50 flex items-center justify-center"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !isSaving && !isDeleting) onClose();
+      }}
+    >
+      <section className="modal-card member-modal-card" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <div className="member-modal-head">
           <div>
-            <h2 className="text-[18px] font-extrabold leading-tight">{title}</h2>
+            <h2 id={titleId} className="member-modal-title">{title}</h2>
           </div>
           <button type="button" className="icon-btn" onClick={onClose} disabled={isSaving || isDeleting} aria-label="Đóng">
             <X />
           </button>
         </div>
 
-        <div className="space-y-3">
+        <div className="member-modal-body">
+          <div className="member-modal-stack">
           <UserModalSection title="Tài khoản">
             <div>
               <label className="flabel" htmlFor="memberFullName">Họ tên</label>
@@ -221,8 +292,105 @@ export function UserModal({
             ) : null}
           </UserModalSection>
 
+          <UserModalSection title="Quyền sử dụng">
+            <div className="sm:col-span-2">
+              <StyledSelect
+                value={permissionMode}
+                disabled={isSaving}
+                onChange={(event) => onChange({ permissionMode: event.target.value as UserModalDraft['permissionMode'] })}
+              >
+                <option value="role_default">Theo vai trò</option>
+                <option value="view_only">Chỉ xem</option>
+                <option value="custom">Tùy chỉnh</option>
+              </StyledSelect>
+              <p className="mt-2 text-[12px] font-semibold text-sub">
+                {getPermissionOverrideSummary(permissionMode)} · Mặc định quyền được xác định theo vai trò.
+              </p>
+            </div>
+
+            {permissionMode === 'custom' ? (
+              <div className="permission-grid sm:col-span-2">
+                <div className="permission-group">
+                  <strong>Lịch quay</strong>
+                  <PermissionCheck
+                    label="Xem"
+                    checked={permissionFlags.calendar_view === true}
+                    onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'calendar_view', checked) })}
+                    disabled={isSaving}
+                  />
+                  <PermissionCheck
+                    label="Tạo và chỉnh sửa"
+                    checked={permissionFlags.calendar_edit === true}
+                    onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'calendar_edit', checked) })}
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <div className="permission-group">
+                  <strong>Video tháng</strong>
+                  <PermissionCheck
+                    label="Xem"
+                    checked={permissionFlags.tasks_view === true}
+                    onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'tasks_view', checked) })}
+                    disabled={isSaving}
+                  />
+                  <PermissionCheck
+                    label="Tạo và chỉnh sửa"
+                    checked={permissionFlags.tasks_edit === true}
+                    onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'tasks_edit', checked) })}
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <div className="permission-group">
+                  <strong>Content Plan</strong>
+                  <PermissionCheck
+                    label="Xem"
+                    checked={permissionFlags.content_plan_view === true}
+                    onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'content_plan_view', checked) })}
+                    disabled={isSaving}
+                  />
+                  <PermissionCheck
+                    label="Chỉnh nội dung"
+                    checked={permissionFlags.content_plan_edit_content === true}
+                    onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'content_plan_edit_content', checked) })}
+                    disabled={isSaving}
+                  />
+                  <PermissionCheck
+                    label="Phân công editor"
+                    checked={permissionFlags.content_plan_assign_editor === true}
+                    onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'content_plan_assign_editor', checked) })}
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <div className="permission-group">
+                  <strong>Khác</strong>
+                  <PermissionCheck
+                    label="Xem Dashboard"
+                    checked={permissionFlags.dashboard_view === true}
+                    onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'dashboard_view', checked) })}
+                    disabled={isSaving}
+                  />
+                  <PermissionCheck
+                    label="Sửa hồ sơ cá nhân"
+                    checked={permissionFlags.profile_edit_self !== false}
+                    onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'profile_edit_self', checked) })}
+                    disabled={isSaving}
+                  />
+                  <PermissionCheck
+                    label="Quản lý thành viên"
+                    checked={usersManageChecked}
+                    onChange={() => undefined}
+                    disabled={isSaving || usersManageLocked}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </UserModalSection>
+
           {mode === 'edit' ? (
-            <details className="rounded-[16px] border px-4 py-3 text-[12.5px]" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
+            <details className="member-modal-advanced rounded-[16px] border text-[12.5px]" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
               <summary className="cursor-pointer font-bold text-sub">Nâng cao</summary>
               <div className="mt-3">
                 <label className="flabel" htmlFor="memberCrewKey">Crew Key cũ</label>
@@ -239,7 +407,7 @@ export function UserModal({
           ) : null}
 
           {canDelete ? (
-            <section className="rounded-[18px] border p-4" style={{ borderColor: 'color-mix(in srgb,var(--danger) 24%,var(--border))', background: 'color-mix(in srgb,var(--danger) 6%,var(--bg2))' }}>
+            <section className="member-modal-section rounded-[18px] border" style={{ borderColor: 'color-mix(in srgb,var(--danger) 24%,var(--border))', background: 'color-mix(in srgb,var(--danger) 6%,var(--bg2))' }}>
               {!deleteOpen ? (
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
@@ -306,21 +474,25 @@ export function UserModal({
               )}
             </section>
           ) : null}
+          </div>
         </div>
 
-        {errorMessage ? (
-          <div className="profile-inline-error mt-4">{errorMessage}</div>
-        ) : null}
+        <div className="member-modal-footer">
+          {errorMessage ? (
+            <div className="profile-inline-error member-modal-error">{errorMessage}</div>
+          ) : null}
 
-        <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-          <button type="button" className="btn-ghost" onClick={onClose} disabled={isSaving || isDeleting}>
-            Hủy
-          </button>
-          <button type="button" className="btn" onClick={onSave} disabled={isSaving || isDeleting}>
-            <CircleCheck /> {isSaving ? 'Đang lưu...' : 'Lưu'}
-          </button>
+          <div className="member-modal-actions">
+            <button type="button" className="btn-ghost" onClick={onClose} disabled={isSaving || isDeleting}>
+              Hủy
+            </button>
+            <button type="button" className="btn" onClick={onSave} disabled={isSaving || isDeleting}>
+              <CircleCheck /> {isSaving ? 'Đang lưu...' : 'Lưu'}
+            </button>
+          </div>
         </div>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }

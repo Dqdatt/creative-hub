@@ -4,6 +4,7 @@ export interface ContentPlanItem {
   id: string;
   air_date: string;
   video_name: string;
+  note: string;
   category: ContentPlanCategory;
   editor_id: string;
 }
@@ -11,6 +12,7 @@ export interface ContentPlanItem {
 export interface ContentPlanFormData {
   air_date: string;
   video_name: string;
+  note: string;
   category: ContentPlanCategory;
   editor_id: string;
 }

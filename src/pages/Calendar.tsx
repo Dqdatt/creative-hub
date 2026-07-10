@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { CalendarDays, X } from 'lucide-react';
 import type { ShootSchedule, ShootType, ShootFormData } from '../types/shoot';
 import { EmptyState } from '../components/common/EmptyState';
 import { ErrorState } from '../components/common/ErrorState';
@@ -6,13 +7,13 @@ import { LoadingState } from '../components/common/LoadingState';
 import { CalendarHeader } from '../components/calendar/CalendarHeader';
 import { CalendarGrid } from '../components/calendar/CalendarGrid';
 import { ShootModal } from '../components/calendar/ShootModal';
-import { canEditShoot } from '../config/permissions';
 import { useAuth } from '../context/authContext';
 import { useShoots } from '../hooks/useShoots';
 import { useConfirmDialog } from '../components/common/confirmDialogContext';
 import { useToast } from '../components/common/toastContext';
 import { useMonth } from '../context/monthContext';
 import { monthValueToDate } from '../utils/month';
+import { SHOOT_TYPES_META } from '../data/shoots';
 
 function toIsoDate(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -34,8 +35,83 @@ function getCalendarRange(date: Date) {
   };
 }
 
+function formatAgendaDate(value: string) {
+  const [year, month, day] = value.split('-');
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
+}
+
+function DayAgendaModal({
+  date,
+  events,
+  onClose,
+  onShootClick,
+}: {
+  date: string;
+  events: ShootSchedule[];
+  onClose: () => void;
+  onShootClick: (shoot: ShootSchedule, e: React.MouseEvent) => void;
+}) {
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return (
+    <div
+      className="modal-overlay fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto px-4 py-6"
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+    >
+      <section className="modal-card day-agenda-card">
+        <div className="day-agenda-head">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="icoc icoc-lg" style={{ background: 'var(--grad)', color: '#fff' }}>
+              <CalendarDays />
+            </span>
+            <div className="min-w-0">
+              <h2>Lịch ngày {formatAgendaDate(date)}</h2>
+              <p>{events.length} lịch quay</p>
+            </div>
+          </div>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Đóng">
+            <X />
+          </button>
+        </div>
+
+        <div className="day-agenda-list">
+          {events.map((event) => {
+            const meta = SHOOT_TYPES_META[event.type];
+            return (
+              <button
+                key={event.id}
+                type="button"
+                className="day-agenda-item"
+                onClick={(clickEvent) => {
+                  onShootClick(event, clickEvent);
+                  onClose();
+                }}
+              >
+                <span className="day-agenda-type" style={{ background: meta.dot }} />
+                <span className="min-w-0">
+                  <strong>{event.place}</strong>
+                  <span>{meta.label}{event.time ? ` · ${event.time}` : ''}</span>
+                  <span>{event.displayCrew || event.crew || 'Chưa có crew/editor'}</span>
+                  {event.note ? <em>{event.note}</em> : null}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function Calendar() {
-  const { role } = useAuth();
+  const { can } = useAuth();
   const { requestConfirm } = useConfirmDialog();
   const { showToast } = useToast();
   const { selectedMonth, goToCurrentMonth } = useMonth();
@@ -44,10 +120,10 @@ export default function Calendar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedShoot, setSelectedShoot] = useState<ShootSchedule | null>(null);
   const [defaultDateForModal, setDefaultDateForModal] = useState('');
-  const canManageShoots = canEditShoot(role);
-  const canCreateShoot = canManageShoots;
-  const canUpdateShoot = canManageShoots;
-  const canDeleteShoot = canManageShoots;
+  const [agenda, setAgenda] = useState<{ date: string; events: ShootSchedule[] } | null>(null);
+  const canCreateShoot = can('shoots:create');
+  const canUpdateShoot = can('shoots:update');
+  const canDeleteShoot = can('shoots:delete');
 
   const currentDate = useMemo(() => monthValueToDate(selectedMonth), [selectedMonth]);
 
@@ -82,10 +158,16 @@ export default function Calendar() {
 
   const handleShootClick = (shoot: ShootSchedule, e: React.MouseEvent) => {
     e.stopPropagation();
+    setAgenda(null);
     clearModalError();
     setSelectedShoot(shoot);
     setDefaultDateForModal(shoot.date);
     setIsModalOpen(true);
+  };
+
+  const handleMoreClick = (dateStr: string, events: ShootSchedule[], e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAgenda({ date: dateStr, events });
   };
 
   const closeModal = () => {
@@ -170,10 +252,20 @@ export default function Calendar() {
             filter={filter}
             onDayClick={handleDayClick}
             onShootClick={handleShootClick}
+            onMoreClick={handleMoreClick}
             canCreateShoot={canCreateShoot}
           />
         )}
       </div>
+
+      {agenda ? (
+        <DayAgendaModal
+          date={agenda.date}
+          events={agenda.events}
+          onClose={() => setAgenda(null)}
+          onShootClick={handleShootClick}
+        />
+      ) : null}
 
       <ShootModal
         isOpen={isModalOpen}

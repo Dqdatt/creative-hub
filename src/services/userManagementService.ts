@@ -1,4 +1,5 @@
-import { ROLE_LABELS, normalizeRole } from '../config/permissions';
+import { ROLE_LABELS, getPermissionOverrideSummary, normalizeRole } from '../config/permissions';
+import type { PermissionAccessMode, PermissionOverrideFlags } from '../config/permissions';
 import { supabase, supabaseConfigError } from '../lib/supabase';
 import { logActivity } from './activityLogService';
 import type { CreateMemberFormData, ManagedUserProfile, UserProfileFormData } from '../types/userManagement';
@@ -22,6 +23,42 @@ interface ProfileRow {
   is_active: Nullable<boolean>;
   created_at: string;
   updated_at: Nullable<string>;
+}
+
+interface PermissionOverrideRow {
+  profile_id: string;
+  access_mode: PermissionAccessMode | null;
+  dashboard_view: boolean | null;
+  calendar_view: boolean | null;
+  calendar_edit: boolean | null;
+  tasks_view: boolean | null;
+  tasks_edit: boolean | null;
+  content_plan_view: boolean | null;
+  content_plan_edit_content: boolean | null;
+  content_plan_assign_editor: boolean | null;
+  users_manage: boolean | null;
+  profile_edit_self: boolean | null;
+}
+
+const DEFAULT_PERMISSION_FLAGS: PermissionOverrideFlags = {
+  dashboard_view: null,
+  calendar_view: null,
+  calendar_edit: null,
+  tasks_view: null,
+  tasks_edit: null,
+  content_plan_view: null,
+  content_plan_edit_content: null,
+  content_plan_assign_editor: null,
+  users_manage: null,
+  profile_edit_self: null,
+};
+
+function isMissingPermissionTable(error: { code?: string; message?: string } | null) {
+  const message = (error?.message ?? '').toLowerCase();
+  return error?.code === '42P01' ||
+    error?.code === 'PGRST205' ||
+    message.includes('user_permission_overrides') ||
+    message.includes('could not find the table');
 }
 
 function requireSupabase() {
@@ -130,9 +167,28 @@ async function mapFunctionError(error: { message?: string } | null) {
   return message || 'Không thể xử lý tài khoản. Vui lòng thử lại.';
 }
 
-function mapProfile(row: ProfileRow): ManagedUserProfile {
+function mapOverride(row?: PermissionOverrideRow | null) {
+  return {
+    permissionMode: row?.access_mode ?? 'role_default' as PermissionAccessMode,
+    permissionFlags: row ? {
+      dashboard_view: row.dashboard_view,
+      calendar_view: row.calendar_view,
+      calendar_edit: row.calendar_edit,
+      tasks_view: row.tasks_view,
+      tasks_edit: row.tasks_edit,
+      content_plan_view: row.content_plan_view,
+      content_plan_edit_content: row.content_plan_edit_content,
+      content_plan_assign_editor: row.content_plan_assign_editor,
+      users_manage: row.users_manage,
+      profile_edit_self: row.profile_edit_self,
+    } : { ...DEFAULT_PERMISSION_FLAGS },
+  };
+}
+
+function mapProfile(row: ProfileRow, override?: PermissionOverrideRow | null): ManagedUserProfile {
   const role = normalizeRole(row.role);
   const displayName = row.display_name || row.short_name || row.full_name || row.email || 'Thành viên';
+  const mappedOverride = mapOverride(override);
 
   return {
     id: row.id,
@@ -148,6 +204,8 @@ function mapProfile(row: ProfileRow): ManagedUserProfile {
     crewKey: row.crew_key ?? '',
     isEditorMember: row.is_editor_member ?? (Boolean(row.editor_code) || role === 'editor'),
     isActive: row.is_active ?? row.active ?? true,
+    permissionMode: mappedOverride.permissionMode,
+    permissionFlags: mappedOverride.permissionFlags,
     createdAt: row.created_at,
     updatedAt: row.updated_at ?? row.created_at,
   };
@@ -188,6 +246,68 @@ function hasProfileFieldChanges(data: UserProfileFormData, previousProfile?: Man
     data.isEditorMember !== previousProfile.isEditorMember ||
     data.isActive !== previousProfile.isActive
   );
+}
+
+function normalizePermissionFlags(flags: PermissionOverrideFlags = {}) {
+  return {
+    dashboard_view: flags.dashboard_view ?? null,
+    calendar_view: flags.calendar_view ?? null,
+    calendar_edit: flags.calendar_edit ?? null,
+    tasks_view: flags.tasks_view ?? null,
+    tasks_edit: flags.tasks_edit ?? null,
+    content_plan_view: flags.content_plan_view ?? null,
+    content_plan_edit_content: flags.content_plan_edit_content ?? null,
+    content_plan_assign_editor: flags.content_plan_assign_editor ?? null,
+    users_manage: flags.users_manage ?? null,
+    profile_edit_self: flags.profile_edit_self ?? null,
+  };
+}
+
+async function savePermissionOverride(
+  profileId: string,
+  data: UserProfileFormData,
+  actorId?: string | null,
+  previousProfile?: ManagedUserProfile
+) {
+  const client = requireSupabase();
+
+  if (data.permissionMode === 'role_default') {
+    const { error } = await client
+      .from('user_permission_overrides')
+      .delete()
+      .eq('profile_id', profileId);
+
+    if (error && !isMissingPermissionTable(error)) throw new Error(mapDatabaseError(error));
+    return;
+  }
+
+  const payload = {
+    profile_id: profileId,
+    access_mode: data.permissionMode,
+    ...normalizePermissionFlags(data.permissionFlags),
+    updated_by: actorId ?? null,
+  };
+
+  const { error } = await client
+    .from('user_permission_overrides')
+    .upsert(payload, { onConflict: 'profile_id' });
+
+  if (error) throw new Error(mapDatabaseError(error));
+
+  if (!previousProfile || previousProfile.permissionMode !== data.permissionMode) {
+    void logActivity({
+      actorId,
+      entityType: 'profile',
+      entityId: profileId,
+      action: 'updated',
+      title: data.displayName || data.fullName,
+      description: `Đã cập nhật quyền sử dụng thành "${getPermissionOverrideSummary(data.permissionMode)}".`,
+      metadata: {
+        previous_permission_mode: previousProfile?.permissionMode,
+        permission_mode: data.permissionMode,
+      },
+    });
+  }
 }
 
 async function getAccessToken() {
@@ -242,7 +362,33 @@ export async function fetchUserProfiles(): Promise<ManagedUserProfile[]> {
 
   if (error) throw new Error(mapDatabaseError(error));
 
-  return ((data ?? []) as ProfileRow[]).map(mapProfile);
+  const profileRows = (data ?? []) as ProfileRow[];
+  const { data: overrideRows, error: overrideError } = await client
+    .from('user_permission_overrides')
+    .select(`
+      profile_id,
+      access_mode,
+      dashboard_view,
+      calendar_view,
+      calendar_edit,
+      tasks_view,
+      tasks_edit,
+      content_plan_view,
+      content_plan_edit_content,
+      content_plan_assign_editor,
+      users_manage,
+      profile_edit_self
+    `);
+
+  if (overrideError && !isMissingPermissionTable(overrideError)) {
+    throw new Error(mapDatabaseError(overrideError));
+  }
+
+  const overrideByProfileId = new Map(
+    ((overrideRows ?? []) as PermissionOverrideRow[]).map((row) => [row.profile_id, row])
+  );
+
+  return profileRows.map((profile) => mapProfile(profile, overrideByProfileId.get(profile.id)));
 }
 
 export async function updateManagedUserProfile(
@@ -273,6 +419,8 @@ export async function updateManagedUserProfile(
     if (error) throw new Error(mapDatabaseError(error));
   }
 
+  await savePermissionOverride(profileId, data, actorId, previousProfile);
+
   const roleChanged = previousProfile?.role && previousProfile.role !== data.role;
   const statusChanged = previousProfile && previousProfile.isActive !== data.isActive;
 
@@ -296,7 +444,8 @@ export async function updateManagedUserProfile(
         editor_code: data.editorCode,
         is_editor_member: data.isEditorMember,
         crew_key: data.crewKey,
-        email_updated: emailChanged,
+      email_updated: emailChanged,
+      permission_mode: data.permissionMode,
       },
     });
   }
@@ -329,6 +478,10 @@ export async function createManagedUser(data: CreateMemberFormData, actorId?: st
   const createdUserId = typeof createdUser === 'object' && createdUser && 'user_id' in createdUser
     ? String(createdUser.user_id)
     : null;
+
+  if (createdUserId) {
+    await savePermissionOverride(createdUserId, data, actorId);
+  }
 
   void logActivity({
     actorId,

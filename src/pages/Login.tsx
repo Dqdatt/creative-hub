@@ -1,19 +1,12 @@
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/authContext';
+import { DEFAULT_AUTHENTICATED_ROUTE } from '../config/permissions';
 import './Login.css';
-
-function getReturnPath(state: unknown) {
-  if (state && typeof state === 'object' && 'from' in state && typeof state.from === 'string') {
-    return state.from === '/login' ? '/dashboard' : state.from;
-  }
-  return '/dashboard';
-}
 
 export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { signIn, authError, configError, clearAuthError } = useAuth();
   const [showPass, setShowPass] = useState(false);
   const [email, setEmail] = useState('');
@@ -27,7 +20,7 @@ export default function Login() {
     setSubmitting(true);
     const { error } = await signIn(email, pass);
     setSubmitting(false);
-    if (!error) navigate(getReturnPath(location.state), { replace: true });
+    if (!error) navigate(DEFAULT_AUTHENTICATED_ROUTE, { replace: true });
   };
 
   const visibleError = authError ?? configError;

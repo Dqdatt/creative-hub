@@ -9,7 +9,9 @@ Run these SQL files in Supabase SQL Editor, in order:
 3. `supabase/editor_membership_patch.sql`
 4. `supabase/shoot_editors_rls_patch.sql`
 5. `supabase/content_plan_schema.sql`
-6. `supabase/activity_log_schema.sql`
+6. `supabase/content_plan_note_patch.sql`
+7. `supabase/user_permission_overrides_patch.sql`
+8. `supabase/activity_log_schema.sql`
 
 Optional seed data for first setup:
 

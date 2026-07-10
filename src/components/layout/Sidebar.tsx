@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Clapperboard, ClipboardList, LayoutDashboard, CalendarDays, UsersRound, LogOut, ChevronRight } from 'lucide-react';
-import { getVisibleNavigation } from '../../config/permissions';
+import { getVisibleNavigationForPermissions } from '../../config/permissions';
 import { useAuth } from '../../context/authContext';
 
 const NAV_ICONS = {
@@ -20,8 +20,8 @@ interface SidebarProps {
 export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
-  const { role, signOut } = useAuth();
-  const navigation = getVisibleNavigation(role);
+  const { role, permissions, signOut } = useAuth();
+  const navigation = getVisibleNavigationForPermissions(role, permissions);
 
   const logout = async () => {
     onClose?.();

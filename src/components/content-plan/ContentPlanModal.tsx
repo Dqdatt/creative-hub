@@ -10,6 +10,7 @@ interface ContentPlanModalProps {
   editorOptions: ContentPlanEditorOption[];
   canEditAirDate: boolean;
   canEditVideoName: boolean;
+  canEditNote: boolean;
   canEditCategory: boolean;
   canEditEditor: boolean;
   canDelete: boolean;
@@ -43,6 +44,7 @@ export function ContentPlanModal({
   editorOptions,
   canEditAirDate,
   canEditVideoName,
+  canEditNote,
   canEditCategory,
   canEditEditor,
   canDelete,
@@ -129,6 +131,19 @@ export function ContentPlanModal({
                 <option key={editor.id} value={editor.id}>{editor.short}</option>
               ))}
             </StyledSelect>
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="flabel" htmlFor="contentPlanNote">Ghi chú</label>
+            <textarea
+              id="contentPlanNote"
+              className="field content-note-input"
+              value={draft.note}
+              maxLength={2000}
+              disabled={isSaving || !canEditNote}
+              onChange={(event) => onChange({ note: event.target.value })}
+              placeholder="Ghi chú thêm cho lịch air..."
+            />
           </div>
         </div>
 

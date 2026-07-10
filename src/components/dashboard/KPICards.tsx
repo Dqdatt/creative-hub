@@ -1,16 +1,14 @@
-import { Clapperboard, CircleCheck, Clock, Video } from 'lucide-react';
+import { Clapperboard, CircleCheck, Video } from 'lucide-react';
 import { monthValueToDate } from '../../utils/month';
 
 interface KPICardsProps {
   monthValue: string;
   totalVideos: number;
   doneVideos: number;
-  doingVideos: number;
-  urgentVideos: number;
   totalShoots: number;
 }
 
-export function KPICards({ monthValue, totalVideos, doneVideos, doingVideos, urgentVideos, totalShoots }: KPICardsProps) {
+export function KPICards({ monthValue, totalVideos, doneVideos, totalShoots }: KPICardsProps) {
   const pct = totalVideos ? Math.round((doneVideos / totalVideos) * 100) : 0;
   const monthDate = monthValueToDate(monthValue);
   const monthNumber = monthDate.getMonth() + 1;
@@ -18,7 +16,7 @@ export function KPICards({ monthValue, totalVideos, doneVideos, doingVideos, urg
   const monthSummary = `Tổng hợp tháng ${monthNumber} · ${monthYear}`;
   
   return (
-    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-5 md:grid-cols-3">
       {/* Total Videos */}
       <div className="card card-h relative p-6 overflow-hidden">
         <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full" style={{ background: '#2563EB', opacity: 0.16, filter: 'blur(10px)' }}></div>
@@ -39,17 +37,6 @@ export function KPICards({ monthValue, totalVideos, doneVideos, doingVideos, urg
         </div>
         <div className="text-[40px] font-extrabold leading-none tracking-tight relative">{doneVideos}</div>
         <div className="text-[12.5px] text-sub mt-2.5 truncate relative">{pct}% khối lượng công việc</div>
-      </div>
-
-      {/* Doing Videos */}
-      <div className="card card-h relative p-6 overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full" style={{ background: '#F59E0B', opacity: 0.16, filter: 'blur(10px)' }}></div>
-        <div className="flex items-center justify-between mb-6 relative">
-          <span className="kpi-ic" style={{ background: '#F59E0B' }}><Clock /></span>
-          <span className="text-[11px] font-bold text-sub uppercase tracking-wider">Đang thực hiện</span>
-        </div>
-        <div className="text-[40px] font-extrabold leading-none tracking-tight relative">{doingVideos}</div>
-        <div className="text-[12.5px] text-sub mt-2.5 truncate relative">{urgentVideos ? `${urgentVideos} việc gắn nhãn Gấp` : 'Đang bám tiến độ'}</div>
       </div>
 
       {/* Total Shoots */}

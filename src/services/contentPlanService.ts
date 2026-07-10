@@ -23,6 +23,7 @@ interface ContentPlanRow {
   id: string;
   air_date: string;
   title: string;
+  note: Nullable<string>;
   category: Nullable<ContentPlanCategory>;
   editor_id: Nullable<string>;
   profiles: ProfileRow | ProfileRow[] | null;
@@ -31,6 +32,7 @@ interface ContentPlanRow {
 type ContentPlanPayload = {
   air_date: string;
   title: string;
+  note: string | null;
   category: ContentPlanCategory | null;
   editor_id: string | null;
   created_by?: string | null;
@@ -97,6 +99,7 @@ function mapContentPlanRow(row: ContentPlanRow): ContentPlanItem {
     id: row.id,
     air_date: row.air_date,
     video_name: row.title,
+    note: row.note ?? '',
     category: row.category ?? 'Video dài',
     editor_id: profile?.editor_code ?? '',
   };
@@ -169,12 +172,15 @@ async function toContentPlanPayload(
 ): Promise<ContentPlanPayload> {
   const title = data.video_name.trim();
   if (!title) throw new Error('Vui lòng nhập tên video.');
+  const note = data.note.trim();
+  if (note.length > 2000) throw new Error('Ghi chú tối đa 2000 ký tự.');
 
   const editorProfileId = await resolveEditorProfileId(data.editor_id);
 
   return {
     air_date: validateIsoDate(data.air_date, 'Ngày Air'),
     title,
+    note: note || null,
     category: data.category || null,
     editor_id: editorProfileId,
     ...(includeCreatedBy ? { created_by: userId ?? null } : {}),
@@ -190,6 +196,7 @@ export async function fetchContentPlan(monthValue?: string): Promise<ContentPlan
       id,
       air_date,
       title,
+      note,
       category,
       editor_id,
       profiles!content_plan_editor_id_fkey (
@@ -270,6 +277,7 @@ export async function createContentPlanRow(data: ContentPlanFormData, userId?: s
     metadata: {
       air_date: data.air_date,
       category: data.category,
+      note: data.note.trim(),
       editor_id: data.editor_id,
     },
   });
@@ -306,6 +314,7 @@ export async function updateContentPlanRow(
     metadata: {
       air_date: data.air_date,
       category: data.category,
+      note: data.note.trim(),
       previous_editor_id: previousItem?.editor_id,
       editor_id: data.editor_id,
     },

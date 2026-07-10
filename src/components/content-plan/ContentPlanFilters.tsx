@@ -31,7 +31,7 @@ export function ContentPlanFilters({
   onCreate,
 }: ContentPlanFiltersProps) {
   return (
-    <div className="card p-3">
+    <div className="card p-3 sticky-filter-bar">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative">
           <Search className="text-sub absolute left-4 top-1/2 -translate-y-1/2" style={{ width: '17px', height: '17px' }} />

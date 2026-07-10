@@ -23,6 +23,8 @@ const DEFAULT_MEMBER_DRAFT: CreateMemberFormData = {
   crewKey: '',
   isEditorMember: false,
   isActive: true,
+  permissionMode: 'role_default',
+  permissionFlags: {},
 };
 
 function toFormData(user: ManagedUserProfile): UserProfileFormData {
@@ -37,6 +39,8 @@ function toFormData(user: ManagedUserProfile): UserProfileFormData {
     crewKey: user.crewKey,
     isEditorMember: user.isEditorMember,
     isActive: user.isActive,
+    permissionMode: user.permissionMode,
+    permissionFlags: user.permissionFlags,
   };
 }
 
@@ -139,6 +143,12 @@ export default function Users() {
       const nextDraft = { ...current, ...patch };
       if (patch.isEditorMember === false) {
         nextDraft.editorCode = '';
+      }
+      if (patch.role && patch.role !== 'admin') {
+        nextDraft.permissionFlags = {
+          ...nextDraft.permissionFlags,
+          users_manage: false,
+        };
       }
       return nextDraft;
     });

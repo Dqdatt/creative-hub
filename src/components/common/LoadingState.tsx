@@ -49,7 +49,7 @@ export function LoadingState(props: LoadingStateProps) {
     return (
       <div className={`skeleton-dashboard ${props.className}`} aria-label={props.message}>
         <div className="skeleton-kpis">
-          {Array.from({ length: 4 }).map((_, index) => (
+          {Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="card skeleton-card">
               <span className="skel-box skel-icon" />
               <div className="min-w-0 flex-1">

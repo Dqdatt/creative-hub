@@ -5,7 +5,6 @@ import { ErrorState } from '../components/common/ErrorState';
 import { LoadingState } from '../components/common/LoadingState';
 import { TaskFilters } from '../components/tasks/TaskFilters';
 import { TaskTable } from '../components/tasks/TaskTable';
-import { hasPermission } from '../config/permissions';
 import { useAuth } from '../context/authContext';
 import { TaskModal } from '../components/tasks/TaskModal';
 import { useTasks } from '../hooks/useTasks';
@@ -13,7 +12,7 @@ import { useToast } from '../components/common/toastContext';
 import { useMonth } from '../context/monthContext';
 
 export default function Tasks() {
-  const { role } = useAuth();
+  const { can } = useAuth();
   const { showToast } = useToast();
   const { selectedMonth } = useMonth();
   const {
@@ -33,8 +32,8 @@ export default function Tasks() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<VideoTask | null>(null);
-  const canCreateTask = hasPermission(role, 'video_tasks:create');
-  const canUpdateTask = hasPermission(role, 'video_tasks:update');
+  const canCreateTask = can('video_tasks:create');
+  const canUpdateTask = can('video_tasks:update');
 
   const filteredTasks = useMemo(() =>
     tasks
@@ -141,6 +140,7 @@ export default function Tasks() {
         isOpen={isModalOpen}
         task={selectedTask}
         editors={editors}
+        selectedMonth={selectedMonth}
         onClose={closeModal}
         onSave={handleSave}
         isSaving={isSaving}

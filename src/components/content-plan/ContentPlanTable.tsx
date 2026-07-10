@@ -36,10 +36,10 @@ export function ContentPlanTable({
 }: ContentPlanTableProps) {
   if (items.length === 0) {
     return (
-      <table className="ctable min-w-[860px]">
+      <table className="ctable min-w-[1040px]">
         <tbody>
           <tr>
-            <td colSpan={4} className="px-3 py-12 text-center text-sub">
+            <td colSpan={5} className="px-3 py-12 text-center text-sub">
               <div className="table-empty-state">
                 <strong>Không có lịch air phù hợp</strong>
                 <span>Thử đổi tháng, editor hoặc thể loại.</span>
@@ -52,11 +52,12 @@ export function ContentPlanTable({
   }
 
   return (
-    <table className="ctable min-w-[860px]">
+    <table className="ctable min-w-[1040px]">
       <thead>
         <tr>
           <th style={{ width: '118px' }}>Ngày Air</th>
           <th>Tên video</th>
+          <th style={{ width: '260px' }}>Ghi chú</th>
           <th style={{ width: '150px' }}>Thể loại</th>
           <th style={{ width: '180px' }}>Editor</th>
         </tr>
@@ -77,6 +78,12 @@ export function ContentPlanTable({
 
               <td className="font-semibold whitespace-normal" style={{ minWidth: '320px' }}>
                 {item.video_name}
+              </td>
+
+              <td className="text-sub">
+                <span className="content-note-cell" title={item.note || undefined}>
+                  {item.note || '—'}
+                </span>
               </td>
 
               <td>

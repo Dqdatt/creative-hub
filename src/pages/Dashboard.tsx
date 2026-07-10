@@ -59,8 +59,6 @@ export default function Dashboard() {
         monthValue={selectedMonth}
         totalVideos={metrics.totalVideos}
         doneVideos={metrics.doneVideos}
-        doingVideos={metrics.doingVideos}
-        urgentVideos={metrics.urgentVideos}
         totalShoots={metrics.totalShoots}
       />
       

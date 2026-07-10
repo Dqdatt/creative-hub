@@ -5,8 +5,7 @@ import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import { ProtectedRoute, PublicOnlyRoute } from './components/auth/AuthRoutes';
-import { getDefaultRouteForRole } from './config/permissions';
-import { useAuth } from './context/authContext';
+import { DEFAULT_AUTHENTICATED_ROUTE } from './config/permissions';
 import { ConfirmDialogProvider } from './components/common/ConfirmDialogProvider';
 import { ToastProvider } from './components/common/ToastProvider';
 import { LoadingState } from './components/common/LoadingState';
@@ -21,8 +20,7 @@ const ContentPlan = lazy(() => import('./pages/ContentPlan'));
 const Users = lazy(() => import('./pages/Users'));
 
 function DefaultRedirect() {
-  const { role } = useAuth();
-  return <Navigate to={getDefaultRouteForRole(role)} replace />;
+  return <Navigate to={DEFAULT_AUTHENTICATED_ROUTE} replace />;
 }
 
 function RouteLoadingFallback() {

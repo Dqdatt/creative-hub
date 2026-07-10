@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AuthChangeEvent, AuthError, Session, User } from '@supabase/supabase-js';
-import { normalizeRole, ROLE_LABELS } from '../config/permissions';
+import {
+  getEffectivePermissions,
+  hasEffectivePermission,
+  normalizeRole,
+  ROLE_LABELS,
+} from '../config/permissions';
+import type { Permission, UserPermissionOverride } from '../config/permissions';
 import { supabase, supabaseConfigError } from '../lib/supabase';
 import { AuthContext } from './authContext';
 import type { AuthContextValue, AuthProfile } from './authContext';
@@ -23,6 +29,53 @@ function mapConfigError(error: string | null) {
   return error ? 'Đăng nhập chưa sẵn sàng. Vui lòng liên hệ quản trị viên.' : null;
 }
 
+const DEFAULT_PERMISSION_OVERRIDE: UserPermissionOverride = {
+  accessMode: 'role_default',
+  flags: {},
+};
+
+interface PermissionOverrideRow {
+  access_mode: 'role_default' | 'view_only' | 'custom' | null;
+  dashboard_view: boolean | null;
+  calendar_view: boolean | null;
+  calendar_edit: boolean | null;
+  tasks_view: boolean | null;
+  tasks_edit: boolean | null;
+  content_plan_view: boolean | null;
+  content_plan_edit_content: boolean | null;
+  content_plan_assign_editor: boolean | null;
+  users_manage: boolean | null;
+  profile_edit_self: boolean | null;
+}
+
+function isMissingOverrideTable(error: { code?: string; message?: string } | null) {
+  const message = (error?.message ?? '').toLowerCase();
+  return error?.code === '42P01' ||
+    error?.code === 'PGRST205' ||
+    message.includes('user_permission_overrides') ||
+    message.includes('could not find the table');
+}
+
+function mapOverrideRow(row: PermissionOverrideRow | null): UserPermissionOverride {
+  if (!row) return DEFAULT_PERMISSION_OVERRIDE;
+
+  return {
+    accessMode: row.access_mode ?? 'role_default',
+    flags: {
+      dashboard_view: row.dashboard_view,
+      calendar_view: row.calendar_view,
+      calendar_edit: row.calendar_edit,
+      tasks_view: row.tasks_view,
+      tasks_edit: row.tasks_edit,
+      content_plan_view: row.content_plan_view,
+      content_plan_edit_content: row.content_plan_edit_content,
+      content_plan_assign_editor: row.content_plan_assign_editor,
+      users_manage: row.users_manage,
+      profile_edit_self: row.profile_edit_self,
+    },
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(mapConfigError(supabaseConfigError));
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profile, setProfile] = useState<AuthProfile | null>(null);
+  const [permissionOverride, setPermissionOverride] = useState<UserPermissionOverride>(DEFAULT_PERMISSION_OVERRIDE);
   const sessionRef = useRef<Session | null>(null);
   const profileRequestIdRef = useRef(0);
   const authEventRequestIdRef = useRef(0);
@@ -76,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!currentUser) {
       setProfile(null);
       setProfileError(null);
+      setPermissionOverride(DEFAULT_PERMISSION_OVERRIDE);
       setProfileLoading(false);
       setBackgroundAuthRefreshing(false);
       markInitialProfileResolved();
@@ -85,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) {
       setProfile(buildFallbackProfile(currentUser));
       setProfileError('Không thể tải hồ sơ. Tạm dùng quyền Editor.');
+      setPermissionOverride(DEFAULT_PERMISSION_OVERRIDE);
       setProfileLoading(false);
       setBackgroundAuthRefreshing(false);
       markInitialProfileResolved();
@@ -112,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
         applySession(null);
         setProfile(null);
+        setPermissionOverride(DEFAULT_PERMISSION_OVERRIDE);
         setProfileError('Tài khoản không còn hoạt động. Vui lòng đăng nhập lại.');
         return;
       }
@@ -120,9 +177,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
         applySession(null);
         setProfile(null);
+        setPermissionOverride(DEFAULT_PERMISSION_OVERRIDE);
         setProfileError('Tài khoản đã bị tạm khóa. Vui lòng liên hệ quản trị viên.');
         return;
       }
+
+      const { data: overrideData, error: overrideError } = await supabase
+        .from('user_permission_overrides')
+        .select(`
+          access_mode,
+          dashboard_view,
+          calendar_view,
+          calendar_edit,
+          tasks_view,
+          tasks_edit,
+          content_plan_view,
+          content_plan_edit_content,
+          content_plan_assign_editor,
+          users_manage,
+          profile_edit_self
+        `)
+        .eq('profile_id', currentUser.id)
+        .maybeSingle();
+
+      if (overrideError && !isMissingOverrideTable(overrideError)) throw overrideError;
+      if (requestId !== profileRequestIdRef.current) return;
 
       const role = normalizeRole(data.role);
       const fallbackProfile = buildFallbackProfile(currentUser);
@@ -138,9 +217,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role,
         rawRole: data.role,
       });
+      setPermissionOverride(mapOverrideRow((overrideData ?? null) as PermissionOverrideRow | null));
     } catch {
       if (requestId !== profileRequestIdRef.current) return;
       setProfile(buildFallbackProfile(currentUser));
+      setPermissionOverride(DEFAULT_PERMISSION_OVERRIDE);
       setProfileError('Không thể tải hồ sơ người dùng. Tạm dùng quyền Editor.');
     } finally {
       if (requestId === profileRequestIdRef.current) {
@@ -170,6 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!nextSession) {
       applySession(null);
       setProfile(null);
+      setPermissionOverride(DEFAULT_PERMISSION_OVERRIDE);
       setProfileError(null);
       setProfileLoading(false);
       setBackgroundAuthRefreshing(false);
@@ -267,6 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     applySession(null);
     setProfile(null);
+    setPermissionOverride(DEFAULT_PERMISSION_OVERRIDE);
     setProfileError(null);
     setProfileLoading(false);
     setBackgroundAuthRefreshing(false);
@@ -277,6 +360,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearAuthError = useCallback(() => {
     setAuthError(mapConfigError(supabaseConfigError));
   }, []);
+
+  const permissions = useMemo(
+    () => getEffectivePermissions(profile?.role ?? 'editor', permissionOverride),
+    [permissionOverride, profile?.role]
+  );
+
+  const can = useCallback((permission: Permission) => (
+    hasEffectivePermission(permissions, permission, profile?.role ?? 'editor')
+  ), [permissions, profile?.role]);
 
   const value = useMemo<AuthContextValue>(() => ({
     session,
@@ -290,11 +382,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profile,
     role: profile?.role ?? 'editor',
     roleLabel: ROLE_LABELS[profile?.role ?? 'editor'],
+    permissionOverride,
+    permissionMode: permissionOverride.accessMode,
+    permissions,
+    can,
     signIn,
     signOut,
     clearAuthError,
     refreshProfile,
-  }), [authError, backgroundAuthRefreshing, clearAuthError, loading, profile, profileError, profileLoading, refreshProfile, session, signIn, signOut]);
+  }), [authError, backgroundAuthRefreshing, can, clearAuthError, loading, permissionOverride, permissions, profile, profileError, profileLoading, refreshProfile, session, signIn, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

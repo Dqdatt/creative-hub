@@ -14,6 +14,7 @@ interface CompactProfileCardProps {
   onAvatarRemoved: () => void;
   onOpenPassword: () => void;
   isSaving?: boolean;
+  canEdit?: boolean;
 }
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
@@ -29,7 +30,10 @@ export function CompactProfileCard({
   onAvatarRemoved,
   onOpenPassword,
   isSaving = false,
+  canEdit = true,
 }: CompactProfileCardProps) {
+  const isProfileDisabled = isSaving || !canEdit;
+
   const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -86,17 +90,17 @@ export function CompactProfileCard({
               className="sr-only"
               type="file"
               accept="image/*"
-              disabled={isSaving}
+              disabled={isProfileDisabled}
               onChange={handleAvatarChange}
             />
-            <label className="btn-ghost btn-sm cursor-pointer" htmlFor="avatarFileInput">
+            <label className={`btn-ghost btn-sm ${isProfileDisabled ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`} htmlFor="avatarFileInput">
               <ImageUp /> Đổi ảnh
             </label>
             <button
               id="removeAvatarBtn"
               type="button"
               className="profile-text-btn"
-              disabled={isSaving}
+              disabled={isProfileDisabled}
               onClick={() => {
                 onChange({ avatarUrl: defaultAvatar });
                 onAvatarRemoved();
@@ -115,6 +119,7 @@ export function CompactProfileCard({
           className="profile-form-compact"
           onSubmit={(event) => {
             event.preventDefault();
+            if (!canEdit) return;
             onSave();
           }}
         >
@@ -131,7 +136,7 @@ export function CompactProfileCard({
                 id="profileFullName"
                 className="field"
                 value={draft.fullName}
-                disabled={isSaving}
+                disabled={isProfileDisabled}
                 onChange={(event) => onChange({ fullName: event.target.value })}
                 placeholder="Nhập họ tên"
               />
@@ -142,7 +147,7 @@ export function CompactProfileCard({
                 id="profileDisplayName"
                 className="field"
                 value={draft.displayName}
-                disabled={isSaving}
+                disabled={isProfileDisabled}
                 onChange={(event) => onChange({ displayName: event.target.value })}
                 placeholder="Nhập tên hiển thị"
               />
@@ -157,7 +162,7 @@ export function CompactProfileCard({
                 id="profilePhone"
                 className="field"
                 value={draft.phone}
-                disabled={isSaving}
+                disabled={isProfileDisabled}
                 onChange={(event) => onChange({ phone: event.target.value })}
                 placeholder="VD: 0901 234 567"
               />
@@ -172,7 +177,7 @@ export function CompactProfileCard({
                 id="profileDepartment"
                 className="field"
                 value={draft.department}
-                disabled={isSaving}
+                disabled={isProfileDisabled}
                 onChange={(event) => onChange({ department: event.target.value })}
                 placeholder="Nhập bộ phận"
               />
@@ -180,10 +185,10 @@ export function CompactProfileCard({
           </div>
 
           <div className="profile-actions">
-            <button type="button" className="btn-ghost" onClick={onReset} disabled={isSaving}>
+            <button type="button" className="btn-ghost" onClick={onReset} disabled={isProfileDisabled}>
               <RotateCcw /> Hoàn tác
             </button>
-            <button type="submit" className="btn" disabled={isSaving}>
+            <button type="submit" className="btn" disabled={isProfileDisabled}>
               <CircleCheck /> {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
           </div>

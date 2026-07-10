@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import type { AppRole } from '../config/permissions';
+import type { AppRole, EffectivePermissions, Permission, PermissionAccessMode, UserPermissionOverride } from '../config/permissions';
 
 export interface AuthProfile {
   id: string;
@@ -25,6 +25,10 @@ export interface AuthContextValue {
   profile: AuthProfile | null;
   role: AppRole;
   roleLabel: string;
+  permissionOverride: UserPermissionOverride;
+  permissionMode: PermissionAccessMode;
+  permissions: EffectivePermissions;
+  can: (permission: Permission) => boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<{ error: string | null }>;
   clearAuthError: () => void;
