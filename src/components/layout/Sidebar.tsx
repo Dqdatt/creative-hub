@@ -1,8 +1,20 @@
 import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { Clapperboard, ClipboardList, LayoutDashboard, CalendarDays, UsersRound, LogOut, ChevronRight } from 'lucide-react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import {
+  Clapperboard,
+  ClipboardList,
+  LayoutDashboard,
+  CalendarDays,
+  UsersRound,
+  LogOut,
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from 'lucide-react';
 import { getVisibleNavigationForPermissions } from '../../config/permissions';
 import { useAuth } from '../../context/authContext';
+import logoSymbol from '../../assets/logo.png';
+import logoWordmark from '../../assets/text.png';
 
 const NAV_ICONS = {
   dashboard: LayoutDashboard,
@@ -22,6 +34,9 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { role, permissions, signOut } = useAuth();
   const navigation = getVisibleNavigationForPermissions(role, permissions);
+  const isCollapsed = !mobileOpen && collapsed;
+  const ToggleIcon = isCollapsed ? PanelLeftOpen : PanelLeftClose;
+  const toggleLabel = isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng';
 
   const logout = async () => {
     onClose?.();
@@ -32,23 +47,53 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   return (
     <aside
       id="sidebar"
-      className={`${mobileOpen ? 'flex fixed inset-y-0 left-0 z-40 shadow-2xl' : 'hidden'} xl:flex xl:sticky xl:inset-auto xl:z-auto xl:shadow-none shrink-0 flex-col ${collapsed ? 'is-collapsed' : ''}`}
+      className={`${mobileOpen ? 'flex fixed inset-y-0 left-0 z-40 shadow-2xl' : 'hidden'} xl:flex xl:sticky xl:inset-auto xl:z-auto xl:shadow-none shrink-0 flex-col ${isCollapsed ? 'is-collapsed' : ''}`}
     >
       <div className="sb-shell">
         <div className="sb-brand">
-          <div className="sb-logo">
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className="sb-mark"
-              title="Thu gọn / mở rộng sidebar"
+          {mobileOpen ? (
+            <Link
+              to="/dashboard"
+              className="sb-mobile-brand-link"
+              aria-label="CreativeHub - Trang tổng quan"
+              onClick={onClose}
             >
-              <Clapperboard style={{ width: '20px', height: '20px' }} />
-            </button>
-          </div>
-          <div className="sb-brand-text">
-            <div className="t1">CreativeHub</div>
-            <div className="t2">Team Marketing</div>
-          </div>
+              <img className="sb-brand-symbol" src={logoSymbol} alt="" draggable={false} />
+              <span className="sb-brand-wordmark-wrap" aria-hidden="true">
+                <img className="sb-brand-wordmark" src={logoWordmark} alt="" draggable={false} />
+                <span className="sb-brand-wordmark-creative" aria-hidden="true"></span>
+              </span>
+            </Link>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setCollapsed((value) => !value)}
+                className="sb-logo-toggle"
+                aria-label={toggleLabel}
+                title={toggleLabel}
+              >
+                <span className="sb-logo-layer" aria-hidden="true">
+                  <img className="sb-brand-symbol" src={logoSymbol} alt="" draggable={false} />
+                </span>
+                <span className="sb-toggle-layer" aria-hidden="true">
+                  <ToggleIcon />
+                </span>
+              </button>
+              {!isCollapsed ? (
+                <Link
+                  to="/dashboard"
+                  className="sb-wordmark-link"
+                  aria-label="CreativeHub - Trang tổng quan"
+                >
+                  <span className="sb-brand-wordmark-wrap" aria-hidden="true">
+                    <img className="sb-brand-wordmark" src={logoWordmark} alt="" draggable={false} />
+                    <span className="sb-brand-wordmark-creative" aria-hidden="true"></span>
+                  </span>
+                </Link>
+              ) : null}
+            </>
+          )}
         </div>
 
         <div className="sb-scroll">

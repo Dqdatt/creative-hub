@@ -15,7 +15,7 @@ export default function AppLayout() {
           <Outlet />
         </main>
         <footer className="app-footer" style={{ borderTop: '1px solid var(--border)' }}>
-          CreativeHub | Developed by Doan Quoc Dat | v1.0.2
+          CreativeHub | Developed by Doan Quoc Dat | v1.0.3
         </footer>
       </div>
       <div
