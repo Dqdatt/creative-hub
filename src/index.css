@@ -40,7 +40,9 @@
   --z-dropdown:1000;
   --z-modal-backdrop:1100;
   --z-modal-panel:1110;
-  --z-dropdown-modal:1200;
+  --z-dropdown-modal:1120;
+  --z-modal-nested-backdrop:1210;
+  --z-modal-nested-panel:1220;
   --z-toast:1300;
 }
 html.dark{
@@ -652,6 +654,12 @@ html.dark .sb-shell{ background:#18181B; }
   max-height:min(90dvh,calc(100dvh - 28px));
   overflow:auto;
   overscroll-behavior:contain;
+}
+.modal-overlay--nested{
+  z-index:var(--z-modal-nested-backdrop);
+}
+.modal-overlay--nested .modal-card{
+  z-index:var(--z-modal-nested-panel);
 }
 @keyframes pop{ from{opacity:0;transform:translateY(18px) scale(.96)} to{opacity:1;transform:none} }
 

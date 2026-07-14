@@ -1,6 +1,6 @@
 import type { Editor, VideoTask } from '../types/task';
 
-export const ORDER_TEAMS = ['BRAND', 'DIGITAL', 'ECOM', 'HR', 'ISD', 'CS', 'GT', 'PUR'];
+export const ORDER_TEAMS = ['BRAND', 'DIGITAL', 'ECOM', 'HR', 'ISD', 'IT', 'CS', 'GT', 'PUR'];
 
 export const EDITORS: Editor[] = [
   {

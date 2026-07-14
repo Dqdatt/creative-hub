@@ -5,6 +5,7 @@ import { StyledSelect } from '../common/StyledSelect';
 import { ROLE_LABELS, getPermissionOverrideSummary } from '../../config/permissions';
 import type { AppRole, PermissionOverrideFlags, PermissionOverrideKey } from '../../config/permissions';
 import type { CreateMemberFormData, ManagedUserProfile, UserProfileFormData } from '../../types/userManagement';
+import { useDocumentScrollLock } from '../common/useDocumentScrollLock';
 
 type UserModalDraft = UserProfileFormData | CreateMemberFormData;
 
@@ -93,24 +94,12 @@ export function UserModal({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
 
+  useDocumentScrollLock(isOpen);
+
   useEffect(() => {
     setDeleteOpen(false);
     setDeleteEmail('');
   }, [selectedUser?.id, isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousHtmlOverflow;
-    };
-  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;

@@ -234,7 +234,7 @@ where category is not null and category not in ('Video dài', 'Motion', 'Ads');
 
 update public.video_tasks
 set order_team = null
-where order_team is not null and order_team not in ('BRAND', 'DIGITAL', 'ECOM', 'HR', 'ISD', 'CS', 'GT', 'PUR');
+where order_team is not null and order_team not in ('BRAND', 'DIGITAL', 'ECOM', 'HR', 'ISD', 'IT', 'CS', 'GT', 'PUR');
 
 alter table public.video_tasks drop constraint if exists video_tasks_status_check;
 alter table public.video_tasks
@@ -254,7 +254,7 @@ alter table public.video_tasks
 alter table public.video_tasks drop constraint if exists video_tasks_order_team_check;
 alter table public.video_tasks
   add constraint video_tasks_order_team_check
-  check (order_team is null or order_team in ('BRAND', 'DIGITAL', 'ECOM', 'HR', 'ISD', 'CS', 'GT', 'PUR'));
+  check (order_team is null or order_team in ('BRAND', 'DIGITAL', 'ECOM', 'HR', 'ISD', 'IT', 'CS', 'GT', 'PUR'));
 
 alter table public.video_tasks drop constraint if exists video_tasks_date_order_check;
 alter table public.video_tasks

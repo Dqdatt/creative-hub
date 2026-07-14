@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CalendarDays, X } from 'lucide-react';
 import type { ShootSchedule, ShootType, ShootFormData } from '../types/shoot';
 import { EmptyState } from '../components/common/EmptyState';
@@ -14,6 +15,7 @@ import { useToast } from '../components/common/toastContext';
 import { useMonth } from '../context/monthContext';
 import { monthValueToDate } from '../utils/month';
 import { SHOOT_TYPES_META } from '../data/shoots';
+import { useDocumentScrollLock } from '../components/common/useDocumentScrollLock';
 
 function toIsoDate(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -52,6 +54,8 @@ function DayAgendaModal({
   onClose: () => void;
   onShootClick: (shoot: ShootSchedule, e: React.MouseEvent) => void;
 }) {
+  useDocumentScrollLock(true);
+
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -60,7 +64,7 @@ function DayAgendaModal({
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div
       className="modal-overlay fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto px-4 py-6"
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
@@ -106,7 +110,8 @@ function DayAgendaModal({
           })}
         </div>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }
 

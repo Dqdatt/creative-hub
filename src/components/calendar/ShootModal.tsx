@@ -6,6 +6,7 @@ import { Avatar } from '../common/Avatar';
 import type { ShootSchedule, ShootType, ShootFormData } from '../../types/shoot';
 import type { ContentPlanEditorOption } from '../../types/contentPlan';
 import { SHOOT_TYPES_META } from '../../data/shoots';
+import { useDocumentScrollLock } from '../common/useDocumentScrollLock';
 
 interface ShootModalProps {
   isOpen: boolean;
@@ -38,6 +39,8 @@ export function ShootModal({
   const isEditMode = shoot !== null;
   const isBusy = isSaving || isDeleting;
 
+  useDocumentScrollLock(isOpen);
+
   useEffect(() => {
     if (isOpen && canEdit) setTimeout(() => crewRef.current?.focus(), 80);
   }, [canEdit, isOpen]);
@@ -52,20 +55,6 @@ export function ShootModal({
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [isBusy, isOpen, onClose]);
-
-  useEffect(() => {
-    if (!isOpen) return undefined;
-
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousHtmlOverflow;
-    };
-  }, [isOpen]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

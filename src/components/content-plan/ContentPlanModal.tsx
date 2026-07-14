@@ -1,7 +1,9 @@
 import { CalendarDays, PencilLine, Trash2, UserRound, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { StyledSelect } from '../common/StyledSelect';
 import { CONTENT_PLAN_CATEGORIES } from '../../data/contentPlan';
 import type { ContentPlanCategory, ContentPlanEditorOption, ContentPlanFormData } from '../../types/contentPlan';
+import { useDocumentScrollLock } from '../common/useDocumentScrollLock';
 
 interface ContentPlanModalProps {
   isOpen: boolean;
@@ -55,11 +57,13 @@ export function ContentPlanModal({
   onSave,
   onDelete,
 }: ContentPlanModalProps) {
+  useDocumentScrollLock(isOpen);
+
   if (!isOpen || !draft) return null;
 
   const copy = MODAL_COPY[mode];
 
-  return (
+  return createPortal(
     <div
       className="modal-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto py-10 px-4"
       onClick={(event) => { if (event.target === event.currentTarget && !isSaving) onClose(); }}
@@ -169,6 +173,7 @@ export function ContentPlanModal({
           </div>
         </div>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }

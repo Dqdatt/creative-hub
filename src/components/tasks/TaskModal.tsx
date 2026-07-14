@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Clapperboard, CircleCheck } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
 import type { Editor, VideoTask, TaskFormData, TaskStatus, TaskCategory, TaskPriority } from '../../types/task';
 import { ORDER_TEAMS } from '../../data/tasks';
+import { useDocumentScrollLock } from '../common/useDocumentScrollLock';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -35,6 +37,8 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
   const nameRef = useRef<HTMLInputElement>(null);
   const isEditMode = task !== null;
 
+  useDocumentScrollLock(isOpen);
+
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => nameRef.current?.focus(), 80);
@@ -43,10 +47,11 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
 
   // Escape to close
   useEffect(() => {
+    if (!isOpen) return undefined;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [onClose]);
+  }, [isOpen, onClose]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -83,7 +88,7 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
         priority: '', resize: '', receiveDate: '', returnDate: '', airDate: '', link: '',
       };
 
-  return (
+  return createPortal(
     <div 
       className="modal-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto py-10 px-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -223,6 +228,7 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
