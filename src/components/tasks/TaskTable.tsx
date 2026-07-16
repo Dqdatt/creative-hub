@@ -13,7 +13,7 @@ interface TaskTableProps {
 export function TaskTable({ tasks, editors, onRowClick, canEditTask = true }: TaskTableProps) {
   if (tasks.length === 0) {
     return (
-      <table className="ctable min-w-[1200px]">
+      <table className="ctable min-w-[1200px]" data-tour="video-task-table">
         <tbody>
           <tr>
             <td colSpan={12} className="px-3 py-12 text-center text-sub">
@@ -29,7 +29,7 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true }: Ta
   }
 
   return (
-    <table className="ctable min-w-[1200px]">
+    <table className="ctable min-w-[1200px]" data-tour="video-task-table">
       <thead>
         <tr>
           <th className="text-center" style={{ width: '48px' }}>STT</th>
@@ -41,9 +41,9 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true }: Ta
           <th style={{ width: '80px' }}>Nhận</th>
           <th style={{ width: '80px' }}>Trả</th>
           <th style={{ width: '80px' }}>Air</th>
-          <th style={{ width: '128px' }}>Trạng thái</th>
+          <th style={{ width: '128px' }} data-tour="video-task-status-column">Trạng thái</th>
           <th style={{ width: '80px' }}>Ưu tiên</th>
-          <th className="text-center" style={{ width: '64px' }}>Link</th>
+          <th className="text-center" style={{ width: '64px' }} data-tour="video-task-link-column">Link</th>
         </tr>
       </thead>
       <tbody>
@@ -54,7 +54,12 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true }: Ta
           else if (v.priority === 'Gấp') rowBg = `${cursorClass} vrow-gap`;
 
           return (
-            <tr key={v.id} className={rowBg} onClick={() => { if (canEditTask) onRowClick(v); }}>
+            <tr
+              key={v.id}
+              className={rowBg}
+              data-tour={v.contentPlanId && v.status === 'Chờ' ? 'video-task-waiting-row' : undefined}
+              onClick={() => { if (canEditTask) onRowClick(v); }}
+            >
               <td className="text-center text-sub font-bold">{v.id}</td>
               <td className="font-semibold whitespace-normal" style={{ maxWidth: '260px' }}>
                 {v.name}
@@ -82,7 +87,7 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true }: Ta
               <td className="font-bold tabular-nums" style={{ color: 'var(--accent)' }}>
                 {v.airDate}
               </td>
-              <td>
+              <td data-tour={v.contentPlanId && v.status === 'Chờ' ? 'video-task-accept' : v.contentPlanId && v.status === 'Đang làm' ? 'video-task-complete' : undefined}>
                 <StatusBadge status={v.status} />
               </td>
               <td>
@@ -92,7 +97,11 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true }: Ta
                   <span className="text-sub/40">-</span>
                 )}
               </td>
-              <td className="text-center" onClick={(e) => e.stopPropagation()}>
+              <td
+                className="text-center"
+                data-tour={v.contentPlanId && v.status === 'Đang làm' ? 'video-task-result-link' : undefined}
+                onClick={(e) => e.stopPropagation()}
+              >
                 {isSafeHttpUrl(v.link) ? (
                   <a
                     href={v.link}

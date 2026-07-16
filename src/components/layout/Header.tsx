@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Menu, Calendar, Mail, Bell, Moon, Sun } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Calendar, Mail, Bell, Moon, Sun, Sparkles, UserRound } from 'lucide-react';
 import { useTheme } from '../../context/themeContext';
 import { useAuth } from '../../context/authContext';
 import { useMonth } from '../../context/monthContext';
@@ -21,12 +21,15 @@ const MONTH_ROUTES = new Set(['/dashboard', '/calendar', '/tasks', '/content-pla
 
 interface HeaderProps {
   onOpenSidebar?: () => void;
+  onOpenWhatsNew?: () => void;
 }
 
-export default function Header({ onOpenSidebar }: HeaderProps) {
+export default function Header({ onOpenSidebar, onOpenWhatsNew }: HeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [monthOpen, setMonthOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const monthControlRef = useRef<HTMLDivElement>(null);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
   const { theme, toggle } = useTheme();
   const { user, profile, roleLabel } = useAuth();
   const { selectedMonth, setSelectedMonth, goToPreviousMonth, goToNextMonth, goToCurrentMonth } = useMonth();
@@ -46,6 +49,7 @@ export default function Header({ onOpenSidebar }: HeaderProps) {
 
   useEffect(() => {
     setMonthOpen(false);
+    setAccountOpen(false);
   }, [pathname, selectedMonth]);
 
   useEffect(() => {
@@ -69,6 +73,38 @@ export default function Header({ onOpenSidebar }: HeaderProps) {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [monthOpen]);
+
+  useEffect(() => {
+    if (!accountOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (accountMenuRef.current?.contains(target)) return;
+      setAccountOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAccountOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [accountOpen]);
+
+  const openProfile = () => {
+    setAccountOpen(false);
+    setProfileOpen(true);
+  };
+
+  const openWhatsNew = () => {
+    setAccountOpen(false);
+    onOpenWhatsNew?.();
+  };
 
   return (
     <>
@@ -124,13 +160,35 @@ export default function Header({ onOpenSidebar }: HeaderProps) {
           <button className="icon-btn" title="Đổi giao diện" onClick={toggle}>
             {theme === 'light' ? <Moon /> : <Sun />}
           </button>
-          <button type="button" className="header-user-button" onClick={() => setProfileOpen(true)} aria-label="Mở hồ sơ cá nhân">
-            <Avatar src={avatarUrl} name={metaName} size="sm" className="header-avatar" />
-            <span className="hidden sm:block leading-tight text-left">
-              <span className="header-user-name">{metaName}</span>
-              <span className="header-user-role">{metaRole}</span>
-            </span>
-          </button>
+          <div ref={accountMenuRef} className="header-account">
+            <button
+              type="button"
+              className="header-user-button"
+              onClick={() => setAccountOpen((value) => !value)}
+              aria-label="Mở menu tài khoản"
+              aria-haspopup="menu"
+              aria-expanded={accountOpen}
+            >
+              <Avatar src={avatarUrl} name={metaName} size="sm" className="header-avatar" />
+              <span className="hidden sm:block leading-tight text-left">
+                <span className="header-user-name">{metaName}</span>
+                <span className="header-user-role">{metaRole}</span>
+              </span>
+            </button>
+
+            {accountOpen ? (
+              <div className="header-account-menu card" role="menu">
+                <button type="button" className="header-account-item" role="menuitem" onClick={openProfile}>
+                  <UserRound />
+                  <span>Hồ sơ cá nhân</span>
+                </button>
+                <button type="button" className="header-account-item" role="menuitem" onClick={openWhatsNew}>
+                  <Sparkles />
+                  <span>Có gì mới?</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
 

@@ -42,7 +42,7 @@ export function ContentPlanTable({
 }: ContentPlanTableProps) {
   if (items.length === 0) {
     return (
-      <table className="ctable min-w-[1000px]">
+      <table className="ctable min-w-[1000px]" data-tour="content-plan-table">
         <tbody>
           <tr>
             <td colSpan={6} className="px-3 py-12 text-center text-sub">
@@ -58,7 +58,7 @@ export function ContentPlanTable({
   }
 
   return (
-    <table className="ctable min-w-[1000px]">
+    <table className="ctable min-w-[1000px]" data-tour="content-plan-table">
       <colgroup>
         <col style={{ width: '108px' }} />
         <col style={{ width: '132px' }} />
@@ -73,7 +73,7 @@ export function ContentPlanTable({
           <th>Thể loại</th>
           <th>Tên video</th>
           <th>Ghi chú</th>
-          <th>Editor</th>
+          <th data-tour="content-plan-editor">Editor</th>
           <th className="text-center">Link</th>
         </tr>
       </thead>
@@ -110,7 +110,7 @@ export function ContentPlanTable({
                 </span>
               </td>
 
-              <td>
+              <td data-tour={editor ? 'content-plan-editor' : undefined}>
                 <div className="flex items-center gap-2">
                   <Avatar
                     src={editor?.avatarUrl}
