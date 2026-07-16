@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Menu, Calendar, Mail, Bell, Moon, Sun, Sparkles, UserRound } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Calendar, Mail, Moon, Sun, Sparkles, UserRound } from 'lucide-react';
 import { useTheme } from '../../context/themeContext';
 import { useAuth } from '../../context/authContext';
 import { useMonth } from '../../context/monthContext';
 import { Avatar } from '../common/Avatar';
 import { ProfileModal } from '../profile/ProfileModal';
 import { formatVietnameseMonth } from '../../utils/month';
+import { NotificationCenter } from './NotificationCenter';
+import type { useNotifications } from '../../hooks/useNotifications';
 
 const PAGE_META: Record<string, { title: string; sub: string }> = {
   '/dashboard': { title: 'Tổng quan', sub: 'Báo cáo công việc theo tháng' },
@@ -22,18 +24,20 @@ const MONTH_ROUTES = new Set(['/dashboard', '/calendar', '/tasks', '/content-pla
 interface HeaderProps {
   onOpenSidebar?: () => void;
   onOpenWhatsNew?: () => void;
+  notifications: ReturnType<typeof useNotifications>;
 }
 
-export default function Header({ onOpenSidebar, onOpenWhatsNew }: HeaderProps) {
+export default function Header({ onOpenSidebar, onOpenWhatsNew, notifications }: HeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [monthOpen, setMonthOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const monthControlRef = useRef<HTMLDivElement>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const { theme, toggle } = useTheme();
-  const { user, profile, roleLabel } = useAuth();
+  const { user, profile, role, roleLabel, permissions } = useAuth();
   const { selectedMonth, setSelectedMonth, goToPreviousMonth, goToNextMonth, goToCurrentMonth } = useMonth();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const meta = PAGE_META[pathname] ?? { title: 'Không tìm thấy', sub: 'Đường dẫn không tồn tại' };
   const showMonthControl = MONTH_ROUTES.has(pathname);
   const metaName = profile?.displayName || (typeof user?.user_metadata?.full_name === 'string'
@@ -50,7 +54,13 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew }: HeaderProps) {
   useEffect(() => {
     setMonthOpen(false);
     setAccountOpen(false);
-  }, [pathname, selectedMonth]);
+    setNotificationsOpen(false);
+  }, [pathname, search, selectedMonth]);
+
+  useEffect(() => {
+    setNotificationsOpen(false);
+    setAccountOpen(false);
+  }, [profile?.id, user?.id]);
 
   useEffect(() => {
     if (!monthOpen) return;
@@ -125,7 +135,11 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew }: HeaderProps) {
               <button
                 type="button"
                 className="date-chip month-chip"
-                onClick={() => setMonthOpen((value) => !value)}
+                onClick={() => {
+                  setAccountOpen(false);
+                  setNotificationsOpen(false);
+                  setMonthOpen((value) => !value);
+                }}
                 aria-expanded={monthOpen}
                 aria-haspopup="dialog"
               >
@@ -153,10 +167,30 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew }: HeaderProps) {
             </div>
           ) : null}
           <button className="icon-btn hidden sm:grid" aria-label="Hộp thư"><Mail /></button>
-          <button className="icon-btn relative" aria-label="Thông báo">
-            <Bell />
-            <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full" style={{ background: 'var(--danger)' }}></span>
-          </button>
+          <NotificationCenter
+            notifications={notifications.notifications}
+            unreadCount={notifications.unreadCount}
+            isLoading={notifications.isLoading}
+            loadError={notifications.loadError}
+            mutationError={notifications.mutationError}
+            isOpen={notificationsOpen}
+            role={role}
+            permissions={permissions}
+            onOpenChange={(open) => {
+              if (open) {
+                setAccountOpen(false);
+                setMonthOpen(false);
+              }
+              setNotificationsOpen(open);
+            }}
+            onMarkOneRead={notifications.markOneRead}
+            onMarkAllRead={notifications.markAllRead}
+            onDeleteOne={notifications.deleteOne}
+            onDeleteOlderThan={notifications.deleteOlderThan}
+            onRetry={notifications.refetch}
+            deletingIds={notifications.deletingIds}
+            isDeletingOlder={notifications.isDeletingOlder}
+          />
           <button className="icon-btn" title="Đổi giao diện" onClick={toggle}>
             {theme === 'light' ? <Moon /> : <Sun />}
           </button>
@@ -164,7 +198,11 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew }: HeaderProps) {
             <button
               type="button"
               className="header-user-button"
-              onClick={() => setAccountOpen((value) => !value)}
+              onClick={() => {
+                setNotificationsOpen(false);
+                setMonthOpen(false);
+                setAccountOpen((value) => !value);
+              }}
               aria-label="Mở menu tài khoản"
               aria-haspopup="menu"
               aria-expanded={accountOpen}

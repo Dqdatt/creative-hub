@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { EmptyState } from '../components/common/EmptyState';
 import { ErrorState } from '../components/common/ErrorState';
 import { LoadingState } from '../components/common/LoadingState';
@@ -8,10 +9,13 @@ import { ContentPlanTable } from '../components/content-plan/ContentPlanTable';
 import { canEditContentPlanField } from '../config/permissions';
 import { useAuth } from '../context/authContext';
 import { useContentPlan } from '../hooks/useContentPlan';
+import { useRouteHighlight } from '../hooks/useRouteHighlight';
+import { fetchContentPlanItemById } from '../services/contentPlanService';
 import type { ContentPlanCategory, ContentPlanFormData, ContentPlanItem } from '../types/contentPlan';
 import { useConfirmDialog } from '../components/common/confirmDialogContext';
 import { useToast } from '../components/common/toastContext';
 import { useMonth } from '../context/monthContext';
+import { isUuid } from '../utils/id';
 import { isSafeHttpUrl } from '../utils/url';
 
 function toFormData(item: ContentPlanItem): ContentPlanFormData {
@@ -47,7 +51,8 @@ export default function ContentPlan() {
   const { role, permissions, can } = useAuth();
   const { requestConfirm } = useConfirmDialog();
   const { showToast } = useToast();
-  const { selectedMonth } = useMonth();
+  const { selectedMonth, setSelectedMonth } = useMonth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     items,
     editorOptions,
@@ -82,6 +87,9 @@ export default function ContentPlan() {
   const canEditEditor = canEditContentPlanField(role, 'editor_id', permissions);
   const canEditLink = canEditContentPlanField(role, 'link', permissions);
   const canOpenEditor = canEditAirDate || canEditVideoName || canEditNote || canEditCategory || canEditEditor || canEditLink;
+  const highlightParam = searchParams.get('highlight');
+  const legacyItemParam = searchParams.get('item');
+  const targetContentPlanId = highlightParam ?? legacyItemParam;
 
   const monthItems = useMemo(() =>
     items.filter((item) => item.air_date.startsWith(selectedMonth)),
@@ -105,6 +113,15 @@ export default function ContentPlan() {
       }),
     [categoryFilter, editorFilter, monthItems, search]
   );
+
+  const clearHighlightParams = useCallback(() => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('highlight');
+      next.delete('item');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   const closeModal = () => {
     setSelectedItem(null);
@@ -137,6 +154,66 @@ export default function ContentPlan() {
     setDraft(toFormData(item));
     setFormError(null);
   };
+
+  useEffect(() => {
+    if (!targetContentPlanId) return;
+
+    if (!isUuid(targetContentPlanId)) {
+      showToast({ type: 'warning', message: 'Đường dẫn Content Plan không hợp lệ.' });
+      clearHighlightParams();
+      return;
+    }
+
+    const visibleItem = items.find((item) => item.id === targetContentPlanId);
+    if (visibleItem) {
+      const targetMonth = visibleItem.air_date.slice(0, 7);
+      if (targetMonth !== selectedMonth) setSelectedMonth(targetMonth);
+      if (search || editorFilter !== 'all' || categoryFilter !== 'all') {
+        setSearch('');
+        setEditorFilter('all');
+        setCategoryFilter('all');
+      }
+      return;
+    }
+
+    if (isLoading) return;
+
+    let cancelled = false;
+
+    void fetchContentPlanItemById(targetContentPlanId)
+      .then((item) => {
+        if (cancelled) return;
+        if (!item) {
+          showToast({ type: 'warning', message: 'Không tìm thấy Content Plan liên quan.' });
+          clearHighlightParams();
+          return;
+        }
+
+        const targetMonth = item.air_date.slice(0, 7);
+        if (targetMonth !== selectedMonth) setSelectedMonth(targetMonth);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        showToast({ type: 'warning', message: 'Nội dung liên quan không còn tồn tại hoặc bạn không có quyền xem.' });
+        clearHighlightParams();
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [categoryFilter, clearHighlightParams, editorFilter, isLoading, items, search, selectedMonth, setSelectedMonth, showToast, targetContentPlanId]);
+
+  const handleHighlightMissing = useCallback(() => {
+    showToast({ type: 'warning', message: 'Không tìm thấy Content Plan liên quan.' });
+  }, [showToast]);
+
+  const highlightedContentPlanId = useRouteHighlight({
+    targetId: targetContentPlanId && isUuid(targetContentPlanId) ? targetContentPlanId : null,
+    selector: targetContentPlanId && isUuid(targetContentPlanId) ? `[data-content-plan-id="${targetContentPlanId}"]` : null,
+    ready: !isLoading && filteredItems.some((item) => item.id === targetContentPlanId),
+    clearQuery: clearHighlightParams,
+    onMissing: handleHighlightMissing,
+  });
 
   const handleDraftChange = (data: Partial<ContentPlanFormData>) => {
     setDraft((current) => current ? { ...current, ...data } : current);
@@ -255,6 +332,7 @@ export default function ContentPlan() {
         editorOptions={editorOptions}
         canEdit={canOpenEditor && !isSaving && !isDeleting}
         onEdit={handleOpenEditor}
+        highlightedId={highlightedContentPlanId}
       />
     );
   };

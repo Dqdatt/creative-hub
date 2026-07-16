@@ -9,6 +9,8 @@ interface CalendarGridProps {
   onShootClick: (shoot: ShootSchedule, e: React.MouseEvent) => void;
   onMoreClick: (dateStr: string, events: ShootSchedule[], e: React.MouseEvent) => void;
   canCreateShoot?: boolean;
+  highlightedShootId?: string | null;
+  highlightedDate?: string | null;
 }
 
 export function CalendarGrid({
@@ -19,6 +21,8 @@ export function CalendarGrid({
   onShootClick,
   onMoreClick,
   canCreateShoot = true,
+  highlightedShootId = null,
+  highlightedDate = null,
 }: CalendarGridProps) {
   const WD = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   
@@ -52,6 +56,7 @@ export function CalendarGrid({
         const events = idx < startDow ? [] : shoots.filter((s) => s.date === iso && (filter === 'all' || s.type === filter));
         const visibleEvents = events.slice(0, 2);
         const hiddenCount = Math.max(0, events.length - visibleEvents.length);
+        const cellHighlighted = highlightedDate === iso || events.some((event) => event.id === highlightedShootId);
 
         const clickAttr = c.out || !canCreateShoot ? {} : { onClick: () => onDayClick(iso), style: { cursor: 'pointer' } };
         const borderFix = isSun ? { borderRight: 'none' } : {};
@@ -59,7 +64,9 @@ export function CalendarGrid({
         return (
           <div 
             key={idx} 
-            className={`cal-cell ${c.out ? 'out' : ''} ${wknd ? 'wknd' : ''}`}
+            className={`cal-cell ${c.out ? 'out' : ''} ${wknd ? 'wknd' : ''} ${cellHighlighted ? 'route-highlight route-highlight--day' : ''}`}
+            data-calendar-date={iso}
+            aria-current={cellHighlighted ? 'true' : undefined}
             {...clickAttr}
             style={{ ...clickAttr.style, ...borderFix }}
           >
@@ -71,7 +78,8 @@ export function CalendarGrid({
                   <button
                     type="button"
                     key={ev.id}
-                    className="cal-ev"
+                    className={`cal-ev ${highlightedShootId === ev.id ? 'route-highlight route-highlight--event' : ''}`}
+                    data-shoot-id={ev.id}
                     onClick={(e) => onShootClick(ev, e)}
                     style={{ background: `color-mix(in srgb, ${t.dot} 15%, transparent)`, borderColor: `color-mix(in srgb, ${t.dot} 40%, transparent)` }}
                   >

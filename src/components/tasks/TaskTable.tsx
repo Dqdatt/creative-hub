@@ -8,9 +8,10 @@ interface TaskTableProps {
   editors: Editor[];
   onRowClick: (task: VideoTask) => void;
   canEditTask?: boolean;
+  highlightedId?: string | null;
 }
 
-export function TaskTable({ tasks, editors, onRowClick, canEditTask = true }: TaskTableProps) {
+export function TaskTable({ tasks, editors, onRowClick, canEditTask = true, highlightedId = null }: TaskTableProps) {
   if (tasks.length === 0) {
     return (
       <table className="ctable min-w-[1200px]" data-tour="video-task-table">
@@ -52,11 +53,14 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true }: Ta
           let rowBg = cursorClass;
           if (v.status === 'Đã xong') rowBg = `${cursorClass} vrow-done`;
           else if (v.priority === 'Gấp') rowBg = `${cursorClass} vrow-gap`;
+          if (v.dbId && highlightedId === v.dbId) rowBg = `${rowBg} route-highlight route-highlight--row`;
 
           return (
             <tr
               key={v.id}
               className={rowBg}
+              data-video-task-id={v.dbId}
+              aria-current={v.dbId && highlightedId === v.dbId ? 'true' : undefined}
               data-tour={v.contentPlanId && v.status === 'Chờ' ? 'video-task-waiting-row' : undefined}
               onClick={() => { if (canEditTask) onRowClick(v); }}
             >

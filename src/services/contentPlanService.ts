@@ -58,6 +58,11 @@ interface AssignEditorRpcRow {
   air_date: string;
 }
 
+interface CreateContentPlanRpcRow {
+  content_plan_id: string;
+  notifications_created: number;
+}
+
 const editorIdCache = new Map<string, string | null>();
 
 function requireSupabase() {
@@ -294,6 +299,40 @@ export async function fetchContentPlan(monthValue?: string): Promise<ContentPlan
   return ((data ?? []) as unknown as ContentPlanRow[]).map(mapContentPlanRow);
 }
 
+export async function fetchContentPlanItemById(rowId: string): Promise<ContentPlanItem | null> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from('content_plan')
+    .select(`
+      id,
+      air_date,
+      title,
+      note,
+      category,
+      editor_id,
+      link,
+      video_tasks!video_tasks_content_plan_id_fkey (
+        id
+      ),
+      profiles!content_plan_editor_id_fkey (
+        id,
+        editor_code,
+        short_name,
+        display_name,
+        full_name,
+        ui_color,
+        avatar_url
+      )
+    `)
+    .eq('id', rowId)
+    .maybeSingle();
+
+  if (error) throw new Error(mapDatabaseError(error));
+  if (!data) return null;
+
+  return mapContentPlanRow(data as unknown as ContentPlanRow);
+}
+
 export async function fetchContentPlanEditorOptions(): Promise<ContentPlanEditorOption[]> {
   const client = requireSupabase();
   const { data, error } = await client
@@ -329,29 +368,20 @@ export async function fetchContentPlanEditorOptions(): Promise<ContentPlanEditor
 export async function createContentPlanRow(data: ContentPlanFormData, userId?: string | null) {
   const client = requireSupabase();
   const payload = await toContentPlanPayload(data, userId, true);
-  const { data: createdRow, error } = await client
-    .from('content_plan')
-    .insert(payload)
-    .select('id')
-    .single();
+  const { data: createdRows, error } = await client.rpc('create_content_plan_with_notifications', {
+    p_air_date: payload.air_date,
+    p_title: payload.title,
+    p_note: payload.note,
+    p_category: payload.category,
+    p_link: payload.link,
+  });
 
   if (error) throw new Error(mapDatabaseError(error));
 
-  void logActivity({
-    actorId: userId,
-    entityType: 'content_plan',
-    entityId: createdRow?.id ?? null,
-    action: 'created',
-    title: data.video_name.trim(),
-    description: `Đã tạo kế hoạch content "${data.video_name.trim()}".`,
-    metadata: {
-      air_date: data.air_date,
-      category: data.category,
-      note: data.note.trim(),
-      editor_id: data.editor_id,
-      link: data.link.trim(),
-    },
-  });
+  const createdRow = Array.isArray(createdRows) ? createdRows[0] : createdRows;
+  if (!(createdRow as CreateContentPlanRpcRow | null)?.content_plan_id) {
+    throw new Error('Không nhận được kết quả tạo Content Plan.');
+  }
 }
 
 export async function updateContentPlanRow(
@@ -418,24 +448,11 @@ export async function assignEditorToContentPlan(
   return mapAssignEditorRpcRow(row as AssignEditorRpcRow);
 }
 
-export async function deleteContentPlanRow(rowId: string, userId?: string | null, title?: string) {
+export async function deleteContentPlanRow(rowId: string) {
   const client = requireSupabase();
-  const { error } = await client
-    .from('content_plan')
-    .delete()
-    .eq('id', rowId);
+  const { error } = await client.rpc('delete_content_plan_with_notifications', {
+    p_content_plan_id: rowId,
+  });
 
   if (error) throw new Error(mapDatabaseError(error));
-
-  void logActivity({
-    actorId: userId,
-    entityType: 'content_plan',
-    entityId: rowId,
-    action: 'deleted',
-    title: title ?? 'Kế hoạch content',
-    description: `Đã xóa kế hoạch content "${title ?? rowId}".`,
-    metadata: {
-      content_plan_id: rowId,
-    },
-  });
 }

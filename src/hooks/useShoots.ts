@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAuth } from '../context/authContext';
 import { createShoot, deleteShoot, fetchShoots, updateShoot } from '../services/shootsService';
 import { fetchContentPlanEditorOptions } from '../services/contentPlanService';
 import type { ContentPlanEditorOption } from '../types/contentPlan';
@@ -20,7 +19,6 @@ interface LoadOptions {
 }
 
 export function useShoots({ startDate, endDate }: UseShootsOptions) {
-  const { user } = useAuth();
   const requestIdRef = useRef(0);
   const [shoots, setShoots] = useState<ShootSchedule[]>([]);
   const [editorOptions, setEditorOptions] = useState<ContentPlanEditorOption[]>([]);
@@ -73,7 +71,7 @@ export function useShoots({ startDate, endDate }: UseShootsOptions) {
     setModalError(null);
 
     try {
-      await createShoot(data, user?.id);
+      await createShoot(data);
       await loadShoots();
       return true;
     } catch (error) {
@@ -82,14 +80,14 @@ export function useShoots({ startDate, endDate }: UseShootsOptions) {
     } finally {
       setIsSaving(false);
     }
-  }, [loadShoots, user?.id]);
+  }, [loadShoots]);
 
   const updateShootSchedule = useCallback(async (shootId: string, data: ShootFormData) => {
     setIsSaving(true);
     setModalError(null);
 
     try {
-      await updateShoot(shootId, data, user?.id);
+      await updateShoot(shootId, data);
       await loadShoots();
       return true;
     } catch (error) {
@@ -98,15 +96,14 @@ export function useShoots({ startDate, endDate }: UseShootsOptions) {
     } finally {
       setIsSaving(false);
     }
-  }, [loadShoots, user?.id]);
+  }, [loadShoots]);
 
   const deleteShootSchedule = useCallback(async (shootId: string) => {
     setIsDeleting(true);
     setModalError(null);
 
     try {
-      const targetShoot = shoots.find((shoot) => shoot.id === shootId);
-      await deleteShoot(shootId, user?.id, targetShoot?.place);
+      await deleteShoot(shootId);
       await loadShoots();
       return true;
     } catch (error) {
@@ -115,7 +112,7 @@ export function useShoots({ startDate, endDate }: UseShootsOptions) {
     } finally {
       setIsDeleting(false);
     }
-  }, [loadShoots, shoots, user?.id]);
+  }, [loadShoots]);
 
   const clearModalError = useCallback(() => {
     setModalError(null);

@@ -1,5 +1,4 @@
 import { supabase, supabaseConfigError } from '../lib/supabase';
-import { logActivity } from './activityLogService';
 import type { ShootFormData, ShootSchedule, ShootType } from '../types/shoot';
 
 type Nullable<T> = T | null;
@@ -36,13 +35,7 @@ type ShootPayload = {
   time_slot: string | null;
   location: string;
   content_note: string | null;
-  status: 'scheduled';
-  priority: '';
-  created_by?: string | null;
-  updated_by?: string | null;
 };
-
-const editorIdCache = new Map<string, string | null>();
 
 function requireSupabase() {
   if (!supabase) {
@@ -63,6 +56,21 @@ function mapDatabaseError(error: { message?: string; code?: string } | null) {
   }
   if (message.includes('violates check constraint')) {
     return 'Dữ liệu lịch quay chưa đúng định dạng.';
+  }
+  if (message.includes('bạn không có quyền tạo lịch quay')) {
+    return 'Bạn không có quyền tạo lịch quay.';
+  }
+  if (message.includes('bạn không có quyền cập nhật lịch quay')) {
+    return 'Bạn không có quyền cập nhật lịch quay.';
+  }
+  if (message.includes('bạn không có quyền xóa lịch quay')) {
+    return 'Bạn không có quyền xóa lịch quay.';
+  }
+  if (message.includes('không tìm thấy lịch quay')) {
+    return 'Không tìm thấy lịch quay.';
+  }
+  if (message.includes('loại lịch quay không hợp lệ')) {
+    return 'Loại lịch quay không hợp lệ.';
   }
   if (message.includes('shoot_editors') || message.includes('is_editor_member')) {
     return 'Phân công editor chưa sẵn sàng. Vui lòng liên hệ quản trị viên.';
@@ -147,7 +155,7 @@ function mapShootRow(row: ShootRow): ShootSchedule {
   };
 }
 
-function toShootPayload(data: ShootFormData, userId?: string | null, includeCreatedBy = false): ShootPayload {
+function toShootPayload(data: ShootFormData): ShootPayload {
   const place = data.place.trim();
   if (!place) throw new Error('Vui lòng nhập địa điểm lịch quay.');
 
@@ -158,89 +166,7 @@ function toShootPayload(data: ShootFormData, userId?: string | null, includeCrea
     time_slot: data.time.trim() || null,
     location: place,
     content_note: data.note.trim() || null,
-    status: 'scheduled',
-    priority: '',
-    ...(includeCreatedBy ? { created_by: userId ?? null } : {}),
-    updated_by: userId ?? null,
   };
-}
-
-async function resolveEditorProfileId(editorCode: string) {
-  const cleanCode = editorCode.trim().toLowerCase();
-  if (!cleanCode) return null;
-  if (editorIdCache.has(cleanCode)) return editorIdCache.get(cleanCode) ?? null;
-
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from('profiles')
-    .select('id')
-    .eq('is_editor_member', true)
-    .ilike('editor_code', cleanCode)
-    .maybeSingle();
-
-  if (error) throw new Error(mapDatabaseError(error));
-
-  const editorProfileId = data?.id ?? null;
-  editorIdCache.set(cleanCode, editorProfileId);
-  return editorProfileId;
-}
-
-async function syncShootEditors(shootId: string, editorIds: string[], userId?: string | null) {
-  const client = requireSupabase();
-  const uniqueEditorIds = Array.from(new Set(editorIds.map((id) => id.trim().toLowerCase()).filter(Boolean)));
-  const profileIds = (await Promise.all(uniqueEditorIds.map(resolveEditorProfileId))).filter((id): id is string => Boolean(id));
-
-  if (profileIds.length !== uniqueEditorIds.length) {
-    throw new Error('Không tìm thấy profile editor hợp lệ. Hãy kiểm tra Editor Code và bật "Tham gia team editor" trong Thành viên.');
-  }
-
-  const { data: currentRows, error: fetchError } = await client
-    .from('shoot_editors')
-    .select('profile_id')
-    .eq('shoot_id', shootId);
-
-  if (fetchError) throw new Error(mapDatabaseError(fetchError));
-
-  const currentProfileIds = new Set((currentRows ?? []).map((row) => row.profile_id as string));
-  const nextProfileIds = new Set(profileIds);
-  const profileIdsToInsert = profileIds.filter((profileId) => !currentProfileIds.has(profileId));
-  const profileIdsToDelete = Array.from(currentProfileIds).filter((profileId) => !nextProfileIds.has(profileId));
-
-  if (profileIdsToInsert.length > 0) {
-    const { error: insertError } = await client
-      .from('shoot_editors')
-      .insert(profileIdsToInsert.map((profileId) => ({
-        shoot_id: shootId,
-        profile_id: profileId,
-        created_by: userId ?? null,
-      })));
-
-    if (insertError) throw new Error(mapDatabaseError(insertError));
-  }
-
-  if (profileIdsToDelete.length === 0) return;
-
-  const { error: deleteError } = await client
-    .from('shoot_editors')
-    .delete()
-    .eq('shoot_id', shootId)
-    .in('profile_id', profileIdsToDelete);
-
-  if (deleteError) throw new Error(mapDatabaseError(deleteError));
-}
-
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Không thể lưu phân công editor cho lịch quay.';
-}
-
-async function rollbackCreatedShoot(shootId: string) {
-  const client = requireSupabase();
-  const { error } = await client
-    .from('shoots')
-    .delete()
-    .eq('id', shootId);
-
-  return !error;
 }
 
 export async function fetchShoots(startDate: string, endDate: string): Promise<ShootSchedule[]> {
@@ -277,91 +203,78 @@ export async function fetchShoots(startDate: string, endDate: string): Promise<S
   return ((data ?? []) as unknown as ShootRow[]).map(mapShootRow);
 }
 
-export async function createShoot(data: ShootFormData, userId?: string | null) {
+export async function fetchShootById(shootId: string): Promise<ShootSchedule | null> {
   const client = requireSupabase();
-  const payload = toShootPayload(data, userId, true);
-  const { data: createdRow, error } = await client
+  const { data, error } = await client
     .from('shoots')
-    .insert(payload)
-    .select('id')
-    .single();
+    .select(`
+      id,
+      shoot_date,
+      shoot_type,
+      crew,
+      time_slot,
+      location,
+      content_note,
+      shoot_editors (
+        profile_id,
+        profiles!shoot_editors_profile_id_fkey (
+          id,
+          editor_code,
+          short_name,
+          display_name,
+          full_name,
+          ui_color
+        )
+      )
+    `)
+    .eq('id', shootId)
+    .maybeSingle();
 
   if (error) throw new Error(mapDatabaseError(error));
-  if (!createdRow?.id) throw new Error('Không nhận được mã lịch quay. Vui lòng thử lại.');
+  if (!data) return null;
 
-  try {
-    await syncShootEditors(createdRow.id, data.editorIds, userId);
-  } catch (assignmentError) {
-    const didRollback = await rollbackCreatedShoot(createdRow.id);
-    if (!didRollback) {
-      throw new Error(`${getErrorMessage(assignmentError)} Lịch quay đã được tạo nhưng phân công editor chưa được lưu. Vui lòng liên hệ quản trị viên.`);
-    }
-    throw assignmentError;
-  }
-
-  void logActivity({
-    actorId: userId,
-    entityType: 'shoot',
-    entityId: createdRow.id,
-    action: 'created',
-    title: data.place.trim(),
-    description: `Đã tạo lịch quay "${data.place.trim()}".`,
-    metadata: {
-      shoot_date: data.date,
-      shoot_type: data.type,
-      crew: data.crew,
-      editor_ids: data.editorIds,
-      time_slot: data.time,
-    },
-  });
+  return mapShootRow(data as unknown as ShootRow);
 }
 
-export async function updateShoot(shootId: string, data: ShootFormData, userId?: string | null) {
+export async function createShoot(data: ShootFormData) {
   const client = requireSupabase();
-  const payload = toShootPayload(data, userId);
-  const { error } = await client
-    .from('shoots')
-    .update(payload)
-    .eq('id', shootId);
+  const payload = toShootPayload(data);
+  const { data: result, error } = await client.rpc('create_shoot_with_notifications', {
+    p_shoot_date: payload.shoot_date,
+    p_shoot_type: payload.shoot_type,
+    p_crew: payload.crew,
+    p_time_slot: payload.time_slot,
+    p_location: payload.location,
+    p_content_note: payload.content_note,
+    p_editor_codes: data.editorIds,
+  });
 
   if (error) throw new Error(mapDatabaseError(error));
-  await syncShootEditors(shootId, data.editorIds, userId);
-
-  void logActivity({
-    actorId: userId,
-    entityType: 'shoot',
-    entityId: shootId,
-    action: 'updated',
-    title: data.place.trim(),
-    description: `Đã cập nhật lịch quay "${data.place.trim()}".`,
-    metadata: {
-      shoot_date: data.date,
-      shoot_type: data.type,
-      crew: data.crew,
-      editor_ids: data.editorIds,
-      time_slot: data.time,
-    },
-  });
+  if (!Array.isArray(result) || !result[0]?.shoot_id) throw new Error('Không nhận được mã lịch quay. Vui lòng thử lại.');
 }
 
-export async function deleteShoot(shootId: string, userId?: string | null, title?: string) {
+export async function updateShoot(shootId: string, data: ShootFormData) {
   const client = requireSupabase();
-  const { error } = await client
-    .from('shoots')
-    .delete()
-    .eq('id', shootId);
+  const payload = toShootPayload(data);
+  const { error } = await client.rpc('update_shoot_with_notifications', {
+    p_shoot_id: shootId,
+    p_shoot_date: payload.shoot_date,
+    p_shoot_type: payload.shoot_type,
+    p_crew: payload.crew,
+    p_time_slot: payload.time_slot,
+    p_location: payload.location,
+    p_content_note: payload.content_note,
+    p_editor_codes: data.editorIds,
+  });
 
   if (error) throw new Error(mapDatabaseError(error));
+}
 
-  void logActivity({
-    actorId: userId,
-    entityType: 'shoot',
-    entityId: shootId,
-    action: 'deleted',
-    title: title ?? 'Lịch quay',
-    description: `Đã xóa lịch quay "${title ?? shootId}".`,
-    metadata: {
-      shoot_id: shootId,
-    },
+export async function deleteShoot(shootId: string) {
+  const client = requireSupabase();
+  const { error } = await client.rpc('delete_shoot_with_notifications', {
+    p_shoot_id: shootId,
   });
+
+  if (error) throw new Error(mapDatabaseError(error));
 }

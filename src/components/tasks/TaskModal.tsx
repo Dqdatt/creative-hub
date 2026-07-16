@@ -19,6 +19,7 @@ interface TaskModalProps {
   onComplete?: (data: LinkedVideoTaskExecutionData) => void | Promise<void>;
   canAcceptLinkedTask?: boolean;
   canCompleteLinkedTask?: boolean;
+  readOnly?: boolean;
   isSaving?: boolean;
   errorMessage?: string | null;
 }
@@ -46,8 +47,30 @@ function resolveTaskModalFieldState(
   task: VideoTask | null,
   canAcceptLinkedTask: boolean,
   canCompleteLinkedTask: boolean,
+  readOnly: boolean,
 ): TaskModalFieldState {
   const isLinkedTask = Boolean(task?.contentPlanId);
+
+  if (readOnly) {
+    return {
+      isLinkedTask,
+      canEditTitle: false,
+      canEditEditor: false,
+      canEditStatus: false,
+      canEditOrderTeam: false,
+      canEditCategory: false,
+      canEditPriority: false,
+      canEditResize: false,
+      canEditReceiveDate: false,
+      canEditReturnDate: false,
+      canEditAirDate: false,
+      canEditResultLink: false,
+      canAccept: false,
+      canSaveExecution: false,
+      canComplete: false,
+      canUseGenericSave: false,
+    };
+  }
 
   if (!isLinkedTask) {
     return {
@@ -130,13 +153,14 @@ export function TaskModal({
   onComplete,
   canAcceptLinkedTask = false,
   canCompleteLinkedTask = false,
+  readOnly = false,
   isSaving = false,
   errorMessage = null,
 }: TaskModalProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const isEditMode = task !== null;
-  const fieldState = resolveTaskModalFieldState(task, canAcceptLinkedTask, canCompleteLinkedTask);
+  const fieldState = resolveTaskModalFieldState(task, canAcceptLinkedTask, canCompleteLinkedTask, readOnly);
   const isAcceptMode = fieldState.canAccept;
   const isCompleteMode = fieldState.canComplete;
   const isLinkedDoneTask = fieldState.isLinkedTask && task?.status === 'Đã xong';

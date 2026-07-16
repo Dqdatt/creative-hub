@@ -8,6 +8,7 @@ interface ContentPlanTableProps {
   editorOptions: ContentPlanEditorOption[];
   canEdit: boolean;
   onEdit: (item: ContentPlanItem) => void;
+  highlightedId?: string | null;
 }
 
 function formatDate(value: string) {
@@ -39,6 +40,7 @@ export function ContentPlanTable({
   editorOptions,
   canEdit,
   onEdit,
+  highlightedId = null,
 }: ContentPlanTableProps) {
   if (items.length === 0) {
     return (
@@ -84,12 +86,15 @@ export function ContentPlanTable({
           const rowClassName = [
             canEdit ? 'cursor-pointer' : '',
             hasLink ? 'vrow-done' : '',
+            highlightedId === item.id ? 'route-highlight route-highlight--row' : '',
           ].filter(Boolean).join(' ');
 
           return (
             <tr
               key={item.id}
               className={rowClassName}
+              data-content-plan-id={item.id}
+              aria-current={highlightedId === item.id ? 'true' : undefined}
               onClick={() => { if (canEdit) onEdit(item); }}
             >
               <td className="text-sub tabular-nums font-bold">

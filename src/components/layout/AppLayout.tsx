@@ -4,11 +4,13 @@ import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { WhatsNewTour } from "../common/WhatsNewTour";
 import { useAuth } from "../../context/authContext";
+import { useNotifications } from "../../hooks/useNotifications";
 import { useWhatsNewOnboarding } from "../../hooks/useWhatsNewOnboarding";
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { profile, role, permissions } = useAuth();
+  const notifications = useNotifications(profile?.id);
   const whatsNew = useWhatsNewOnboarding(profile?.id);
 
   return (
@@ -18,6 +20,7 @@ export default function AppLayout() {
         <Header
           onOpenSidebar={() => setSidebarOpen(true)}
           onOpenWhatsNew={whatsNew.openManually}
+          notifications={notifications}
         />
         <main id="view" className="app-content">
           <Outlet />
@@ -26,7 +29,7 @@ export default function AppLayout() {
           className="app-footer"
           style={{ borderTop: "1px solid var(--border)" }}
         >
-          CreativeHub | Developed by Doan Quoc Dat | v1.0.5.1
+          CreativeHub | Developed by Doan Quoc Dat | v1.0.6
         </footer>
       </div>
       <div

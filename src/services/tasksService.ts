@@ -100,6 +100,11 @@ interface UpdateLinkedVideoTaskExecutionRpcRow {
   changed_fields: string[] | null;
 }
 
+export interface VideoTaskDeepLinkTarget {
+  task: VideoTask;
+  monthValue: string | null;
+}
+
 const editorIdCache = new Map<string, string | null>();
 
 function requireSupabase() {
@@ -398,6 +403,47 @@ export async function fetchVideoTasks(monthValue?: string): Promise<VideoTask[]>
   if (error) throw new Error(mapDatabaseError(error));
 
   return ((data ?? []) as unknown as VideoTaskRow[]).map(mapTaskRow);
+}
+
+export async function fetchVideoTaskById(taskId: string): Promise<VideoTaskDeepLinkTarget | null> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from('video_tasks')
+    .select(`
+      id,
+      stt,
+      title,
+      resize_reqs,
+      editor_id,
+      order_team,
+      category,
+      receive_date,
+      return_date,
+      air_date,
+      status,
+      priority,
+      result_link,
+      content_plan_id,
+      profiles!video_tasks_editor_id_fkey (
+        id,
+        editor_code,
+        short_name,
+        display_name,
+        full_name,
+        ui_color
+      )
+    `)
+    .eq('id', taskId)
+    .maybeSingle();
+
+  if (error) throw new Error(mapDatabaseError(error));
+  if (!data) return null;
+
+  const row = data as unknown as VideoTaskRow;
+  return {
+    task: mapTaskRow(row),
+    monthValue: row.air_date?.slice(0, 7) ?? null,
+  };
 }
 
 export async function createVideoTask(data: TaskFormData, userId?: string | null) {

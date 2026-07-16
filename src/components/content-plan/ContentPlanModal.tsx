@@ -18,6 +18,7 @@ interface ContentPlanModalProps {
   canEditLink: boolean;
   isLinkSynced: boolean;
   canDelete: boolean;
+  canSave?: boolean;
   isSaving: boolean;
   errorMessage?: string | null;
   onClose: () => void;
@@ -54,6 +55,7 @@ export function ContentPlanModal({
   canEditLink,
   isLinkSynced,
   canDelete,
+  canSave = true,
   isSaving,
   errorMessage = null,
   onClose,
@@ -191,10 +193,12 @@ export function ContentPlanModal({
           <button type="button" className="btn-ghost" onClick={onClose} disabled={isSaving}>
             Hủy
           </button>
-          <button type="button" className="btn" onClick={onSave} disabled={isSaving}>
-            {mode === 'assign' ? <UserRound /> : <PencilLine />}
-            {isSaving ? 'Đang lưu...' : copy.action}
-          </button>
+          {canSave ? (
+            <button type="button" className="btn" onClick={onSave} disabled={isSaving}>
+              {mode === 'assign' ? <UserRound /> : <PencilLine />}
+              {isSaving ? 'Đang lưu...' : copy.action}
+            </button>
+          ) : null}
           </div>
         </div>
       </section>

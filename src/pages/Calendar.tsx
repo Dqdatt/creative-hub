@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import { CalendarDays, X } from 'lucide-react';
 import type { ShootSchedule, ShootType, ShootFormData } from '../types/shoot';
 import { EmptyState } from '../components/common/EmptyState';
@@ -10,10 +11,13 @@ import { CalendarGrid } from '../components/calendar/CalendarGrid';
 import { ShootModal } from '../components/calendar/ShootModal';
 import { useAuth } from '../context/authContext';
 import { useShoots } from '../hooks/useShoots';
+import { useRouteHighlight } from '../hooks/useRouteHighlight';
+import { fetchShootById } from '../services/shootsService';
 import { useConfirmDialog } from '../components/common/confirmDialogContext';
 import { useToast } from '../components/common/toastContext';
 import { useMonth } from '../context/monthContext';
 import { monthValueToDate } from '../utils/month';
+import { isIsoDate, isUuid } from '../utils/id';
 import { SHOOT_TYPES_META } from '../data/shoots';
 import { useDocumentScrollLock } from '../components/common/useDocumentScrollLock';
 
@@ -119,7 +123,8 @@ export default function Calendar() {
   const { can } = useAuth();
   const { requestConfirm } = useConfirmDialog();
   const { showToast } = useToast();
-  const { selectedMonth, goToCurrentMonth } = useMonth();
+  const { selectedMonth, setSelectedMonth, goToCurrentMonth } = useMonth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filter, setFilter] = useState<ShootType | 'all'>('all');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -129,6 +134,10 @@ export default function Calendar() {
   const canCreateShoot = can('shoots:create');
   const canUpdateShoot = can('shoots:update');
   const canDeleteShoot = can('shoots:delete');
+  const highlightParam = searchParams.get('highlight');
+  const legacyShootParam = searchParams.get('shoot');
+  const targetShootId = highlightParam ?? legacyShootParam;
+  const dateParam = searchParams.get('date');
 
   const currentDate = useMemo(() => monthValueToDate(selectedMonth), [selectedMonth]);
 
@@ -170,6 +179,23 @@ export default function Calendar() {
     setIsModalOpen(true);
   };
 
+  const clearShootHighlightParams = useCallback(() => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('highlight');
+      next.delete('shoot');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const clearDateParam = useCallback(() => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('date');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
   const handleMoreClick = (dateStr: string, events: ShootSchedule[], e: React.MouseEvent) => {
     e.stopPropagation();
     setAgenda({ date: dateStr, events });
@@ -181,6 +207,95 @@ export default function Calendar() {
     setSelectedShoot(null);
     clearModalError();
   };
+
+  useEffect(() => {
+    if (dateParam && !isIsoDate(dateParam)) {
+      showToast({ type: 'warning', message: 'Đường dẫn ngày lịch quay không hợp lệ.' });
+      clearDateParam();
+      return;
+    }
+
+    if (dateParam) {
+      const targetMonth = dateParam.slice(0, 7);
+      if (targetMonth !== selectedMonth) setSelectedMonth(targetMonth);
+    }
+  }, [clearDateParam, dateParam, selectedMonth, setSelectedMonth, showToast]);
+
+  useEffect(() => {
+    if (!targetShootId) return;
+
+    if (!isUuid(targetShootId)) {
+      showToast({ type: 'warning', message: 'Đường dẫn lịch quay không hợp lệ.' });
+      clearShootHighlightParams();
+      return;
+    }
+
+    const visibleShoot = shoots.find((shoot) => shoot.id === targetShootId);
+    if (visibleShoot) {
+      if (visibleShoot.date.slice(0, 7) !== selectedMonth) {
+        setSelectedMonth(visibleShoot.date.slice(0, 7));
+      }
+      if (filter !== 'all' && visibleShoot.type !== filter) {
+        setFilter('all');
+      }
+      return;
+    }
+
+    if (isLoading) return;
+
+    let cancelled = false;
+
+    void fetchShootById(targetShootId)
+      .then((shoot) => {
+        if (cancelled) return;
+        if (!shoot) {
+          showToast({ type: 'warning', message: 'Nội dung liên quan không còn tồn tại hoặc bạn không có quyền xem.' });
+          clearShootHighlightParams();
+          return;
+        }
+
+        if (shoot.date.slice(0, 7) !== selectedMonth) {
+          setSelectedMonth(shoot.date.slice(0, 7));
+        }
+        if (filter !== 'all' && shoot.type !== filter) {
+          setFilter('all');
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        showToast({ type: 'warning', message: 'Nội dung liên quan không còn tồn tại hoặc bạn không có quyền xem.' });
+        clearShootHighlightParams();
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clearShootHighlightParams, filter, isLoading, selectedMonth, setSelectedMonth, shoots, showToast, targetShootId]);
+
+  const visibleTargetShoot = targetShootId && isUuid(targetShootId)
+    ? shoots.find((shoot) => shoot.id === targetShootId && (filter === 'all' || shoot.type === filter))
+    : null;
+  const handleShootHighlightMissing = useCallback(() => {
+    showToast({ type: 'warning', message: 'Nội dung liên quan không còn tồn tại hoặc bạn không có quyền xem.' });
+  }, [showToast]);
+  const handleDateHighlightMissing = useCallback(() => {
+    showToast({ type: 'warning', message: 'Không tìm thấy ngày lịch quay liên quan.' });
+  }, [showToast]);
+  const highlightedShootId = useRouteHighlight({
+    targetId: targetShootId && isUuid(targetShootId) ? targetShootId : null,
+    selector: targetShootId && isUuid(targetShootId) ? `[data-shoot-id="${targetShootId}"]` : null,
+    fallbackSelector: visibleTargetShoot ? `[data-calendar-date="${visibleTargetShoot.date}"]` : null,
+    ready: !isLoading && Boolean(visibleTargetShoot),
+    clearQuery: clearShootHighlightParams,
+    onMissing: handleShootHighlightMissing,
+  });
+  const highlightedDate = useRouteHighlight({
+    targetId: dateParam && isIsoDate(dateParam) ? dateParam : null,
+    selector: dateParam && isIsoDate(dateParam) ? `[data-calendar-date="${dateParam}"]` : null,
+    ready: !isLoading && Boolean(dateParam && isIsoDate(dateParam) && dateParam.startsWith(selectedMonth)),
+    clearQuery: clearDateParam,
+    onMissing: handleDateHighlightMissing,
+  });
 
   const handleSave = async (data: ShootFormData) => {
     if (selectedShoot && !canUpdateShoot) return;
@@ -259,6 +374,8 @@ export default function Calendar() {
             onShootClick={handleShootClick}
             onMoreClick={handleMoreClick}
             canCreateShoot={canCreateShoot}
+            highlightedShootId={highlightedShootId}
+            highlightedDate={highlightedDate}
           />
         )}
       </div>

@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { VideoTask, TaskFormData, LinkedVideoTaskExecutionData } from '../types/task';
 import { EmptyState } from '../components/common/EmptyState';
 import { ErrorState } from '../components/common/ErrorState';
@@ -8,13 +9,17 @@ import { TaskTable } from '../components/tasks/TaskTable';
 import { useAuth } from '../context/authContext';
 import { TaskModal } from '../components/tasks/TaskModal';
 import { useTasks } from '../hooks/useTasks';
+import { useRouteHighlight } from '../hooks/useRouteHighlight';
+import { fetchVideoTaskById } from '../services/tasksService';
 import { useToast } from '../components/common/toastContext';
 import { useMonth } from '../context/monthContext';
+import { isUuid } from '../utils/id';
 
 export default function Tasks() {
   const { can, profile } = useAuth();
   const { showToast } = useToast();
-  const { selectedMonth } = useMonth();
+  const { selectedMonth, setSelectedMonth } = useMonth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     tasks,
     editors,
@@ -37,6 +42,9 @@ export default function Tasks() {
   const [selectedTask, setSelectedTask] = useState<VideoTask | null>(null);
   const canCreateTask = can('video_tasks:create');
   const canUpdateTask = can('video_tasks:update');
+  const highlightParam = searchParams.get('highlight');
+  const legacyTaskParam = searchParams.get('task');
+  const targetTaskId = highlightParam ?? legacyTaskParam;
   const selectedTaskEditorProfileId = selectedTask
     ? editors.find((editor) => editor.id === selectedTask.editorId)?.profileId
     : null;
@@ -83,12 +91,80 @@ export default function Tasks() {
     setIsModalOpen(true);
   };
 
+  const clearHighlightParams = useCallback(() => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('highlight');
+      next.delete('task');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
   const closeModal = () => {
     if (isSaving) return;
     setIsModalOpen(false);
     setSelectedTask(null);
     clearSaveError();
   };
+
+  useEffect(() => {
+    if (!targetTaskId) return;
+
+    if (!isUuid(targetTaskId)) {
+      showToast({ type: 'warning', message: 'Đường dẫn Video Task không hợp lệ.' });
+      clearHighlightParams();
+      return;
+    }
+
+    const visibleTask = tasks.find((task) => task.dbId === targetTaskId);
+    if (visibleTask) {
+      if (search || editorFilter !== 'all' || statusFilter !== 'all') {
+        setSearch('');
+        setEditorFilter('all');
+        setStatusFilter('all');
+      }
+      return;
+    }
+
+    if (isLoading) return;
+
+    let cancelled = false;
+
+    void fetchVideoTaskById(targetTaskId)
+      .then((target) => {
+        if (cancelled) return;
+        if (!target) {
+          showToast({ type: 'warning', message: 'Không tìm thấy Task liên quan.' });
+          clearHighlightParams();
+          return;
+        }
+
+        if (target.monthValue && target.monthValue !== selectedMonth) {
+          setSelectedMonth(target.monthValue);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        showToast({ type: 'warning', message: 'Nội dung liên quan không còn tồn tại hoặc bạn không có quyền xem.' });
+        clearHighlightParams();
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clearHighlightParams, editorFilter, isLoading, search, selectedMonth, setSelectedMonth, showToast, statusFilter, targetTaskId, tasks]);
+
+  const handleHighlightMissing = useCallback(() => {
+    showToast({ type: 'warning', message: 'Không tìm thấy Task liên quan.' });
+  }, [showToast]);
+
+  const highlightedTaskId = useRouteHighlight({
+    targetId: targetTaskId && isUuid(targetTaskId) ? targetTaskId : null,
+    selector: targetTaskId && isUuid(targetTaskId) ? `[data-video-task-id="${targetTaskId}"]` : null,
+    ready: !isLoading && filteredTasks.some((task) => task.dbId === targetTaskId),
+    clearQuery: clearHighlightParams,
+    onMissing: handleHighlightMissing,
+  });
 
   const handleSave = async (data: TaskFormData) => {
     if (selectedTask && !canUpdateTask) return;
@@ -170,7 +246,7 @@ export default function Tasks() {
       );
     }
 
-    return <TaskTable tasks={filteredTasks} editors={editors} onRowClick={openEditModal} canEditTask={canUpdateTask} />;
+    return <TaskTable tasks={filteredTasks} editors={editors} onRowClick={openEditModal} canEditTask={canUpdateTask} highlightedId={highlightedTaskId} />;
   };
 
   return (

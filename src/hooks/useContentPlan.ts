@@ -122,7 +122,7 @@ export function useContentPlan(monthValue: string) {
     setSaveError(null);
 
     try {
-      await deleteContentPlanRow(item.id, user?.id, item.video_name);
+      await deleteContentPlanRow(item.id);
       await loadContentPlan();
       return true;
     } catch (error) {
@@ -131,7 +131,7 @@ export function useContentPlan(monthValue: string) {
     } finally {
       setIsDeleting(false);
     }
-  }, [loadContentPlan, user?.id]);
+  }, [loadContentPlan]);
 
   const clearSaveError = useCallback(() => {
     setSaveError(null);
