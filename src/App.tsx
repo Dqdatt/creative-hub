@@ -5,12 +5,13 @@ import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import { ProtectedRoute, PublicOnlyRoute } from './components/auth/AuthRoutes';
-import { DEFAULT_AUTHENTICATED_ROUTE } from './config/permissions';
+import { getDefaultAuthenticatedRoute } from './config/permissions';
 import { ConfirmDialogProvider } from './components/common/ConfirmDialogProvider';
 import { ToastProvider } from './components/common/ToastProvider';
 import { LoadingState } from './components/common/LoadingState';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { MonthProvider } from './context/monthProvider';
+import { useAuth } from './context/authContext';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Tasks = lazy(() => import('./pages/Tasks'));
@@ -20,7 +21,8 @@ const ContentPlan = lazy(() => import('./pages/ContentPlan'));
 const Users = lazy(() => import('./pages/Users'));
 
 function DefaultRedirect() {
-  return <Navigate to={DEFAULT_AUTHENTICATED_ROUTE} replace />;
+  const { role, permissions } = useAuth();
+  return <Navigate to={getDefaultAuthenticatedRoute(role, permissions)} replace />;
 }
 
 function RouteLoadingFallback() {

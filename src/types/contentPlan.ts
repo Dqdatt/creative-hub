@@ -7,6 +7,8 @@ export interface ContentPlanItem {
   note: string;
   category: ContentPlanCategory;
   editor_id: string;
+  link: string;
+  hasLinkedTask: boolean;
 }
 
 export interface ContentPlanFormData {
@@ -15,6 +17,7 @@ export interface ContentPlanFormData {
   note: string;
   category: ContentPlanCategory;
   editor_id: string;
+  link: string;
 }
 
 export interface ContentPlanEditorOption {
@@ -27,4 +30,13 @@ export interface ContentPlanEditorOption {
   bgColor: string;
   avatarUrl: string;
   role: string;
+}
+
+export interface AssignContentPlanEditorResult {
+  contentPlanId: string;
+  videoTaskId: string | null;
+  editorId: string | null;
+  taskCreated: boolean;
+  taskStatus: string | null;
+  airDate: string;
 }

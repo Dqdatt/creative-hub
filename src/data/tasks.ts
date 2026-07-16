@@ -41,6 +41,7 @@ export const EDITORS: Editor[] = [
 export const MOCK_TASKS: VideoTask[] = [
   {
     id: 1,
+    contentPlanId: null,
     name: 'Video Motion Shopee sale 7.7',
     resize: '',
     editorId: 'minh',
@@ -55,6 +56,7 @@ export const MOCK_TASKS: VideoTask[] = [
   },
   {
     id: 2,
+    contentPlanId: null,
     name: 'Video Chạm vào an yên tập 9',
     resize: '9x16 & 1x1',
     editorId: 'minh',
@@ -69,6 +71,7 @@ export const MOCK_TASKS: VideoTask[] = [
   },
   {
     id: 3,
+    contentPlanId: null,
     name: 'Video Review IKI Premium',
     resize: '9x16 & 1x1',
     editorId: 'hai',
@@ -83,6 +86,7 @@ export const MOCK_TASKS: VideoTask[] = [
   },
   {
     id: 4,
+    contentPlanId: null,
     name: "Video Motion Nệm L'ADOME",
     resize: '',
     editorId: 'hai',
@@ -97,6 +101,7 @@ export const MOCK_TASKS: VideoTask[] = [
   },
   {
     id: 5,
+    contentPlanId: null,
     name: 'Video Motion Combo kháng khuẩn',
     resize: '1x1',
     editorId: 'minh',
@@ -111,6 +116,7 @@ export const MOCK_TASKS: VideoTask[] = [
   },
   {
     id: 6,
+    contentPlanId: null,
     name: 'Video Những thứ khiến phòng ngủ đắt tiền',
     resize: '9x16 & 1x1',
     editorId: 'minh',
@@ -125,6 +131,7 @@ export const MOCK_TASKS: VideoTask[] = [
   },
   {
     id: 7,
+    contentPlanId: null,
     name: 'Video Motion Nệm Cocoon Grey',
     resize: '1x1',
     editorId: 'hai',
@@ -139,6 +146,7 @@ export const MOCK_TASKS: VideoTask[] = [
   },
   {
     id: 8,
+    contentPlanId: null,
     name: 'Video COCOON - 3 Lợi ích khi sử dụng nệm lò xo túi độc lập',
     resize: '9x16 & 1x1',
     editorId: 'dat',
@@ -153,6 +161,7 @@ export const MOCK_TASKS: VideoTask[] = [
   },
   {
     id: 9,
+    contentPlanId: null,
     name: "Video Motion Nệm L'ADOME Cool",
     resize: '1x1',
     editorId: 'hai',

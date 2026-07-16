@@ -11,7 +11,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
-import { getVisibleNavigationForPermissions } from '../../config/permissions';
+import { getDefaultAuthenticatedRoute, getVisibleNavigationForPermissions } from '../../config/permissions';
 import { useAuth } from '../../context/authContext';
 import logoSymbol from '../../assets/logo.png';
 import logoWordmark from '../../assets/text.png';
@@ -34,6 +34,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { role, permissions, signOut } = useAuth();
   const navigation = getVisibleNavigationForPermissions(role, permissions);
+  const defaultRoute = getDefaultAuthenticatedRoute(role, permissions);
   const isCollapsed = !mobileOpen && collapsed;
   const ToggleIcon = isCollapsed ? PanelLeftOpen : PanelLeftClose;
   const toggleLabel = isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng';
@@ -53,9 +54,9 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         <div className="sb-brand">
           {mobileOpen ? (
             <Link
-              to="/dashboard"
+              to={defaultRoute}
               className="sb-mobile-brand-link"
-              aria-label="CreativeHub - Trang tổng quan"
+              aria-label="CreativeHub - Trang chính"
               onClick={onClose}
             >
               <img className="sb-brand-symbol" src={logoSymbol} alt="" draggable={false} />
@@ -82,9 +83,9 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               </button>
               {!isCollapsed ? (
                 <Link
-                  to="/dashboard"
+                  to={defaultRoute}
                   className="sb-wordmark-link"
-                  aria-label="CreativeHub - Trang tổng quan"
+                  aria-label="CreativeHub - Trang chính"
                 >
                   <span className="sb-brand-wordmark-wrap" aria-hidden="true">
                     <img className="sb-brand-wordmark" src={logoWordmark} alt="" draggable={false} />

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/authContext';
 import {
+  assignEditorToContentPlan,
   createContentPlanRow,
   deleteContentPlanRow,
   fetchContentPlan,
@@ -99,6 +100,23 @@ export function useContentPlan(monthValue: string) {
     }
   }, [loadContentPlan, user?.id]);
 
+  const assignEditor = useCallback(async (item: ContentPlanItem, editorId: string) => {
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      await assignEditorToContentPlan(item.id, editorId);
+      await loadContentPlan();
+      return true;
+    } catch (error) {
+      setSaveError(getErrorMessage(error, 'Không thể phân công editor. Vui lòng thử lại.'));
+      await loadContentPlan({ silent: true });
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [loadContentPlan]);
+
   const deleteItem = useCallback(async (item: ContentPlanItem) => {
     setIsDeleting(true);
     setSaveError(null);
@@ -130,6 +148,7 @@ export function useContentPlan(monthValue: string) {
     refetch: loadContentPlan,
     createItem,
     updateItem,
+    assignEditor,
     deleteItem,
     clearSaveError,
   };

@@ -20,6 +20,7 @@ export interface Editor {
 
 export interface VideoTask {
   dbId?: string;     // Supabase row id
+  contentPlanId: string | null; // null means manually created Video tháng task
   id: number;        // Display STT
   name: string;
   resize: string;
@@ -46,4 +47,67 @@ export interface TaskFormData {
   status: TaskStatus;
   priority: TaskPriority;
   link: string;
+}
+
+export interface CreateLinkedVideoTaskInput extends TaskFormData {
+  contentPlanId: string;
+}
+
+export interface AcceptLinkedVideoTaskInput {
+  taskId: string;
+  receiveDate: string;
+  returnDate: string;
+}
+
+export interface AcceptLinkedVideoTaskResult {
+  videoTaskId: string;
+  contentPlanId: string;
+  status: TaskStatus;
+  receiveDate: string;
+  returnDate: string;
+  airDate: string;
+  editorId: string;
+}
+
+export interface CompleteLinkedVideoTaskInput {
+  taskId: string;
+  resultLink: string;
+}
+
+export interface CompleteLinkedVideoTaskResult {
+  videoTaskId: string;
+  contentPlanId: string;
+  status: TaskStatus;
+  resultLink: string;
+  contentPlanLink: string;
+  completedAt: string;
+  editorId: string;
+  airDate: string;
+}
+
+export interface LinkedVideoTaskExecutionData {
+  orderTeam: string;
+  priority: TaskPriority;
+  resize: string;
+  receiveDate: string;
+  returnDate: string;
+  link: string;
+}
+
+export interface UpdateLinkedVideoTaskExecutionInput extends LinkedVideoTaskExecutionData {
+  taskId: string;
+}
+
+export interface UpdateLinkedVideoTaskExecutionResult {
+  videoTaskId: string;
+  contentPlanId: string;
+  status: TaskStatus;
+  orderTeam: string;
+  priority: TaskPriority;
+  resize: string;
+  receiveDate: string;
+  returnDate: string;
+  resultLink: string;
+  editorId: string;
+  changedFields: string[];
 }

@@ -1,6 +1,7 @@
 import { Link2 } from 'lucide-react';
 import type { Editor, VideoTask } from '../../types/task';
 import { StatusBadge, CategoryBadge, EditorChip } from './TaskBadges';
+import { isSafeHttpUrl } from '../../utils/url';
 
 interface TaskTableProps {
   tasks: VideoTask[];
@@ -92,13 +93,14 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true }: Ta
                 )}
               </td>
               <td className="text-center" onClick={(e) => e.stopPropagation()}>
-                {v.link && v.link !== '#' ? (
+                {isSafeHttpUrl(v.link) ? (
                   <a
                     href={v.link}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="link-btn"
                     title="Mở link"
+                    aria-label={`Mở link thành phẩm của ${v.name}`}
                   >
                     <Link2 style={{ width: '16px', height: '16px' }} />
                   </a>

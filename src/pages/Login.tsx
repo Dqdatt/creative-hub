@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/authContext';
-import { DEFAULT_AUTHENTICATED_ROUTE } from '../config/permissions';
 import './Login.css';
 
 export default function Login() {
@@ -18,9 +17,9 @@ export default function Login() {
     if (submitting) return;
 
     setSubmitting(true);
-    const { error } = await signIn(email, pass);
+    const { error, defaultRoute } = await signIn(email, pass);
     setSubmitting(false);
-    if (!error) navigate(DEFAULT_AUTHENTICATED_ROUTE, { replace: true });
+    if (!error && defaultRoute) navigate(defaultRoute, { replace: true });
   };
 
   const visibleError = authError ?? configError;

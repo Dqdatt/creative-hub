@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { canAccessRoute, DEFAULT_AUTHENTICATED_ROUTE } from '../../config/permissions';
+import { canAccessRoute, getDefaultAuthenticatedRoute } from '../../config/permissions';
 import { useAuth } from '../../context/authContext';
 import { AuthLoading } from './AuthLoading';
 
@@ -11,6 +11,7 @@ interface RouteGateProps {
 export function ProtectedRoute({ children }: RouteGateProps) {
   const { user, loading, profileLoading, role, permissions } = useAuth();
   const location = useLocation();
+  const defaultRoute = getDefaultAuthenticatedRoute(role, permissions);
 
   if (loading || profileLoading) return <AuthLoading />;
   if (!user) {
@@ -24,17 +25,18 @@ export function ProtectedRoute({ children }: RouteGateProps) {
   }
 
   if (!canAccessRoute(role, location.pathname, permissions)) {
-    return <Navigate to={DEFAULT_AUTHENTICATED_ROUTE} replace />;
+    return <Navigate to={defaultRoute} replace />;
   }
 
   return children;
 }
 
 export function PublicOnlyRoute({ children }: RouteGateProps) {
-  const { user, loading, profileLoading } = useAuth();
+  const { user, loading, profileLoading, role, permissions } = useAuth();
+  const defaultRoute = getDefaultAuthenticatedRoute(role, permissions);
 
   if (loading || profileLoading) return <AuthLoading />;
-  if (user) return <Navigate to={DEFAULT_AUTHENTICATED_ROUTE} replace />;
+  if (user) return <Navigate to={defaultRoute} replace />;
 
   return children;
 }

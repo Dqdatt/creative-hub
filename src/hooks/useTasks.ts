@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/authContext';
 import { fetchContentPlanEditorOptions } from '../services/contentPlanService';
-import { createVideoTask, fetchVideoTasks, updateVideoTask } from '../services/tasksService';
+import { acceptLinkedVideoTask, completeLinkedVideoTask, createVideoTask, fetchVideoTasks, updateLinkedVideoTaskExecution, updateVideoTask } from '../services/tasksService';
 import type { ContentPlanEditorOption } from '../types/contentPlan';
-import type { Editor, TaskFormData, VideoTask } from '../types/task';
+import type { Editor, LinkedVideoTaskExecutionData, TaskFormData, VideoTask } from '../types/task';
 import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -113,6 +113,103 @@ export function useTasks(monthValue: string) {
     }
   }, [loadTasks, user?.id]);
 
+  const acceptTask = useCallback(async (task: VideoTask, receiveDate: string, returnDate: string) => {
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      if (!task.dbId) {
+        throw new Error('Không tìm thấy mã task cần nhận.');
+      }
+      await acceptLinkedVideoTask({
+        taskId: task.dbId,
+        receiveDate,
+        returnDate,
+      });
+      await loadTasks();
+      return true;
+    } catch (error) {
+      setSaveError(getErrorMessage(error, 'Không thể nhận Task. Vui lòng thử lại.'));
+      await loadTasks({ silent: true });
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [loadTasks]);
+
+  const completeTask = useCallback(async (task: VideoTask, resultLink: string) => {
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      if (!task.dbId) {
+        throw new Error('Không tìm thấy mã task cần hoàn thành.');
+      }
+      await completeLinkedVideoTask({
+        taskId: task.dbId,
+        resultLink,
+      });
+      await loadTasks();
+      return true;
+    } catch (error) {
+      setSaveError(getErrorMessage(error, 'Không thể hoàn thành Task. Vui lòng thử lại.'));
+      await loadTasks({ silent: true });
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [loadTasks]);
+
+  const updateLinkedExecution = useCallback(async (task: VideoTask, data: LinkedVideoTaskExecutionData) => {
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      if (!task.dbId) {
+        throw new Error('Không tìm thấy mã task cần cập nhật.');
+      }
+      await updateLinkedVideoTaskExecution({
+        taskId: task.dbId,
+        ...data,
+      });
+      await loadTasks();
+      return true;
+    } catch (error) {
+      setSaveError(getErrorMessage(error, 'Không thể lưu thông tin thực hiện Task. Vui lòng thử lại.'));
+      await loadTasks({ silent: true });
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [loadTasks]);
+
+  const saveExecutionAndCompleteTask = useCallback(async (task: VideoTask, data: LinkedVideoTaskExecutionData) => {
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      if (!task.dbId) {
+        throw new Error('Không tìm thấy mã task cần hoàn thành.');
+      }
+      await updateLinkedVideoTaskExecution({
+        taskId: task.dbId,
+        ...data,
+      });
+      await completeLinkedVideoTask({
+        taskId: task.dbId,
+        resultLink: data.link,
+      });
+      await loadTasks();
+      return true;
+    } catch (error) {
+      setSaveError(getErrorMessage(error, 'Không thể hoàn thành Task. Vui lòng thử lại.'));
+      await loadTasks({ silent: true });
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [loadTasks]);
+
   const clearSaveError = useCallback(() => {
     setSaveError(null);
   }, []);
@@ -127,6 +224,10 @@ export function useTasks(monthValue: string) {
     refetch: loadTasks,
     createTask,
     updateTask,
+    acceptTask,
+    completeTask,
+    updateLinkedExecution,
+    saveExecutionAndCompleteTask,
     clearSaveError,
   };
 }

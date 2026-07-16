@@ -55,7 +55,23 @@ alter table public.activity_logs
 alter table public.activity_logs drop constraint if exists activity_logs_action_check;
 alter table public.activity_logs
   add constraint activity_logs_action_check
-  check (action in ('created', 'updated', 'deleted', 'status_changed', 'assigned', 'uploaded', 'password_changed'));
+  check (action in (
+    'created',
+    'updated',
+    'deleted',
+    'status_changed',
+    'assigned',
+    'uploaded',
+    'password_changed',
+    'content_plan_assigned',
+    'content_plan_reassigned',
+    'video_task_generated',
+    'video_task_editor_changed',
+    'video_task_accepted',
+    'video_task_execution_updated',
+    'video_task_completed',
+    'content_plan_completed'
+  ));
 
 create index if not exists activity_logs_actor_id_idx
   on public.activity_logs (actor_id);

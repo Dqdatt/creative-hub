@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Clapperboard, CircleCheck } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
-import type { Editor, VideoTask, TaskFormData, TaskStatus, TaskCategory, TaskPriority } from '../../types/task';
+import type { Editor, VideoTask, TaskFormData, TaskStatus, TaskCategory, TaskPriority, LinkedVideoTaskExecutionData } from '../../types/task';
 import { ORDER_TEAMS } from '../../data/tasks';
 import { useDocumentScrollLock } from '../common/useDocumentScrollLock';
+import { isSafeHttpUrl } from '../../utils/url';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -13,8 +14,84 @@ interface TaskModalProps {
   selectedMonth: string;
   onClose: () => void;
   onSave: (data: TaskFormData) => void | Promise<void>;
+  onSaveExecution?: (data: LinkedVideoTaskExecutionData) => void | Promise<void>;
+  onAccept?: (data: { receiveDate: string; returnDate: string }) => void | Promise<void>;
+  onComplete?: (data: LinkedVideoTaskExecutionData) => void | Promise<void>;
+  canAcceptLinkedTask?: boolean;
+  canCompleteLinkedTask?: boolean;
   isSaving?: boolean;
   errorMessage?: string | null;
+}
+
+type TaskModalFieldState = {
+  isLinkedTask: boolean;
+  canEditTitle: boolean;
+  canEditEditor: boolean;
+  canEditStatus: boolean;
+  canEditOrderTeam: boolean;
+  canEditCategory: boolean;
+  canEditPriority: boolean;
+  canEditResize: boolean;
+  canEditReceiveDate: boolean;
+  canEditReturnDate: boolean;
+  canEditAirDate: boolean;
+  canEditResultLink: boolean;
+  canAccept: boolean;
+  canSaveExecution: boolean;
+  canComplete: boolean;
+  canUseGenericSave: boolean;
+};
+
+function resolveTaskModalFieldState(
+  task: VideoTask | null,
+  canAcceptLinkedTask: boolean,
+  canCompleteLinkedTask: boolean,
+): TaskModalFieldState {
+  const isLinkedTask = Boolean(task?.contentPlanId);
+
+  if (!isLinkedTask) {
+    return {
+      isLinkedTask: false,
+      canEditTitle: true,
+      canEditEditor: true,
+      canEditStatus: true,
+      canEditOrderTeam: true,
+      canEditCategory: true,
+      canEditPriority: true,
+      canEditResize: true,
+      canEditReceiveDate: true,
+      canEditReturnDate: true,
+      canEditAirDate: true,
+      canEditResultLink: true,
+      canAccept: false,
+      canSaveExecution: false,
+      canComplete: false,
+      canUseGenericSave: true,
+    };
+  }
+
+  const canAccept = task?.status === 'Chờ' && canAcceptLinkedTask;
+  const canComplete = task?.status === 'Đang làm' && canCompleteLinkedTask;
+  const canSaveExecution = canComplete;
+
+  return {
+    isLinkedTask: true,
+    canEditTitle: false,
+    canEditEditor: false,
+    canEditStatus: false,
+    canEditOrderTeam: canSaveExecution,
+    canEditCategory: false,
+    canEditPriority: canSaveExecution,
+    canEditResize: canSaveExecution,
+    canEditReceiveDate: canAccept || canSaveExecution,
+    canEditReturnDate: canAccept || canSaveExecution,
+    canEditAirDate: false,
+    canEditResultLink: canComplete,
+    canAccept,
+    canSaveExecution,
+    canComplete,
+    canUseGenericSave: false,
+  };
 }
 
 function toDateInputValue(value: string, selectedMonth: string) {
@@ -33,17 +110,69 @@ function toDateInputValue(value: string, selectedMonth: string) {
   return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 }
 
-export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSave, isSaving = false, errorMessage = null }: TaskModalProps) {
+function getTodayLocalDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function TaskModal({
+  isOpen,
+  task,
+  editors,
+  selectedMonth,
+  onClose,
+  onSave,
+  onSaveExecution,
+  onAccept,
+  onComplete,
+  canAcceptLinkedTask = false,
+  canCompleteLinkedTask = false,
+  isSaving = false,
+  errorMessage = null,
+}: TaskModalProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const isEditMode = task !== null;
+  const fieldState = resolveTaskModalFieldState(task, canAcceptLinkedTask, canCompleteLinkedTask);
+  const isAcceptMode = fieldState.canAccept;
+  const isCompleteMode = fieldState.canComplete;
+  const isLinkedDoneTask = fieldState.isLinkedTask && task?.status === 'Đã xong';
+  const [acceptReceiveDate, setAcceptReceiveDate] = useState('');
+  const [acceptReturnDate, setAcceptReturnDate] = useState('');
+  const [completeLink, setCompleteLink] = useState('');
 
   useDocumentScrollLock(isOpen);
 
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => nameRef.current?.focus(), 80);
+    if (!isOpen || fieldState.isLinkedTask) return undefined;
+    const focusTimer = window.setTimeout(() => nameRef.current?.focus(), 80);
+    return () => window.clearTimeout(focusTimer);
+  }, [fieldState.isLinkedTask, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !task) return;
+
+    if (isAcceptMode) {
+      setAcceptReceiveDate(toDateInputValue(task.receiveDate, selectedMonth) || getTodayLocalDate());
+      setAcceptReturnDate(toDateInputValue(task.returnDate, selectedMonth));
+    } else {
+      setAcceptReceiveDate('');
+      setAcceptReturnDate('');
     }
-  }, [isOpen]);
+  }, [isAcceptMode, isOpen, selectedMonth, task]);
+
+  useEffect(() => {
+    if (!isOpen || !task) return;
+
+    if (isCompleteMode) {
+      setCompleteLink(task.link);
+    } else {
+      setCompleteLink('');
+    }
+  }, [isCompleteMode, isOpen, task]);
 
   // Escape to close
   useEffect(() => {
@@ -53,9 +182,44 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
     return () => document.removeEventListener('keydown', handler);
   }, [isOpen, onClose]);
 
+  const getFormValue = (name: string) =>
+    (formRef.current?.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null)?.value ?? '';
+
+  const getExecutionData = (): LinkedVideoTaskExecutionData => ({
+    orderTeam: getFormValue('orderTeam'),
+    priority: getFormValue('priority') as TaskPriority,
+    resize: getFormValue('resize').trim(),
+    receiveDate: getFormValue('receiveDate').trim(),
+    returnDate: getFormValue('returnDate').trim(),
+    link: getFormValue('resultLink').trim(),
+  });
+
+  const handleSaveExecution = () => {
+    if (isSaving || !fieldState.canSaveExecution) return;
+    onSaveExecution?.(getExecutionData());
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isSaving) return;
+
+    if (isAcceptMode) {
+      if (acceptValidationError) return;
+      onAccept?.({
+        receiveDate: acceptReceiveDate,
+        returnDate: acceptReturnDate,
+      });
+      return;
+    }
+
+    if (isCompleteMode) {
+      if (completeValidationError) return;
+      onComplete?.(getExecutionData());
+      return;
+    }
+
+    if (!fieldState.canUseGenericSave) return;
+
     const form = e.currentTarget;
     const get = (name: string) =>
       (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement)?.value ?? '';
@@ -78,8 +242,6 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
     onSave(data);
   };
 
-  if (!isOpen) return null;
-
   const dv: TaskFormData = task
     ? { ...task }
     : {
@@ -87,6 +249,26 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
         orderTeam: ORDER_TEAMS[0], category: 'Video dài',
         priority: '', resize: '', receiveDate: '', returnDate: '', airDate: '', link: '',
       };
+  const acceptValidationError = !isAcceptMode
+    ? null
+    : !acceptReceiveDate || !acceptReturnDate
+      ? 'Vui lòng chọn Ngày nhận và Ngày trả.'
+      : acceptReturnDate < acceptReceiveDate
+        ? 'Ngày trả phải sau hoặc bằng Ngày nhận.'
+        : null;
+  const completeValidationError = !isCompleteMode
+    ? null
+    : !completeLink.trim()
+      ? 'Vui lòng nhập Link thành phẩm.'
+      : !isSafeHttpUrl(completeLink)
+        ? 'Link thành phẩm chưa hợp lệ.'
+        : null;
+  const submitDisabled = isSaving
+    || (isAcceptMode && Boolean(acceptValidationError))
+    || (isCompleteMode && Boolean(completeValidationError));
+  const showSubmitButton = fieldState.canUseGenericSave || isAcceptMode || isCompleteMode;
+
+  if (!isOpen) return null;
 
   return createPortal(
     <div 
@@ -100,13 +282,13 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
               <Clapperboard style={{ width: '20px', height: '20px' }} />
             </span>
             <h3 className="font-extrabold text-[19px] leading-none tracking-tight">
-              {isEditMode ? 'Chỉnh sửa Task' : 'Thêm Task mới'}
+              {isAcceptMode ? 'Nhận Task' : isCompleteMode ? 'Hoàn thành Task' : isEditMode ? 'Chỉnh sửa Task' : 'Thêm Task mới'}
             </h3>
           </div>
           <button onClick={onClose} className="icon-btn"><X /></button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           <div className="space-y-5">
             <div>
               <label className="flabel">Tên video <span style={{ color: 'var(--danger)' }}>*</span></label>
@@ -116,14 +298,23 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
                 defaultValue={dv.name}
                 required
                 className="field"
+                readOnly={!fieldState.canEditTitle}
+                disabled={isSaving && fieldState.canEditTitle}
+                aria-readonly={!fieldState.canEditTitle}
                 placeholder="Nhập tên video..."
               />
             </div>
 
+            {fieldState.isLinkedTask ? (
+              <p className="text-[12px] font-semibold text-sub">
+                Thông tin kế hoạch được đồng bộ từ Content Plan và không thể chỉnh sửa tại Video tháng.
+              </p>
+            ) : null}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="flabel">Người làm (Editor)</label>
-                <StyledSelect name="editorId" defaultValue={dv.editorId}>
+                <StyledSelect name="editorId" defaultValue={dv.editorId} disabled={isSaving || !fieldState.canEditEditor}>
                   <option value="">Chưa phân công</option>
                   {editors.map((e) => (
                     <option key={e.id} value={e.id}>{e.short}</option>
@@ -132,7 +323,7 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
               </div>
               <div>
                 <label className="flabel">Trạng thái</label>
-                <StyledSelect name="status" defaultValue={dv.status}>
+                <StyledSelect name="status" defaultValue={dv.status} disabled={isSaving || !fieldState.canEditStatus}>
                   <option value="Chờ">Chờ</option>
                   <option value="Đang làm">Đang làm</option>
                   <option value="Đã xong">Đã xong</option>
@@ -140,7 +331,7 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
               </div>
               <div>
                 <label className="flabel">Team Order</label>
-                <StyledSelect name="orderTeam" defaultValue={dv.orderTeam}>
+                <StyledSelect name="orderTeam" defaultValue={dv.orderTeam} disabled={isSaving || !fieldState.canEditOrderTeam}>
                   {ORDER_TEAMS.map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
@@ -148,7 +339,7 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
               </div>
               <div>
                 <label className="flabel">Thể loại</label>
-                <StyledSelect name="category" defaultValue={dv.category}>
+                <StyledSelect name="category" defaultValue={dv.category} disabled={isSaving || !fieldState.canEditCategory}>
                   <option value="Video dài">Video dài</option>
                   <option value="Motion">Motion</option>
                   <option value="Ads">Ads</option>
@@ -156,7 +347,7 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
               </div>
               <div>
                 <label className="flabel">Độ ưu tiên</label>
-                <StyledSelect name="priority" defaultValue={dv.priority}>
+                <StyledSelect name="priority" defaultValue={dv.priority} disabled={isSaving || !fieldState.canEditPriority}>
                   <option value="">Bình thường</option>
                   <option value="Gấp">Gấp</option>
                 </StyledSelect>
@@ -167,6 +358,9 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
                   name="resize"
                   defaultValue={dv.resize}
                   className="field"
+                  readOnly={!fieldState.canEditResize}
+                  disabled={isSaving && fieldState.canEditResize}
+                  aria-readonly={!fieldState.canEditResize}
                   placeholder="VD: 9x16 & 1x1"
                 />
               </div>
@@ -178,7 +372,10 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
                 <input
                   name="receiveDate"
                   type="date"
-                  defaultValue={toDateInputValue(dv.receiveDate, selectedMonth)}
+                  defaultValue={isAcceptMode ? undefined : toDateInputValue(dv.receiveDate, selectedMonth)}
+                  value={isAcceptMode ? acceptReceiveDate : undefined}
+                  disabled={isSaving || !fieldState.canEditReceiveDate}
+                  onChange={isAcceptMode ? (event) => setAcceptReceiveDate(event.target.value) : undefined}
                   className="field task-date-field"
                 />
               </div>
@@ -187,7 +384,10 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
                 <input
                   name="returnDate"
                   type="date"
-                  defaultValue={toDateInputValue(dv.returnDate, selectedMonth)}
+                  defaultValue={isAcceptMode ? undefined : toDateInputValue(dv.returnDate, selectedMonth)}
+                  value={isAcceptMode ? acceptReturnDate : undefined}
+                  disabled={isSaving || !fieldState.canEditReturnDate}
+                  onChange={isAcceptMode ? (event) => setAcceptReturnDate(event.target.value) : undefined}
                   className="field task-date-field"
                 />
               </div>
@@ -197,6 +397,7 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
                   name="airDate"
                   type="date"
                   defaultValue={toDateInputValue(dv.airDate, selectedMonth)}
+                  disabled={isSaving || !fieldState.canEditAirDate}
                   className="field task-date-field"
                 />
               </div>
@@ -206,12 +407,28 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
               <label className="flabel">Link thành phẩm</label>
               <input
                 name="resultLink"
-                defaultValue={dv.link}
+                defaultValue={isCompleteMode ? undefined : dv.link}
+                value={isCompleteMode ? completeLink : undefined}
                 className="field"
+                readOnly={!fieldState.canEditResultLink}
+                disabled={isSaving && fieldState.canEditResultLink}
+                aria-readonly={!fieldState.canEditResultLink}
+                onChange={isCompleteMode ? (event) => setCompleteLink(event.target.value) : undefined}
                 placeholder="Nhập link (Drive, Youtube, etc.)..."
               />
+              {isLinkedDoneTask ? (
+                <p className="mt-2 text-[12px] font-semibold text-sub">
+                  Link đã được đồng bộ về Content Plan.
+                </p>
+              ) : null}
             </div>
           </div>
+
+          {acceptValidationError || completeValidationError ? (
+            <div className="mt-5 text-[13px] font-semibold" style={{ color: 'var(--danger)' }}>
+              {acceptValidationError ?? completeValidationError}
+            </div>
+          ) : null}
 
           {errorMessage ? (
             <div className="mt-5 text-[13px] font-semibold" style={{ color: 'var(--danger)' }}>
@@ -221,10 +438,18 @@ export function TaskModal({ isOpen, task, editors, selectedMonth, onClose, onSav
 
           <div className="mt-7 flex justify-end gap-3">
             <button type="button" onClick={onClose} className="btn-ghost" disabled={isSaving}>Đóng</button>
-            <button type="submit" className="btn" disabled={isSaving}>
-              <CircleCheck style={{ width: '17px', height: '17px' }} />
-              {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
-            </button>
+            {fieldState.canSaveExecution ? (
+              <button type="button" className="btn-ghost" onClick={handleSaveExecution} disabled={isSaving}>
+                <CircleCheck style={{ width: '17px', height: '17px' }} />
+                {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+              </button>
+            ) : null}
+            {showSubmitButton ? (
+              <button type="submit" className="btn" disabled={submitDisabled}>
+                <CircleCheck style={{ width: '17px', height: '17px' }} />
+                {isSaving ? 'Đang lưu...' : isAcceptMode ? 'Nhận Task' : isCompleteMode ? 'Hoàn thành' : 'Lưu thay đổi'}
+              </button>
+            ) : null}
           </div>
         </form>
       </div>

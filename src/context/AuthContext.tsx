@@ -3,11 +3,12 @@ import type { ReactNode } from 'react';
 import type { AuthChangeEvent, AuthError, Session, User } from '@supabase/supabase-js';
 import {
   getEffectivePermissions,
+  getDefaultAuthenticatedRoute,
   hasEffectivePermission,
   normalizeRole,
   ROLE_LABELS,
 } from '../config/permissions';
-import type { Permission, UserPermissionOverride } from '../config/permissions';
+import type { AppRole, Permission, UserPermissionOverride } from '../config/permissions';
 import { supabase, supabaseConfigError } from '../lib/supabase';
 import { AuthContext } from './authContext';
 import type { AuthContextValue, AuthProfile } from './authContext';
@@ -46,6 +47,11 @@ interface PermissionOverrideRow {
   content_plan_assign_editor: boolean | null;
   users_manage: boolean | null;
   profile_edit_self: boolean | null;
+}
+
+interface LoadedAuthState {
+  role: AppRole;
+  permissionOverride: UserPermissionOverride;
 }
 
 function isMissingOverrideTable(error: { code?: string; message?: string } | null) {
@@ -121,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfileForUser = useCallback(async (
     currentUser: User | null | undefined,
     options?: { silent?: boolean },
-  ) => {
+  ): Promise<LoadedAuthState | null> => {
     const requestId = profileRequestIdRef.current + 1;
     profileRequestIdRef.current = requestId;
     const isInitialProfileLoad = !initialProfileResolvedRef.current;
@@ -134,17 +140,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfileLoading(false);
       setBackgroundAuthRefreshing(false);
       markInitialProfileResolved();
-      return;
+      return null;
     }
 
     if (!supabase) {
-      setProfile(buildFallbackProfile(currentUser));
+      const fallbackProfile = buildFallbackProfile(currentUser);
+      setProfile(fallbackProfile);
       setProfileError('Không thể tải hồ sơ. Tạm dùng quyền Editor.');
       setPermissionOverride(DEFAULT_PERMISSION_OVERRIDE);
       setProfileLoading(false);
       setBackgroundAuthRefreshing(false);
       markInitialProfileResolved();
-      return;
+      return {
+        role: fallbackProfile.role,
+        permissionOverride: DEFAULT_PERMISSION_OVERRIDE,
+      };
     }
 
     if (showInitialProfileGate) {
@@ -162,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (error) throw error;
-      if (requestId !== profileRequestIdRef.current) return;
+      if (requestId !== profileRequestIdRef.current) return null;
 
       if (!data) {
         await supabase.auth.signOut();
@@ -170,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         setPermissionOverride(DEFAULT_PERMISSION_OVERRIDE);
         setProfileError('Tài khoản không còn hoạt động. Vui lòng đăng nhập lại.');
-        return;
+        return null;
       }
 
       if ((data.is_active ?? data.active ?? true) === false) {
@@ -179,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         setPermissionOverride(DEFAULT_PERMISSION_OVERRIDE);
         setProfileError('Tài khoản đã bị tạm khóa. Vui lòng liên hệ quản trị viên.');
-        return;
+        return null;
       }
 
       const { data: overrideData, error: overrideError } = await supabase
@@ -201,11 +211,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (overrideError && !isMissingOverrideTable(overrideError)) throw overrideError;
-      if (requestId !== profileRequestIdRef.current) return;
+      if (requestId !== profileRequestIdRef.current) return null;
 
       const role = normalizeRole(data.role);
       const fallbackProfile = buildFallbackProfile(currentUser);
       const displayName = data.display_name || data.short_name || data.full_name || fallbackProfile.displayName;
+      const mappedOverride = mapOverrideRow((overrideData ?? null) as PermissionOverrideRow | null);
 
       setProfile({
         id: data.id,
@@ -217,12 +228,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role,
         rawRole: data.role,
       });
-      setPermissionOverride(mapOverrideRow((overrideData ?? null) as PermissionOverrideRow | null));
+      setPermissionOverride(mappedOverride);
+      return {
+        role,
+        permissionOverride: mappedOverride,
+      };
     } catch {
-      if (requestId !== profileRequestIdRef.current) return;
-      setProfile(buildFallbackProfile(currentUser));
+      if (requestId !== profileRequestIdRef.current) return null;
+      const fallbackProfile = buildFallbackProfile(currentUser);
+      setProfile(fallbackProfile);
       setPermissionOverride(DEFAULT_PERMISSION_OVERRIDE);
       setProfileError('Không thể tải hồ sơ người dùng. Tạm dùng quyền Editor.');
+      return {
+        role: fallbackProfile.role,
+        permissionOverride: DEFAULT_PERMISSION_OVERRIDE,
+      };
     } finally {
       if (requestId === profileRequestIdRef.current) {
         markInitialProfileResolved();
@@ -330,8 +350,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     applySession(data.session);
-    await loadProfileForUser(data.session?.user, { silent: true });
-    return { error: null };
+    const loadedAuthState = await loadProfileForUser(data.session?.user, { silent: true });
+    const nextRole = loadedAuthState?.role ?? 'editor';
+    const nextPermissions = getEffectivePermissions(nextRole, loadedAuthState?.permissionOverride ?? DEFAULT_PERMISSION_OVERRIDE);
+    return {
+      error: null,
+      defaultRoute: getDefaultAuthenticatedRoute(nextRole, nextPermissions),
+    };
   }, [applySession, loadProfileForUser]);
 
   const signOut = useCallback(async () => {

@@ -17,6 +17,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Motion',
     editor_id: 'hai',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-002',
@@ -25,6 +27,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Ads',
     editor_id: 'minh',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-003',
@@ -33,6 +37,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Motion',
     editor_id: 'minh',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-004',
@@ -41,6 +47,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Video dài',
     editor_id: 'minh',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-005',
@@ -49,6 +57,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Ads',
     editor_id: 'hai',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-006',
@@ -57,6 +67,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Ads',
     editor_id: 'hai',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-007',
@@ -65,6 +77,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Video dài',
     editor_id: 'minh',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-008',
@@ -73,6 +87,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Video dài',
     editor_id: 'hai',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-009',
@@ -81,6 +97,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Video dài',
     editor_id: 'dat',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-010',
@@ -89,6 +107,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Video dài',
     editor_id: 'dat',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-011',
@@ -97,6 +117,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Livestream',
     editor_id: 'minh',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-012',
@@ -105,6 +127,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Short/Reels',
     editor_id: 'hai',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-013',
@@ -113,6 +137,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Video dài',
     editor_id: 'dat',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-014',
@@ -121,6 +147,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Motion',
     editor_id: 'minh',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-015',
@@ -129,6 +157,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Short/Reels',
     editor_id: 'hai',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-016',
@@ -137,6 +167,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Ảnh',
     editor_id: 'dat',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-017',
@@ -145,6 +177,8 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Video dài',
     editor_id: 'minh',
+    link: '',
+    hasLinkedTask: false,
   },
   {
     id: 'CP-018',
@@ -153,5 +187,7 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     note: '',
     category: 'Video dài',
     editor_id: 'dat',
+    link: '',
+    hasLinkedTask: false,
   },
 ];

@@ -197,10 +197,12 @@ create table if not exists public.video_tasks (
   return_date date,
   air_date date,
   result_link text,
+  content_plan_id uuid,
   created_at timestamptz not null default timezone('utc'::text, now())
 );
 
 alter table public.video_tasks
+  add column if not exists content_plan_id uuid,
   add column if not exists created_by uuid references public.profiles(id) on delete set null,
   add column if not exists updated_by uuid references public.profiles(id) on delete set null,
   add column if not exists updated_at timestamptz not null default timezone('utc'::text, now()),
@@ -275,12 +277,136 @@ create index if not exists video_tasks_return_date_idx on public.video_tasks (re
 create index if not exists video_tasks_air_date_idx on public.video_tasks (air_date);
 create index if not exists video_tasks_month_filter_idx
   on public.video_tasks (coalesce(air_date, return_date, receive_date));
+create unique index if not exists video_tasks_content_plan_id_unique
+  on public.video_tasks (content_plan_id)
+  where content_plan_id is not null;
+
+create or replace function public.is_content_plan_assignment_context()
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select coalesce(current_setting('app.content_plan_assignment', true) = 'on', false);
+$$;
+
+create or replace function public.is_linked_video_task_acceptance_context()
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select coalesce(current_setting('app.linked_video_task_acceptance', true) = 'on', false);
+$$;
+
+create or replace function public.is_linked_video_task_completion_context()
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select coalesce(current_setting('app.linked_video_task_completion', true) = 'on', false);
+$$;
+
+create or replace function public.is_linked_video_task_execution_update_context()
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select coalesce(current_setting('app.linked_video_task_execution_update', true) = 'on', false);
+$$;
 
 drop trigger if exists video_tasks_set_updated_at on public.video_tasks;
 drop trigger if exists video_tasks_set_audit_fields on public.video_tasks;
 create trigger video_tasks_set_audit_fields
 before insert or update on public.video_tasks
 for each row execute function public.set_audit_fields();
+
+create or replace function public.prevent_video_task_content_plan_relink()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'UPDATE' and new.content_plan_id is distinct from old.content_plan_id then
+    raise exception 'Không được đổi liên kết Content Plan của Video Task.';
+  end if;
+
+  if tg_op = 'UPDATE'
+    and old.content_plan_id is not null
+    and (
+      new.title is distinct from old.title
+      or new.category is distinct from old.category
+      or new.air_date is distinct from old.air_date
+    )
+    and not public.is_content_plan_assignment_context() then
+    raise exception 'Thông tin kế hoạch của Task liên kết được quản lý từ Content Plan.';
+  end if;
+
+  if tg_op = 'UPDATE'
+    and old.content_plan_id is not null
+    and (
+      new.order_team is distinct from old.order_team
+      or new.priority is distinct from old.priority
+      or new.resize_reqs is distinct from old.resize_reqs
+    )
+    and not public.is_linked_video_task_execution_update_context() then
+    raise exception 'Hãy cập nhật thông tin thực hiện Task liên kết qua thao tác Lưu thay đổi.';
+  end if;
+
+  if tg_op = 'UPDATE'
+    and old.content_plan_id is not null
+    and new.editor_id is distinct from old.editor_id
+    and not public.is_content_plan_assignment_context() then
+    raise exception 'Hãy đổi Editor của Task liên kết từ Content Plan.';
+  end if;
+
+  if tg_op = 'UPDATE'
+    and old.content_plan_id is not null
+    and old.status = 'Chờ'
+    and (
+      new.status is distinct from old.status
+      or new.receive_date is distinct from old.receive_date
+      or new.return_date is distinct from old.return_date
+      or new.result_link is distinct from old.result_link
+    )
+    and not public.is_linked_video_task_acceptance_context() then
+    raise exception 'Hãy nhận Task liên kết qua thao tác Nhận Task.';
+  end if;
+
+  if tg_op = 'UPDATE'
+    and old.content_plan_id is not null
+    and old.status in ('Đang làm', 'Đã xong')
+    and new.status is distinct from old.status
+    and not public.is_linked_video_task_completion_context() then
+    raise exception 'Hãy hoàn thành Task liên kết qua thao tác Hoàn thành.';
+  end if;
+
+  if tg_op = 'UPDATE'
+    and old.content_plan_id is not null
+    and old.status in ('Đang làm', 'Đã xong')
+    and (
+      new.receive_date is distinct from old.receive_date
+      or new.return_date is distinct from old.return_date
+      or new.result_link is distinct from old.result_link
+    )
+    and not (
+      public.is_linked_video_task_execution_update_context()
+      or public.is_linked_video_task_completion_context()
+    ) then
+    raise exception 'Hãy cập nhật thông tin thực hiện Task liên kết qua thao tác Lưu thay đổi.';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists video_tasks_content_plan_id_immutable_guard on public.video_tasks;
+create trigger video_tasks_content_plan_id_immutable_guard
+before update on public.video_tasks
+for each row execute function public.prevent_video_task_content_plan_relink();
 
 -- ------------------------------------------------------------
 -- shoots
@@ -516,6 +642,32 @@ grant select, insert, update, delete on public.video_tasks to authenticated;
 grant select, insert, update, delete on public.shoots to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
 
+-- Content Plan is installed by supabase/content_plan_schema.sql in this project.
+-- Keep existing environments aligned if setup.sql is re-run after Content Plan exists.
+do $$
+begin
+  if to_regclass('public.content_plan') is not null then
+    execute 'alter table public.content_plan add column if not exists link text';
+    execute 'comment on column public.content_plan.link is ''Link thành phẩm; có link hợp lệ thì dòng được xem là hoàn thành.''';
+    execute 'alter table public.video_tasks add column if not exists content_plan_id uuid';
+
+    if not exists (
+      select 1
+      from pg_constraint con
+      join pg_class rel on rel.oid = con.conrelid
+      join pg_namespace nsp on nsp.oid = rel.relnamespace
+      where nsp.nspname = 'public'
+        and rel.relname = 'video_tasks'
+        and con.conname = 'video_tasks_content_plan_id_fkey'
+    ) then
+      execute 'alter table public.video_tasks add constraint video_tasks_content_plan_id_fkey foreign key (content_plan_id) references public.content_plan(id) on delete cascade';
+    end if;
+
+    execute 'create unique index if not exists video_tasks_content_plan_id_unique on public.video_tasks (content_plan_id) where content_plan_id is not null';
+    execute 'comment on column public.video_tasks.content_plan_id is ''Optional source Content Plan. Null means manual Video tháng task; non-null generated from Content Plan and cascades on Content Plan delete.''';
+  end if;
+end $$;
+
 -- ------------------------------------------------------------
 -- Comments
 -- ------------------------------------------------------------
@@ -530,6 +682,7 @@ comment on column public.video_tasks.stt is 'Số thứ tự hiển thị trong 
 comment on column public.video_tasks.status is 'Trạng thái UI tiếng Việt: Chờ, Đang làm, Đã xong.';
 comment on column public.video_tasks.priority is 'Độ ưu tiên UI tiếng Việt: rỗng hoặc Gấp.';
 comment on column public.video_tasks.editor_id is 'Editor được giao task, tham chiếu profiles.id.';
+comment on column public.video_tasks.content_plan_id is 'Optional source Content Plan. Null means manual Video tháng task; non-null generated from Content Plan and cascades on Content Plan delete.';
 comment on column public.video_tasks.created_by is 'Người tạo task.';
 
 comment on table public.shoots is 'Lịch quay, livestream, on set theo ngày.';

@@ -42,17 +42,19 @@ export interface UserPermissionOverride {
 }
 
 export type EffectivePermissions = Record<Permission, boolean>;
+export type AppRoute = '/dashboard' | '/calendar' | '/tasks' | '/content-plan' | '/users' | '/profile';
 
 export interface NavigationItem {
   id: 'dashboard' | 'calendar' | 'tasks' | 'content_plan' | 'users';
   label: string;
-  to: string;
+  to: AppRoute;
   permission?: Permission;
 }
 
-export type ContentPlanField = 'air_date' | 'video_name' | 'note' | 'category' | 'editor_id';
+export type ContentPlanField = 'air_date' | 'video_name' | 'note' | 'category' | 'editor_id' | 'link';
 
-export const DEFAULT_AUTHENTICATED_ROUTE = '/dashboard';
+export const DEFAULT_AUTHENTICATED_ROUTE: AppRoute = '/dashboard';
+const FALLBACK_AUTHENTICATED_ROUTE: AppRoute = '/profile';
 
 const ALL_PERMISSIONS: Permission[] = [
   'dashboard:view',
@@ -129,13 +131,20 @@ const NAVIGATION: NavigationItem[] = [
   { id: 'users', label: 'Thành viên', to: '/users', permission: 'user_management:view' },
 ];
 
-const ROUTE_PERMISSIONS: Record<string, Permission | null> = {
+const ROUTE_PERMISSIONS: Record<AppRoute, Permission | null> = {
   '/dashboard': 'dashboard:view',
   '/calendar': 'shoots:view',
   '/tasks': 'video_tasks:view',
   '/content-plan': 'content_plan:view',
   '/users': 'user_management:view',
   '/profile': null,
+};
+
+const ROLE_DEFAULT_ROUTE_ORDER: Record<AppRole, AppRoute[]> = {
+  admin: ['/dashboard'],
+  creative_manager: ['/dashboard'],
+  content_creator: ['/calendar', '/content-plan'],
+  editor: ['/dashboard'],
 };
 
 export function normalizeRole(role: string | null | undefined): AppRole {
@@ -255,15 +264,48 @@ export function hasEffectivePermission(
   return hasPermission(role, permission);
 }
 
+function canAccessKnownRoute(
+  role: AppRole | string | null | undefined,
+  route: AppRoute,
+  permissions?: EffectivePermissions | null
+) {
+  const permission = ROUTE_PERMISSIONS[route];
+  if (permission === null) return true;
+  return hasEffectivePermission(permissions, permission, role);
+}
+
+export function getDefaultAuthenticatedRoute(
+  role?: AppRole | string | null,
+  permissions?: EffectivePermissions | null
+): AppRoute {
+  const normalizedRole = normalizeRole(role);
+  const preferredRoute = ROLE_DEFAULT_ROUTE_ORDER[normalizedRole].find((route) =>
+    canAccessKnownRoute(normalizedRole, route, permissions)
+  );
+
+  if (preferredRoute) {
+    return preferredRoute;
+  }
+
+  if (normalizedRole === 'content_creator') {
+    return FALLBACK_AUTHENTICATED_ROUTE;
+  }
+
+  return NAVIGATION.find((item) => {
+    if (!item.permission) return true;
+    return hasEffectivePermission(permissions, item.permission, normalizedRole);
+  })?.to ?? FALLBACK_AUTHENTICATED_ROUTE;
+}
+
 export function canAccessRoute(
   role: AppRole | string | null | undefined,
   route: string,
   permissions?: EffectivePermissions | null
 ) {
-  const cleanRoute = route.split('?')[0] || DEFAULT_AUTHENTICATED_ROUTE;
-  if (cleanRoute === DEFAULT_AUTHENTICATED_ROUTE) return true;
+  const cleanRoute = route.split('?')[0] || getDefaultAuthenticatedRoute(role, permissions);
+  if (cleanRoute === '/') return true;
 
-  const permission = ROUTE_PERMISSIONS[cleanRoute];
+  const permission = ROUTE_PERMISSIONS[cleanRoute as AppRoute];
 
   if (permission === undefined) return true;
   if (permission === null) return true;
@@ -271,11 +313,14 @@ export function canAccessRoute(
   return hasEffectivePermission(permissions, permission, role);
 }
 
-export function getDefaultRoute(_role?: AppRole | string | null) {
-  return DEFAULT_AUTHENTICATED_ROUTE;
+export function getDefaultRoute(
+  role?: AppRole | string | null,
+  permissions?: EffectivePermissions | null
+) {
+  return getDefaultAuthenticatedRoute(role, permissions);
 }
 
-export const getDefaultRouteForRole = getDefaultRoute;
+export const getDefaultRouteForRole = getDefaultAuthenticatedRoute;
 
 export function getVisibleNavigation(role: AppRole | string | null | undefined) {
   return NAVIGATION.filter((item) => !item.permission || hasPermission(role, item.permission));

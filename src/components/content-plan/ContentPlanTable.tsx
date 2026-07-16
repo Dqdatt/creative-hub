@@ -1,5 +1,7 @@
+import { Link2 } from 'lucide-react';
 import type { ContentPlanCategory, ContentPlanEditorOption, ContentPlanItem } from '../../types/contentPlan';
 import { Avatar } from '../common/Avatar';
+import { isSafeHttpUrl } from '../../utils/url';
 
 interface ContentPlanTableProps {
   items: ContentPlanItem[];
@@ -28,6 +30,10 @@ function getCategoryClass(category: ContentPlanCategory) {
   return map[category] ?? '';
 }
 
+function hasValidContentPlanLink(value: string) {
+  return isSafeHttpUrl(value);
+}
+
 export function ContentPlanTable({
   items,
   editorOptions,
@@ -36,10 +42,10 @@ export function ContentPlanTable({
 }: ContentPlanTableProps) {
   if (items.length === 0) {
     return (
-      <table className="ctable min-w-[1040px]">
+      <table className="ctable min-w-[1000px]">
         <tbody>
           <tr>
-            <td colSpan={5} className="px-3 py-12 text-center text-sub">
+            <td colSpan={6} className="px-3 py-12 text-center text-sub">
               <div className="table-empty-state">
                 <strong>Không có lịch air phù hợp</strong>
                 <span>Thử đổi tháng, editor hoặc thể loại.</span>
@@ -52,31 +58,49 @@ export function ContentPlanTable({
   }
 
   return (
-    <table className="ctable min-w-[1040px]">
+    <table className="ctable min-w-[1000px]">
+      <colgroup>
+        <col style={{ width: '108px' }} />
+        <col style={{ width: '132px' }} />
+        <col />
+        <col style={{ width: '220px' }} />
+        <col style={{ width: '172px' }} />
+        <col style={{ width: '64px' }} />
+      </colgroup>
       <thead>
         <tr>
-          <th style={{ width: '118px' }}>Ngày Air</th>
+          <th>Ngày Air</th>
+          <th>Thể loại</th>
           <th>Tên video</th>
-          <th style={{ width: '260px' }}>Ghi chú</th>
-          <th style={{ width: '150px' }}>Thể loại</th>
-          <th style={{ width: '180px' }}>Editor</th>
+          <th>Ghi chú</th>
+          <th>Editor</th>
+          <th className="text-center">Link</th>
         </tr>
       </thead>
       <tbody>
         {items.map((item) => {
           const editor = getEditor(item.editor_id, editorOptions);
+          const hasLink = hasValidContentPlanLink(item.link);
+          const rowClassName = [
+            canEdit ? 'cursor-pointer' : '',
+            hasLink ? 'vrow-done' : '',
+          ].filter(Boolean).join(' ');
 
           return (
             <tr
               key={item.id}
-              className={canEdit ? 'cursor-pointer' : ''}
+              className={rowClassName}
               onClick={() => { if (canEdit) onEdit(item); }}
             >
               <td className="text-sub tabular-nums font-bold">
                 {formatDate(item.air_date)}
               </td>
 
-              <td className="font-semibold whitespace-normal" style={{ minWidth: '320px' }}>
+              <td>
+                <span className={`tag ${getCategoryClass(item.category)}`}>{item.category}</span>
+              </td>
+
+              <td className="font-semibold whitespace-normal" style={{ minWidth: '300px' }}>
                 {item.video_name}
               </td>
 
@@ -84,10 +108,6 @@ export function ContentPlanTable({
                 <span className="content-note-cell" title={item.note || undefined}>
                   {item.note || '—'}
                 </span>
-              </td>
-
-              <td>
-                <span className={`tag ${getCategoryClass(item.category)}`}>{item.category}</span>
               </td>
 
               <td>
@@ -100,6 +120,23 @@ export function ContentPlanTable({
                   />
                   <span className="font-semibold truncate">{editor?.short ?? 'Chưa phân công'}</span>
                 </div>
+              </td>
+
+              <td className="text-center" onClick={(event) => event.stopPropagation()}>
+                {hasLink ? (
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link-btn"
+                    title="Mở link"
+                    aria-label={`Mở link thành phẩm của ${item.video_name}`}
+                  >
+                    <Link2 />
+                  </a>
+                ) : (
+                  <span className="text-sub/40">-</span>
+                )}
               </td>
             </tr>
           );

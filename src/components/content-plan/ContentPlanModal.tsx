@@ -1,4 +1,4 @@
-import { CalendarDays, PencilLine, Trash2, UserRound, X } from 'lucide-react';
+import { CalendarDays, Link2, PencilLine, Trash2, UserRound, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { StyledSelect } from '../common/StyledSelect';
 import { CONTENT_PLAN_CATEGORIES } from '../../data/contentPlan';
@@ -15,6 +15,8 @@ interface ContentPlanModalProps {
   canEditNote: boolean;
   canEditCategory: boolean;
   canEditEditor: boolean;
+  canEditLink: boolean;
+  isLinkSynced: boolean;
   canDelete: boolean;
   isSaving: boolean;
   errorMessage?: string | null;
@@ -49,6 +51,8 @@ export function ContentPlanModal({
   canEditNote,
   canEditCategory,
   canEditEditor,
+  canEditLink,
+  isLinkSynced,
   canDelete,
   isSaving,
   errorMessage = null,
@@ -148,6 +152,27 @@ export function ContentPlanModal({
               onChange={(event) => onChange({ note: event.target.value })}
               placeholder="Ghi chú thêm cho lịch air..."
             />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="flabel" htmlFor="contentPlanLink">Link thành phẩm</label>
+            <div className="relative">
+              <Link2 className="text-sub absolute left-3 top-1/2 -translate-y-1/2" style={{ width: '16px', height: '16px' }} />
+              <input
+                id="contentPlanLink"
+                className="field"
+                style={{ paddingLeft: '38px' }}
+                value={draft.link}
+                disabled={isSaving || !canEditLink}
+                onChange={(event) => onChange({ link: event.target.value })}
+                placeholder="Nhập link (Drive, Youtube, etc.)..."
+              />
+            </div>
+            {isLinkSynced ? (
+              <p className="mt-2 text-[12px] font-semibold text-sub">
+                Link này được đồng bộ từ Video tháng.
+              </p>
+            ) : null}
           </div>
         </div>
 

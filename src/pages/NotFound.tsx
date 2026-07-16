@@ -4,8 +4,8 @@ import { getDefaultRouteForRole } from '../config/permissions';
 import { useAuth } from '../context/authContext';
 
 export default function NotFound() {
-  const { role } = useAuth();
-  const defaultRoute = getDefaultRouteForRole(role);
+  const { role, permissions } = useAuth();
+  const defaultRoute = getDefaultRouteForRole(role, permissions);
 
   return (
     <div className="not-found-page" data-view="not-found">

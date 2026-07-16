@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { VideoTask, TaskFormData } from '../types/task';
+import type { VideoTask, TaskFormData, LinkedVideoTaskExecutionData } from '../types/task';
 import { EmptyState } from '../components/common/EmptyState';
 import { ErrorState } from '../components/common/ErrorState';
 import { LoadingState } from '../components/common/LoadingState';
@@ -12,7 +12,7 @@ import { useToast } from '../components/common/toastContext';
 import { useMonth } from '../context/monthContext';
 
 export default function Tasks() {
-  const { can } = useAuth();
+  const { can, profile } = useAuth();
   const { showToast } = useToast();
   const { selectedMonth } = useMonth();
   const {
@@ -25,6 +25,9 @@ export default function Tasks() {
     refetch,
     createTask,
     updateTask,
+    acceptTask,
+    updateLinkedExecution,
+    saveExecutionAndCompleteTask,
     clearSaveError,
   } = useTasks(selectedMonth);
   const [search, setSearch] = useState('');
@@ -34,6 +37,25 @@ export default function Tasks() {
   const [selectedTask, setSelectedTask] = useState<VideoTask | null>(null);
   const canCreateTask = can('video_tasks:create');
   const canUpdateTask = can('video_tasks:update');
+  const selectedTaskEditorProfileId = selectedTask
+    ? editors.find((editor) => editor.id === selectedTask.editorId)?.profileId
+    : null;
+  const canAcceptSelectedTask = Boolean(
+    selectedTask?.dbId &&
+    selectedTask.contentPlanId &&
+    selectedTask.status === 'Chờ' &&
+    canUpdateTask &&
+    profile?.id &&
+    selectedTaskEditorProfileId === profile.id
+  );
+  const canCompleteSelectedTask = Boolean(
+    selectedTask?.dbId &&
+    selectedTask.contentPlanId &&
+    selectedTask.status === 'Đang làm' &&
+    canUpdateTask &&
+    profile?.id &&
+    selectedTaskEditorProfileId === profile.id
+  );
 
   const filteredTasks = useMemo(() =>
     tasks
@@ -83,6 +105,54 @@ export default function Tasks() {
       showToast({
         type: 'success',
         message: selectedTask ? 'Đã lưu thay đổi video task.' : 'Đã thêm video task.',
+      });
+    }
+  };
+
+  const handleAccept = async (data: { receiveDate: string; returnDate: string }) => {
+    if (!selectedTask || !canAcceptSelectedTask) return;
+
+    const accepted = await acceptTask(selectedTask, data.receiveDate, data.returnDate);
+
+    if (accepted) {
+      setIsModalOpen(false);
+      setSelectedTask(null);
+      clearSaveError();
+      showToast({
+        type: 'success',
+        message: 'Đã nhận Task.',
+      });
+    }
+  };
+
+  const handleSaveExecution = async (data: LinkedVideoTaskExecutionData) => {
+    if (!selectedTask || !canCompleteSelectedTask) return;
+
+    const saved = await updateLinkedExecution(selectedTask, data);
+
+    if (saved) {
+      setIsModalOpen(false);
+      setSelectedTask(null);
+      clearSaveError();
+      showToast({
+        type: 'success',
+        message: 'Đã lưu thông tin thực hiện Task.',
+      });
+    }
+  };
+
+  const handleComplete = async (data: LinkedVideoTaskExecutionData) => {
+    if (!selectedTask || !canCompleteSelectedTask) return;
+
+    const completed = await saveExecutionAndCompleteTask(selectedTask, data);
+
+    if (completed) {
+      setIsModalOpen(false);
+      setSelectedTask(null);
+      clearSaveError();
+      showToast({
+        type: 'success',
+        message: 'Đã hoàn thành Task.',
       });
     }
   };
@@ -143,6 +213,11 @@ export default function Tasks() {
         selectedMonth={selectedMonth}
         onClose={closeModal}
         onSave={handleSave}
+        onSaveExecution={handleSaveExecution}
+        onAccept={handleAccept}
+        onComplete={handleComplete}
+        canAcceptLinkedTask={canAcceptSelectedTask}
+        canCompleteLinkedTask={canCompleteSelectedTask}
         isSaving={isSaving}
         errorMessage={saveError}
       />

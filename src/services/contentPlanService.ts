@@ -1,7 +1,14 @@
 import { supabase, supabaseConfigError } from '../lib/supabase';
 import { logActivity } from './activityLogService';
-import type { ContentPlanCategory, ContentPlanEditorOption, ContentPlanFormData, ContentPlanItem } from '../types/contentPlan';
+import type {
+  AssignContentPlanEditorResult,
+  ContentPlanCategory,
+  ContentPlanEditorOption,
+  ContentPlanFormData,
+  ContentPlanItem,
+} from '../types/contentPlan';
 import { getMonthRange } from '../utils/month';
+import { normalizeOptionalHttpUrl } from '../utils/url';
 
 type Nullable<T> = T | null;
 
@@ -26,7 +33,9 @@ interface ContentPlanRow {
   note: Nullable<string>;
   category: Nullable<ContentPlanCategory>;
   editor_id: Nullable<string>;
+  link: Nullable<string>;
   profiles: ProfileRow | ProfileRow[] | null;
+  video_tasks?: Array<{ id: string }> | null;
 }
 
 type ContentPlanPayload = {
@@ -34,10 +43,20 @@ type ContentPlanPayload = {
   title: string;
   note: string | null;
   category: ContentPlanCategory | null;
-  editor_id: string | null;
+  editor_id?: string | null;
+  link: string | null;
   created_by?: string | null;
   updated_by?: string | null;
 };
+
+interface AssignEditorRpcRow {
+  content_plan_id: string;
+  video_task_id: string | null;
+  editor_id: string | null;
+  task_created: boolean;
+  task_status: string | null;
+  air_date: string;
+}
 
 const editorIdCache = new Map<string, string | null>();
 
@@ -60,6 +79,30 @@ function mapDatabaseError(error: { message?: string; code?: string } | null) {
   }
   if (message.includes('violates check constraint')) {
     return 'Dữ liệu Content Plan chưa đúng định dạng.';
+  }
+  if (message.includes('bạn không có quyền giao việc từ content plan')) {
+    return 'Bạn không có quyền giao việc từ Content Plan.';
+  }
+  if (message.includes('không tìm thấy content plan')) {
+    return 'Không tìm thấy Content Plan.';
+  }
+  if (message.includes('editor đã chọn không còn hoạt động hoặc không thuộc team editor')) {
+    return 'Editor đã chọn không còn hoạt động hoặc không thuộc team editor.';
+  }
+  if (message.includes('không thể đổi editor vì task đã được bắt đầu')) {
+    return 'Không thể đổi Editor vì Task đã được bắt đầu.';
+  }
+  if (message.includes('content plan đã sinh task')) {
+    return 'Content Plan đã sinh Task. Hãy xóa Content Plan hoặc dùng thao tác hủy giao việc trong phase sau.';
+  }
+  if (message.includes('video_tasks_content_plan_id_unique') || message.includes('duplicate key value')) {
+    return 'Content Plan này đã được tạo Task. Dữ liệu sẽ được tải lại.';
+  }
+  if (message.includes('thể loại content plan chưa tương thích')) {
+    return 'Thể loại Content Plan chưa tương thích với Video tháng.';
+  }
+  if (message.includes('hãy phân công editor qua thao tác giao việc content plan')) {
+    return 'Hãy phân công Editor qua thao tác giao việc Content Plan.';
   }
   if (message.includes('is_editor_member')) {
     return 'Danh sách editor chưa sẵn sàng. Vui lòng liên hệ quản trị viên.';
@@ -92,6 +135,10 @@ function validateIsoDate(value: string, label: string) {
   return cleanValue;
 }
 
+function normalizeContentPlanLink(value: string) {
+  return normalizeOptionalHttpUrl(value);
+}
+
 function mapContentPlanRow(row: ContentPlanRow): ContentPlanItem {
   const profile = firstProfile(row.profiles);
 
@@ -102,6 +149,8 @@ function mapContentPlanRow(row: ContentPlanRow): ContentPlanItem {
     note: row.note ?? '',
     category: row.category ?? 'Video dài',
     editor_id: profile?.editor_code ?? '',
+    link: row.link ?? '',
+    hasLinkedTask: Boolean(row.video_tasks?.length),
   };
 }
 
@@ -168,23 +217,40 @@ async function resolveEditorProfileId(editorCode: string) {
 async function toContentPlanPayload(
   data: ContentPlanFormData,
   userId?: string | null,
-  includeCreatedBy = false
+  includeCreatedBy = false,
+  includeEditor = false
 ): Promise<ContentPlanPayload> {
   const title = data.video_name.trim();
   if (!title) throw new Error('Vui lòng nhập tên video.');
   const note = data.note.trim();
   if (note.length > 2000) throw new Error('Ghi chú tối đa 2000 ký tự.');
 
-  const editorProfileId = await resolveEditorProfileId(data.editor_id);
-
-  return {
+  const link = normalizeContentPlanLink(data.link);
+  const payload: ContentPlanPayload = {
     air_date: validateIsoDate(data.air_date, 'Ngày Air'),
     title,
     note: note || null,
     category: data.category || null,
-    editor_id: editorProfileId,
+    link,
     ...(includeCreatedBy ? { created_by: userId ?? null } : {}),
     updated_by: userId ?? null,
+  };
+
+  if (includeEditor) {
+    payload.editor_id = await resolveEditorProfileId(data.editor_id);
+  }
+
+  return payload;
+}
+
+function mapAssignEditorRpcRow(row: AssignEditorRpcRow): AssignContentPlanEditorResult {
+  return {
+    contentPlanId: row.content_plan_id,
+    videoTaskId: row.video_task_id,
+    editorId: row.editor_id,
+    taskCreated: row.task_created,
+    taskStatus: row.task_status,
+    airDate: row.air_date,
   };
 }
 
@@ -199,6 +265,10 @@ export async function fetchContentPlan(monthValue?: string): Promise<ContentPlan
       note,
       category,
       editor_id,
+      link,
+      video_tasks!video_tasks_content_plan_id_fkey (
+        id
+      ),
       profiles!content_plan_editor_id_fkey (
         id,
         editor_code,
@@ -279,6 +349,7 @@ export async function createContentPlanRow(data: ContentPlanFormData, userId?: s
       category: data.category,
       note: data.note.trim(),
       editor_id: data.editor_id,
+      link: data.link.trim(),
     },
   });
 }
@@ -291,6 +362,9 @@ export async function updateContentPlanRow(
 ) {
   const client = requireSupabase();
   const payload = await toContentPlanPayload(data, userId);
+  if (previousItem?.hasLinkedTask) {
+    payload.link = previousItem.link.trim() || null;
+  }
   const { error } = await client
     .from('content_plan')
     .update(payload)
@@ -317,8 +391,31 @@ export async function updateContentPlanRow(
       note: data.note.trim(),
       previous_editor_id: previousItem?.editor_id,
       editor_id: data.editor_id,
+      link: data.link.trim(),
     },
   });
+}
+
+export async function assignEditorToContentPlan(
+  rowId: string,
+  editorCode: string,
+): Promise<AssignContentPlanEditorResult> {
+  const client = requireSupabase();
+  const editorProfileId = await resolveEditorProfileId(editorCode);
+
+  const { data, error } = await client.rpc('assign_content_plan_editor', {
+    p_content_plan_id: rowId,
+    p_editor_id: editorProfileId,
+  });
+
+  if (error) throw new Error(mapDatabaseError(error));
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    throw new Error('Không nhận được kết quả phân công Content Plan.');
+  }
+
+  return mapAssignEditorRpcRow(row as AssignEditorRpcRow);
 }
 
 export async function deleteContentPlanRow(rowId: string, userId?: string | null, title?: string) {

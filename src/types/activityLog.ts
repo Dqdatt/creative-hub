@@ -7,7 +7,15 @@ export type ActivityAction =
   | 'status_changed'
   | 'assigned'
   | 'uploaded'
-  | 'password_changed';
+  | 'password_changed'
+  | 'content_plan_assigned'
+  | 'content_plan_reassigned'
+  | 'video_task_generated'
+  | 'video_task_editor_changed'
+  | 'video_task_accepted'
+  | 'video_task_execution_updated'
+  | 'video_task_completed'
+  | 'content_plan_completed';
 
 export interface ActivityLog {
   id: string;

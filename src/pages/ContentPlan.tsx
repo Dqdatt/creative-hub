@@ -12,6 +12,7 @@ import type { ContentPlanCategory, ContentPlanFormData, ContentPlanItem } from '
 import { useConfirmDialog } from '../components/common/confirmDialogContext';
 import { useToast } from '../components/common/toastContext';
 import { useMonth } from '../context/monthContext';
+import { isSafeHttpUrl } from '../utils/url';
 
 function toFormData(item: ContentPlanItem): ContentPlanFormData {
   return {
@@ -20,11 +21,24 @@ function toFormData(item: ContentPlanItem): ContentPlanFormData {
     note: item.note,
     category: item.category,
     editor_id: item.editor_id,
+    link: item.link,
   };
 }
 
 function getDefaultDate(monthValue: string) {
   return `${monthValue}-01`;
+}
+
+function hasValidContentPlanLink(value: string) {
+  return isSafeHttpUrl(value);
+}
+
+function hasContentFieldChanges(current: ContentPlanItem, nextData: ContentPlanFormData) {
+  return current.air_date !== nextData.air_date
+    || current.video_name !== nextData.video_name
+    || current.note !== nextData.note
+    || current.category !== nextData.category
+    || current.link !== nextData.link;
 }
 
 type ContentPlanModalMode = 'create' | 'edit' | 'assign';
@@ -45,6 +59,7 @@ export default function ContentPlan() {
     refetch,
     createItem,
     updateItem,
+    assignEditor,
     deleteItem,
     clearSaveError,
   } = useContentPlan(selectedMonth);
@@ -65,7 +80,8 @@ export default function ContentPlan() {
   const canEditNote = canEditContentPlanField(role, 'note', permissions);
   const canEditCategory = canEditContentPlanField(role, 'category', permissions);
   const canEditEditor = canEditContentPlanField(role, 'editor_id', permissions);
-  const canOpenEditor = canEditAirDate || canEditVideoName || canEditNote || canEditCategory || canEditEditor;
+  const canEditLink = canEditContentPlanField(role, 'link', permissions);
+  const canOpenEditor = canEditAirDate || canEditVideoName || canEditNote || canEditCategory || canEditEditor || canEditLink;
 
   const monthItems = useMemo(() =>
     items.filter((item) => item.air_date.startsWith(selectedMonth)),
@@ -81,7 +97,12 @@ export default function ContentPlan() {
         if (!searchValue) return true;
         return item.video_name.toLowerCase().includes(searchValue);
       })
-      .sort((a, b) => a.air_date.localeCompare(b.air_date) || a.id.localeCompare(b.id)),
+      .sort((a, b) => {
+        const aCompleted = hasValidContentPlanLink(a.link);
+        const bCompleted = hasValidContentPlanLink(b.link);
+        if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
+        return a.air_date.localeCompare(b.air_date) || a.id.localeCompare(b.id);
+      }),
     [categoryFilter, editorFilter, monthItems, search]
   );
 
@@ -102,7 +123,8 @@ export default function ContentPlan() {
       video_name: '',
       note: '',
       category: 'Video dài',
-      editor_id: canEditEditor ? editorOptions[0]?.id ?? '' : '',
+      editor_id: '',
+      link: '',
     });
     setFormError(null);
   };
@@ -153,19 +175,37 @@ export default function ContentPlan() {
       note: canEditNote ? draft.note.trim() : sourceItem?.note ?? draft.note.trim(),
       category: canEditCategory ? draft.category : sourceItem?.category ?? draft.category,
       editor_id: canEditEditor ? draft.editor_id : sourceItem?.editor_id ?? '',
+      link: canEditLink && !selectedItem?.hasLinkedTask ? draft.link.trim() : sourceItem?.link ?? draft.link.trim(),
     };
 
-    const saved = modalMode === 'create'
-      ? await createItem(nextData)
-      : selectedItem
-        ? await updateItem(selectedItem, nextData)
-        : false;
+    let saved = false;
+
+    if (modalMode === 'create') {
+      saved = await createItem({ ...nextData, editor_id: '' });
+    } else if (selectedItem) {
+      const editorChanged = selectedItem.editor_id !== nextData.editor_id;
+      const contentChanged = hasContentFieldChanges(selectedItem, nextData);
+
+      if (editorChanged && contentChanged) {
+        setFormError('Vui lòng lưu nội dung trước, rồi phân công editor.');
+        return;
+      }
+
+      if (editorChanged) {
+        saved = await assignEditor(selectedItem, nextData.editor_id);
+      } else if (contentChanged) {
+        saved = await updateItem(selectedItem, nextData);
+      } else {
+        closeModal();
+        return;
+      }
+    }
 
     if (saved) {
       closeModal();
       showToast({
         type: 'success',
-        message: modalMode === 'assign' ? 'Đã phân công editor.' : 'Đã lưu lịch air.',
+        message: selectedItem && selectedItem.editor_id !== nextData.editor_id ? 'Đã phân công editor.' : 'Đã lưu lịch air.',
       });
     }
   };
@@ -181,7 +221,7 @@ export default function ContentPlan() {
     if (isSaving || isDeleting) return;
     const confirmed = await requestConfirm({
       title: 'Xóa kế hoạch content?',
-      description: 'Thao tác này không thể hoàn tác.',
+      description: 'Thao tác này không thể hoàn tác. Nếu dòng đã sinh Video Task, task liên kết cũng sẽ bị xóa.',
       confirmLabel: 'Xóa dòng',
       variant: 'danger',
     });
@@ -202,8 +242,8 @@ export default function ContentPlan() {
         <LoadingState
           variant="table"
           message="Đang tải Content Plan..."
-          colSpan={5}
-          minWidthClass="min-w-[1040px]"
+          colSpan={6}
+          minWidthClass="min-w-[1000px]"
           rows={8}
         />
       );
@@ -265,7 +305,9 @@ export default function ContentPlan() {
         canEditVideoName={canEditVideoName && modalMode !== 'assign'}
         canEditNote={canEditNote && modalMode !== 'assign'}
         canEditCategory={canEditCategory && modalMode !== 'assign'}
-        canEditEditor={canEditEditor}
+        canEditEditor={canEditEditor && modalMode !== 'create'}
+        canEditLink={canEditLink && modalMode !== 'assign' && !selectedItem?.hasLinkedTask}
+        isLinkSynced={Boolean(selectedItem?.hasLinkedTask)}
         canDelete={Boolean(selectedItem) && canDelete && modalMode === 'edit' && !isDeleting}
         isSaving={isSaving}
         errorMessage={formError ?? saveError}

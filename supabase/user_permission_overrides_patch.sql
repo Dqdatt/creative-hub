@@ -256,6 +256,24 @@ as $$
   select public.can_edit_content_plan_content() or public.can_assign_content_plan_editor();
 $$;
 
+create or replace function public.is_content_plan_assignment_context()
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select coalesce(current_setting('app.content_plan_assignment', true) = 'on', false);
+$$;
+
+create or replace function public.is_linked_video_task_completion_context()
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select coalesce(current_setting('app.linked_video_task_completion', true) = 'on', false);
+$$;
+
 create or replace function public.enforce_content_plan_field_permissions()
 returns trigger
 language plpgsql
@@ -273,21 +291,46 @@ begin
     if not v_can_edit_content then
       raise exception 'Không có quyền tạo Content Plan.';
     end if;
+
+    if new.editor_id is not null and not public.is_content_plan_assignment_context() then
+      raise exception 'Hãy phân công Editor qua thao tác giao việc Content Plan.';
+    end if;
+
     return new;
   end if;
 
   if tg_op = 'UPDATE' then
+    if new.link is distinct from old.link
+      and exists (
+        select 1
+        from public.video_tasks vt
+        where vt.content_plan_id = old.id
+      )
+      and not public.is_linked_video_task_completion_context() then
+      raise exception 'Link Content Plan liên kết được đồng bộ từ Video tháng.';
+    end if;
+
     if not v_can_edit_content and (
       new.air_date is distinct from old.air_date
       or new.title is distinct from old.title
       or new.note is distinct from old.note
       or new.category is distinct from old.category
+      or (
+        new.link is distinct from old.link
+        and not public.is_linked_video_task_completion_context()
+      )
     ) then
       raise exception 'Không có quyền chỉnh nội dung Content Plan.';
     end if;
 
-    if not v_can_assign_editor and new.editor_id is distinct from old.editor_id then
-      raise exception 'Không có quyền phân công editor Content Plan.';
+    if new.editor_id is distinct from old.editor_id then
+      if not v_can_assign_editor then
+        raise exception 'Không có quyền phân công editor Content Plan.';
+      end if;
+
+      if not public.is_content_plan_assignment_context() then
+        raise exception 'Hãy phân công Editor qua thao tác giao việc Content Plan.';
+      end if;
     end if;
 
     return new;
@@ -541,6 +584,7 @@ grant execute on function public.can_edit_video_tasks() to authenticated;
 grant execute on function public.can_edit_shoots() to authenticated;
 grant execute on function public.can_edit_content_plan_content() to authenticated;
 grant execute on function public.can_assign_content_plan_editor() to authenticated;
+grant execute on function public.is_content_plan_assignment_context() to authenticated;
 
 comment on table public.user_permission_overrides is 'Quyền sử dụng theo từng tài khoản, nằm trên role baseline.';
 comment on column public.user_permission_overrides.access_mode is 'role_default, view_only hoặc custom.';
