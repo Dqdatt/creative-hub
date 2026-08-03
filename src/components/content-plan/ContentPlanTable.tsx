@@ -110,9 +110,13 @@ export function ContentPlanTable({
               </td>
 
               <td className="text-sub">
-                <span className="content-note-cell" title={item.note || undefined}>
-                  {item.note || '—'}
-                </span>
+                {item.note ? (
+                  <span className="content-note-cell" title="Bấm vào hàng để mở ghi chú đầy đủ">
+                    {item.note}
+                  </span>
+                ) : (
+                  <span className="text-sub/40">—</span>
+                )}
               </td>
 
               <td data-tour={editor ? 'content-plan-editor' : undefined}>

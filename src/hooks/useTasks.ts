@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/authContext';
 import { fetchContentPlanEditorOptions } from '../services/contentPlanService';
-import { acceptLinkedVideoTask, completeLinkedVideoTask, createVideoTask, fetchVideoTasks, updateLinkedVideoTaskExecution, updateVideoTask } from '../services/tasksService';
+import { acceptLinkedVideoTask, completeLinkedVideoTask, createVideoTask, deleteVideoTask, fetchVideoTasks, updateLinkedVideoTaskExecution, updateVideoTask } from '../services/tasksService';
 import type { ContentPlanEditorOption } from '../types/contentPlan';
 import type { Editor, LinkedVideoTaskExecutionData, TaskFormData, VideoTask } from '../types/task';
 import { useRealtimeSubscription } from './useRealtimeSubscription';
@@ -37,6 +37,7 @@ export function useTasks(monthValue: string) {
   const [editors, setEditors] = useState<Editor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -110,6 +111,23 @@ export function useTasks(monthValue: string) {
       return false;
     } finally {
       setIsSaving(false);
+    }
+  }, [loadTasks, user?.id]);
+
+  const deleteTask = useCallback(async (task: VideoTask) => {
+    setIsDeleting(true);
+    setSaveError(null);
+
+    try {
+      await deleteVideoTask(task, user?.id);
+      await loadTasks();
+      return true;
+    } catch (error) {
+      setSaveError(getErrorMessage(error, 'Không thể xóa Task. Vui lòng thử lại.'));
+      await loadTasks({ silent: true });
+      return false;
+    } finally {
+      setIsDeleting(false);
     }
   }, [loadTasks, user?.id]);
 
@@ -219,11 +237,13 @@ export function useTasks(monthValue: string) {
     editors,
     isLoading,
     isSaving,
+    isDeleting,
     loadError,
     saveError,
     refetch: loadTasks,
     createTask,
     updateTask,
+    deleteTask,
     acceptTask,
     completeTask,
     updateLinkedExecution,

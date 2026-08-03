@@ -76,6 +76,7 @@ export function useDashboard(monthValue = getCurrentMonthValue()) {
     const doneVideos = monthTasks.filter((task) => task.status === 'Đã xong').length;
     const missingResultLinks = monthTasks.filter((task) => !task.link || task.link === '#').length;
     const completionRate = totalVideos ? Math.round((doneVideos / totalVideos) * 100) : 0;
+    const countedShoots = shoots.filter((shoot) => shoot.type !== 'livestream');
     const upcomingAirTasks = monthTasks
       .filter((task) => task.airDate && task.status !== 'Đã xong')
       .sort((a, b) => a.airDate.localeCompare(b.airDate));
@@ -83,12 +84,12 @@ export function useDashboard(monthValue = getCurrentMonthValue()) {
     return {
       totalVideos,
       doneVideos,
-      totalShoots: shoots.length,
+      totalShoots: countedShoots.length,
       completionRate,
       missingResultLinks,
       upcomingAirTasks,
     };
-  }, [monthTasks, shoots.length]);
+  }, [monthTasks, shoots]);
 
   return {
     tasks: monthTasks,

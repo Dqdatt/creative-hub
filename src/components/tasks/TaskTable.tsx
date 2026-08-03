@@ -1,4 +1,4 @@
-import { Link2 } from 'lucide-react';
+import { Link2, Trash2 } from 'lucide-react';
 import type { Editor, VideoTask } from '../../types/task';
 import { StatusBadge, CategoryBadge, EditorChip } from './TaskBadges';
 import { isSafeHttpUrl } from '../../utils/url';
@@ -7,17 +7,27 @@ interface TaskTableProps {
   tasks: VideoTask[];
   editors: Editor[];
   onRowClick: (task: VideoTask) => void;
+  onDeleteTask?: (task: VideoTask) => void;
   canEditTask?: boolean;
+  canDeleteTask?: boolean;
   highlightedId?: string | null;
 }
 
-export function TaskTable({ tasks, editors, onRowClick, canEditTask = true, highlightedId = null }: TaskTableProps) {
+export function TaskTable({
+  tasks,
+  editors,
+  onRowClick,
+  onDeleteTask,
+  canEditTask = true,
+  canDeleteTask = false,
+  highlightedId = null,
+}: TaskTableProps) {
   if (tasks.length === 0) {
     return (
-      <table className="ctable min-w-[1200px]" data-tour="video-task-table">
+      <table className="ctable min-w-[1440px]" data-tour="video-task-table">
         <tbody>
           <tr>
-            <td colSpan={12} className="px-3 py-12 text-center text-sub">
+            <td colSpan={14} className="px-3 py-12 text-center text-sub">
               <div className="table-empty-state">
                 <strong>Không có video phù hợp</strong>
                 <span>Thử đổi bộ lọc hoặc từ khóa tìm kiếm.</span>
@@ -30,7 +40,7 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true, high
   }
 
   return (
-    <table className="ctable min-w-[1200px]" data-tour="video-task-table">
+    <table className="ctable min-w-[1440px]" data-tour="video-task-table">
       <thead>
         <tr>
           <th className="text-center" style={{ width: '48px' }}>STT</th>
@@ -44,7 +54,9 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true, high
           <th style={{ width: '80px' }}>Air</th>
           <th style={{ width: '128px' }} data-tour="video-task-status-column">Trạng thái</th>
           <th style={{ width: '80px' }}>Ưu tiên</th>
+          <th style={{ width: '220px' }}>Ghi chú</th>
           <th className="text-center" style={{ width: '64px' }} data-tour="video-task-link-column">Link</th>
+          <th className="text-center" style={{ width: '84px' }}>Thao tác</th>
         </tr>
       </thead>
       <tbody>
@@ -57,7 +69,7 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true, high
 
           return (
             <tr
-              key={v.id}
+              key={v.dbId ?? v.id}
               className={rowBg}
               data-video-task-id={v.dbId}
               aria-current={v.dbId && highlightedId === v.dbId ? 'true' : undefined}
@@ -101,6 +113,15 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true, high
                   <span className="text-sub/40">-</span>
                 )}
               </td>
+              <td className="text-sub">
+                {v.note ? (
+                  <span className="content-note-cell" title="Bấm vào hàng để mở ghi chú đầy đủ">
+                    {v.note}
+                  </span>
+                ) : (
+                  <span className="text-sub/40">-</span>
+                )}
+              </td>
               <td
                 className="text-center"
                 data-tour={v.contentPlanId && v.status === 'Đang làm' ? 'video-task-result-link' : undefined}
@@ -117,6 +138,22 @@ export function TaskTable({ tasks, editors, onRowClick, canEditTask = true, high
                   >
                     <Link2 style={{ width: '16px', height: '16px' }} />
                   </a>
+                ) : (
+                  <span className="text-sub/40">-</span>
+                )}
+              </td>
+              <td className="text-center" onClick={(e) => e.stopPropagation()}>
+                {canDeleteTask && onDeleteTask ? (
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    style={{ width: '34px', height: '34px', color: 'var(--danger)' }}
+                    title="Xóa Task"
+                    aria-label={`Xóa task ${v.name}`}
+                    onClick={() => onDeleteTask(v)}
+                  >
+                    <Trash2 style={{ width: '16px', height: '16px' }} />
+                  </button>
                 ) : (
                   <span className="text-sub/40">-</span>
                 )}

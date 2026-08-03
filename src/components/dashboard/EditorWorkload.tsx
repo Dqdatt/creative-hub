@@ -36,6 +36,7 @@ export function EditorWorkload({ editors, tasks, shoots }: EditorWorkloadProps) 
           const resize = editorTasks.reduce((acc, t) => acc + resizeCount(t.resize), 0);
           const editorShootKey = editor.profileId || editor.id;
           const editorShoots = shoots.filter((s) =>
+            s.type !== 'livestream' &&
             (s.editorProfileIds.includes(editorShootKey) || s.editorIds.includes(editor.id))
           );
           const totalTasks = editorTasks.length + editorShoots.length;

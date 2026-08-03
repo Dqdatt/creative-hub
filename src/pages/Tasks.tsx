@@ -12,11 +12,13 @@ import { useTasks } from '../hooks/useTasks';
 import { useRouteHighlight } from '../hooks/useRouteHighlight';
 import { fetchVideoTaskById } from '../services/tasksService';
 import { useToast } from '../components/common/toastContext';
+import { useConfirmDialog } from '../components/common/confirmDialogContext';
 import { useMonth } from '../context/monthContext';
 import { isUuid } from '../utils/id';
 
 export default function Tasks() {
   const { can, profile } = useAuth();
+  const { requestConfirm } = useConfirmDialog();
   const { showToast } = useToast();
   const { selectedMonth, setSelectedMonth } = useMonth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,11 +27,13 @@ export default function Tasks() {
     editors,
     isLoading,
     isSaving,
+    isDeleting,
     loadError,
     saveError,
     refetch,
     createTask,
     updateTask,
+    deleteTask,
     acceptTask,
     updateLinkedExecution,
     saveExecutionAndCompleteTask,
@@ -42,6 +46,7 @@ export default function Tasks() {
   const [selectedTask, setSelectedTask] = useState<VideoTask | null>(null);
   const canCreateTask = can('video_tasks:create');
   const canUpdateTask = can('video_tasks:update');
+  const canDeleteTask = can('video_tasks:delete');
   const highlightParam = searchParams.get('highlight');
   const legacyTaskParam = searchParams.get('task');
   const targetTaskId = highlightParam ?? legacyTaskParam;
@@ -70,7 +75,10 @@ export default function Tasks() {
       .filter((t) => {
         if (editorFilter !== 'all' && t.editorId !== editorFilter) return false;
         if (statusFilter !== 'all' && t.status !== statusFilter) return false;
-        if (search && !t.name.toLowerCase().includes(search.toLowerCase())) return false;
+        if (search) {
+          const searchValue = search.toLowerCase();
+          if (![t.name, t.airDate, t.note ?? ''].some((value) => value.toLowerCase().includes(searchValue))) return false;
+        }
         return true;
       })
       .sort((a, b) => a.id - b.id),
@@ -233,20 +241,52 @@ export default function Tasks() {
     }
   };
 
+  const handleDeleteTask = useCallback(async (task: VideoTask) => {
+    if (!canDeleteTask || isSaving || isDeleting) return;
+
+    const confirmed = await requestConfirm({
+      title: 'Xóa video task?',
+      description: task.contentPlanId
+        ? 'Task này được tạo từ Content Plan. Thao tác xóa sẽ gỡ task khỏi Video tháng nhưng không xóa dòng Content Plan.'
+        : 'Thao tác này không thể hoàn tác.',
+      confirmLabel: 'Xóa Task',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
+
+    const deleted = await deleteTask(task);
+
+    if (deleted) {
+      if (selectedTask?.dbId === task.dbId) closeModal();
+      showToast({ type: 'success', message: 'Đã xóa video task.' });
+    }
+  }, [canDeleteTask, closeModal, deleteTask, isDeleting, isSaving, requestConfirm, selectedTask?.dbId, showToast]);
+
   const renderTableContent = () => {
     if (isLoading) {
       return (
         <LoadingState
           variant="table"
           message="Đang tải dữ liệu video..."
-          colSpan={12}
-          minWidthClass="min-w-[1200px]"
+          colSpan={14}
+          minWidthClass="min-w-[1440px]"
           rows={7}
         />
       );
     }
 
-    return <TaskTable tasks={filteredTasks} editors={editors} onRowClick={openEditModal} canEditTask={canUpdateTask} highlightedId={highlightedTaskId} />;
+    return (
+      <TaskTable
+        tasks={filteredTasks}
+        editors={editors}
+        onRowClick={openEditModal}
+        canEditTask={canUpdateTask}
+        canDeleteTask={canDeleteTask && !isSaving && !isDeleting}
+        onDeleteTask={(task) => void handleDeleteTask(task)}
+        highlightedId={highlightedTaskId}
+      />
+    );
   };
 
   return (
@@ -292,9 +332,11 @@ export default function Tasks() {
         onSaveExecution={handleSaveExecution}
         onAccept={handleAccept}
         onComplete={handleComplete}
+        onDelete={selectedTask ? () => void handleDeleteTask(selectedTask) : undefined}
+        canDelete={Boolean(selectedTask) && canDeleteTask && !isDeleting}
         canAcceptLinkedTask={canAcceptSelectedTask}
         canCompleteLinkedTask={canCompleteSelectedTask}
-        isSaving={isSaving}
+        isSaving={isSaving || isDeleting}
         errorMessage={saveError}
       />
     </div>

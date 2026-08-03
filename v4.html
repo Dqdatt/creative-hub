@@ -31,6 +31,15 @@
   .nav-item.active{background:#EFF6FF;color:#2563EB;font-weight:600}
   .nav-item.active .nav-ic{color:#2563EB}
   [data-view]{animation:fade .25s ease}
+  .note-preview{
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    max-width:240px;
+    line-height:1.35;
+    white-space:pre-line;
+  }
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -134,7 +143,7 @@
           </div>
       </div>
       
-      <div class="grid grid-cols-3 gap-4 border-t border-line pt-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-line pt-4">
           <div>
             <label class="block text-[12px] font-semibold text-sub mb-1">Ngày nhận</label>
             <input id="mNhan" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30" placeholder="VD: 01/07" />
@@ -153,11 +162,21 @@
         <label class="block text-[12px] font-semibold text-sub mb-1">Link thành phẩm</label>
         <input id="mLink" class="w-full h-9 px-3 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30" placeholder="Nhập link (Drive, Youtube, etc.)..." />
       </div>
+
+      <div class="border-t border-line pt-4 mt-2">
+        <label class="block text-[12px] font-semibold text-sub mb-1">Ghi chú Content Plan</label>
+        <textarea id="mNote" rows="4" class="w-full min-h-[92px] px-3 py-2 rounded-xl border border-line bg-canvas outline-none focus:ring-2 focus:ring-brand/30 resize-y" placeholder="Nhập ghi chú thêm..."></textarea>
+      </div>
     </div>
 
-    <div class="mt-6 flex justify-end gap-3">
-      <button onclick="closeTaskModal()" class="px-4 h-10 rounded-xl text-[13px] font-medium hover:bg-canvas transition">Đóng</button>
-      <button onclick="saveTask()" class="px-5 h-10 rounded-xl bg-brand text-white text-[13px] font-semibold shadow-soft hover:opacity-90 transition">Lưu thay đổi</button>
+    <div class="mt-6 flex flex-wrap items-center gap-3">
+      <button id="mDeleteBtn" onclick="deleteCurrentTask()" class="hidden px-4 h-10 rounded-xl text-[13px] font-semibold text-danger hover:bg-red-50 transition">
+        <i data-lucide="trash-2" class="w-4 h-4 inline-block align-[-3px] mr-1"></i> Xóa Task
+      </button>
+      <div class="ml-auto flex gap-3">
+        <button onclick="closeTaskModal()" class="px-4 h-10 rounded-xl text-[13px] font-medium hover:bg-canvas transition">Đóng</button>
+        <button onclick="saveTask()" class="px-5 h-10 rounded-xl bg-brand text-white text-[13px] font-semibold shadow-soft hover:opacity-90 transition">Lưu thay đổi</button>
+      </div>
     </div>
   </div>
 </div>
@@ -168,6 +187,48 @@ const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
 const el = (t, c, h) => { const n=document.createElement(t); if(c)n.className=c; if(h!=null)n.innerHTML=h; return n; };
 const esc = s => (s??'').toString().replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const APP_YEAR = 2026;
+const APP_MONTH = 7;
+const APP_MONTH_KEY = `${APP_YEAR}-${String(APP_MONTH).padStart(2,'0')}`;
+const normalizeText = s => (s??'').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const isCountedShoot = s => s.date.startsWith(APP_MONTH_KEY) && s.type !== 'livestream';
+
+function parseDateParts(value, fallbackMonth=APP_MONTH, fallbackYear=APP_YEAR){
+  const raw = (value??'').toString().trim();
+  if(!raw) return null;
+
+  let y = fallbackYear, m = fallbackMonth, d = null;
+  let match = raw.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+  if(match){
+    y = Number(match[1]); m = Number(match[2]); d = Number(match[3]);
+  } else {
+    match = raw.match(/^(\d{1,2})(?:[-/.](\d{1,2}))?(?:[-/.](\d{2,4}))?$/);
+    if(!match) return null;
+    d = Number(match[1]);
+    if(match[2]) m = Number(match[2]);
+    if(match[3]) y = Number(match[3].length === 2 ? `20${match[3]}` : match[3]);
+  }
+
+  const date = new Date(y, m - 1, d);
+  if(date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+  return { y, m, d };
+}
+
+function dateSortValue(value){
+  const parts = parseDateParts(value);
+  if(!parts) return Number.MAX_SAFE_INTEGER;
+  return parts.y * 10000 + parts.m * 100 + parts.d;
+}
+
+function dateMonthKey(value){
+  const parts = parseDateParts(value);
+  return parts ? `${parts.y}-${String(parts.m).padStart(2,'0')}` : '';
+}
+
+function compactDate(value){
+  const parts = parseDateParts(value);
+  return parts ? `${parts.d}/${parts.m}` : (value??'').toString().trim();
+}
 
 /* ---- icon set ---- */
 const ICONS = {
@@ -186,7 +247,8 @@ const ICONS = {
   'users':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   'building-2':'<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
   'x':'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
-  'plus':'<path d="M5 12h14"/><path d="M12 5v14"/>'
+  'plus':'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  'trash-2':'<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'
 };
 const lucide = {
   createIcons(){
@@ -206,7 +268,7 @@ const EDITORS = [
   { id:'minh', name:'Hoàng Hữu Lê Minh',short:'Hữu Minh',  role:'Video Editor', color:'#F59E0B', soft:'#FEF3C7', crewKey:'MINH' },
 ];
 const edById = id => EDITORS.find(e=>e.id===id);
-const shootsOf = e => SHOOTS.filter(s => s.date.startsWith('2026-07') && s.crew && s.crew.toUpperCase().includes(e.crewKey));
+const shootsOf = e => SHOOTS.filter(s => isCountedShoot(s) && s.crew && s.crew.toUpperCase().includes(e.crewKey));
 
 const VIDEOS = [
   { stt:1, name:'Video Motion Shopee sale 7.7', resize:'',           editor:'minh', order:'ECOM',    cat:'Motion',    nhan:'26/6', tra:'26/6', air:'2/7',  status:'Đã xong',  uutien:'',    link:'#' },
@@ -219,6 +281,52 @@ const VIDEOS = [
   { stt:8, name:'Video COCOON - 3 Lợi ích khi sử dụng nệm lò xo túi độc lập', resize:'9x16 & 1x1', editor:'dat', order:'BRAND', cat:'Video dài', nhan:'1/7', tra:'7/7', air:'10/7', status:'Đang làm', uutien:'', link:'#' },
   { stt:9, name:"Video Motion Nệm L'ADOME Cool", resize:'1x1',        editor:'hai',  order:'DIGITAL', cat:'Ads',       nhan:'2/7',  tra:'3/7',  air:'3/7',  status:'Đã xong',  uutien:'Gấp', link:'#' },
 ];
+
+const CONTENT_PLAN_ITEMS = [
+  { air:'2026-07-01', name:"Video Motion Nệm L'ADOME", note:'' },
+  { air:'2026-07-01', name:'Video Motion Combo kháng khuẩn', note:'' },
+  { air:'2026-07-02', name:'Video Motion Shopee sale 7.7', note:'' },
+  { air:'2026-07-02', name:'Video Chạm vào an yên tập 9', note:'' },
+  { air:'2026-07-03', name:'Video Motion Nệm Cocoon Grey', note:'' },
+  { air:'2026-07-03', name:"Video Motion Nệm L'ADOME Cool", note:'' },
+  { air:'2026-07-07', name:'Video Những thứ khiến phòng ngủ đắt tiền', note:'' },
+  { air:'2026-07-08', name:'Video Review IKI Premium', note:'' },
+  { air:'2026-07-10', name:'Video COCOON - 3 Lợi ích khi sử dụng nệm lò xo túi độc lập', note:'' },
+  { air:'2026-07-14', name:'Hiểu đúng nệm - Sống vui khỏe tập tháng 8', note:'' },
+  { air:'2026-07-15', name:'Livestream Shopee - Combo phòng ngủ mùa mưa', note:'' },
+  { air:'2026-07-16', name:'Short review IKI Premium cho TikTok', note:'' },
+  { air:'2026-07-21', name:'Content tháng 8 - showroom An Sương', note:'' },
+  { air:'2026-07-22', name:'Motion ưu đãi Cocoon Grey cuối tháng', note:'' },
+  { air:'2026-07-24', name:'On set TIDO - tổng hợp highlight', note:'' },
+  { air:'2026-07-28', name:'Ảnh sản phẩm drap mới phông trắng', note:'' },
+  { air:'2026-07-30', name:'Theo dấu giấc ngủ - showroom Hòa Bình', note:'' },
+  { air:'2026-08-01', name:'Video khai trương showroom Cần Thơ', note:'' },
+];
+
+function contentPlanNoteOf(video){
+  const videoName = normalizeText(video.name);
+  const videoAir = compactDate(video.air);
+  const item = CONTENT_PLAN_ITEMS.find(cp =>
+    normalizeText(cp.name) === videoName &&
+    compactDate(cp.air) === videoAir
+  );
+  return item ? (item.note || '') : '';
+}
+
+function videoNoteOf(video){
+  return (video.note || contentPlanNoteOf(video) || '').toString();
+}
+
+function reorderVideosByAir(){
+  VIDEOS.sort((a,b)=>{
+    const byAir = dateSortValue(a.air) - dateSortValue(b.air);
+    if(byAir) return byAir;
+    const byPrevStt = (a.stt || 0) - (b.stt || 0);
+    if(byPrevStt) return byPrevStt;
+    return a.name.localeCompare(b.name, 'vi');
+  });
+  VIDEOS.forEach((v, idx)=>{ v.stt = idx + 1; });
+}
 
 const resizeCount = r => !r ? 0 : r.split('&').filter(x=>x.trim()).length;
 
@@ -320,7 +428,7 @@ function renderOverview(root){
   const done = VIDEOS.filter(v=>v.status==='Đã xong').length;
   const doing = VIDEOS.filter(v=>v.status==='Đang làm').length;
   const gap = VIDEOS.filter(v=>v.uutien==='Gấp').length;
-  const nShoot = SHOOTS.length;
+  const nShoot = SHOOTS.filter(isCountedShoot).length;
   const pct = total ? Math.round(done/total*100) : 0;
 
   const wrap = el('div','space-y-8');
@@ -562,7 +670,7 @@ function renderVideos(root){
   wrap.appendChild(bar);
 
   const box = el('div','rounded-xl2 border border-line bg-white shadow-soft overflow-x-auto');
-  box.innerHTML = `<table class="w-full min-w-[1200px] text-[13px]">
+  box.innerHTML = `<table class="w-full min-w-[1420px] text-[13px]">
     <thead>
       <tr class="bg-emerald-600 text-white text-left">
         <th class="px-3 py-2.5 font-semibold w-12 text-center">STT</th>
@@ -576,7 +684,9 @@ function renderVideos(root){
         <th class="px-3 py-2.5 font-semibold w-24">Air</th>
         <th class="px-3 py-2.5 font-semibold w-32">Trạng thái</th>
         <th class="px-3 py-2.5 font-semibold w-20">Ưu tiên</th>
+        <th class="px-3 py-2.5 font-semibold w-[240px]">Ghi chú</th>
         <th class="px-3 py-2.5 font-semibold w-16 text-center">Link</th>
+        <th class="px-3 py-2.5 font-semibold w-20 text-center">Thao tác</th>
       </tr>
     </thead>
     <tbody id="vBody"></tbody>
@@ -592,11 +702,11 @@ function renderVideos(root){
 
 function drawVideos(){
   const body = $('#vBody'); if(!body) return;
-  // Sắp xếp xuôi từ 1 -> 9 bằng (a.stt - b.stt)
+  reorderVideosByAir();
   let rows = VIDEOS.filter(v=>
     (vFilterEditor==='all'||v.editor===vFilterEditor) &&
     (vFilterStatus==='all'||v.status===vFilterStatus) &&
-    (!vSearch||v.name.toLowerCase().includes(vSearch))
+    (!vSearch||[v.name, v.air, videoNoteOf(v)].some(text => text.toLowerCase().includes(vSearch)))
   ).sort((a, b) => a.stt - b.stt);
   
   const cnt = $('#vCount'); if(cnt) cnt.textContent = `${rows.length} video`;
@@ -606,6 +716,7 @@ function drawVideos(){
     let rowBg = 'bg-white hover:bg-emerald-50/40'; 
     if (v.status === 'Đã xong') rowBg = 'bg-green-50 hover:bg-green-100/70';
     else if (v.uutien === 'Gấp') rowBg = 'bg-red-50 hover:bg-red-100/70';
+    const note = videoNoteOf(v);
 
     return `
     <tr class="border-t border-line cursor-pointer transition-colors ${rowBg}" onclick="openTaskModal(${v.stt})">
@@ -620,12 +731,18 @@ function drawVideos(){
       <td class="px-3 py-2.5 font-semibold tabular-nums text-brand">${esc(v.air)}</td>
       <td class="px-3 py-2.5">${statusBadge(v.status)}</td>
       <td class="px-3 py-2.5">${v.uutien?`<span class="px-2 h-6 inline-flex items-center rounded-md bg-red-100 text-danger text-[12px] font-bold">${esc(v.uutien)}</span>`:'<span class="text-sub/40">—</span>'}</td>
+      <td class="px-3 py-2.5 text-sub max-w-[240px]">${note ? `<span class="note-preview" title="Bấm vào dòng để đọc ghi chú đầy đủ">${esc(note)}</span>` : '<span class="text-sub/40">—</span>'}</td>
       <td class="px-3 py-2.5 text-center" onclick="event.stopPropagation()">
         ${v.link&&v.link!=='#'?`<a href="${v.link}" target="_blank" class="w-8 h-8 rounded-lg inline-flex items-center justify-center bg-brand/10 text-brand hover:bg-brand hover:text-white transition-colors" title="Mở link"><i data-lucide="link" class="w-4 h-4"></i></a>`:'<span class="text-sub/40">—</span>'}
       </td>
+      <td class="px-3 py-2.5 text-center" onclick="event.stopPropagation()">
+        <button onclick="deleteTask(${v.stt}, event)" class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-danger hover:bg-red-50 transition-colors" title="Xóa task">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </td>
     </tr>`
   }).join('');
-  if(!rows.length) body.innerHTML = `<tr><td colspan="12" class="px-3 py-10 text-center text-sub">Không có video nào khớp bộ lọc.</td></tr>`;
+  if(!rows.length) body.innerHTML = `<tr><td colspan="14" class="px-3 py-10 text-center text-sub">Không có video nào khớp bộ lọc.</td></tr>`;
   lucide.createIcons();
 }
 
@@ -658,6 +775,8 @@ function openTaskModal(stt) {
   $('#mUutien').value = v ? v.uutien : '';
   $('#mResize').value = v ? v.resize : '';
   $('#mLink').value = (v && v.link && v.link !== '#') ? v.link : '';
+  $('#mNote').value = v ? videoNoteOf(v) : '';
+  $('#mDeleteBtn').classList.toggle('hidden', !v);
 
   const m = $('#taskModal');
   m.classList.remove('hidden');
@@ -697,15 +816,35 @@ function saveTask() {
   v.resize = $('#mResize').value.trim();
   let link = $('#mLink').value.trim();
   v.link = link || '#';
+  v.note = $('#mNote').value.trim();
 
   if (isNew) {
     VIDEOS.push(v);
   }
+  reorderVideosByAir();
 
   closeTaskModal();
   if (current === 'videos') {
     drawVideos(); // Render lại bảng
   }
+}
+
+function deleteTask(stt, event) {
+  if(event) event.stopPropagation();
+  const idx = VIDEOS.findIndex(x => x.stt === stt);
+  if(idx < 0) return;
+  if(!confirm(`Xóa task "${VIDEOS[idx].name}" khỏi Video tháng?`)) return;
+  VIDEOS.splice(idx, 1);
+  reorderVideosByAir();
+  if(window.currentTaskStt === stt) closeTaskModal();
+  window.currentTaskStt = null;
+  if (current === 'videos') drawVideos();
+  if (current === 'overview') go('overview');
+}
+
+function deleteCurrentTask() {
+  if(window.currentTaskStt == null) return;
+  deleteTask(window.currentTaskStt);
 }
 
 /* ============ sidebar mobile ============ */
@@ -715,6 +854,7 @@ $('#menuBtn').onclick = openSidebar;
 $('#sbBackdrop').onclick = closeSidebar;
 
 /* ============ init ============ */
+reorderVideosByAir();
 setupModalOptions();
 buildNav();
 go('overview');

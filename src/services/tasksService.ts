@@ -44,6 +44,8 @@ interface VideoTaskRow {
   status: TaskStatus;
   priority: Nullable<TaskPriority>;
   result_link: Nullable<string>;
+  notes: Nullable<string>;
+  content_plan: { note: Nullable<string> } | Array<{ note: Nullable<string> }> | null;
   content_plan_id: Nullable<string>;
   profiles: ProfileRow | ProfileRow[] | null;
 }
@@ -60,6 +62,7 @@ type VideoTaskPayload = {
   status: TaskStatus;
   priority: TaskPriority;
   result_link: string | null;
+  notes: string | null;
   content_plan_id?: string | null;
   created_by?: string | null;
   updated_by?: string | null;
@@ -208,6 +211,11 @@ function firstProfile(profile: VideoTaskRow['profiles']) {
   return profile;
 }
 
+function firstContentPlan(contentPlan: VideoTaskRow['content_plan']) {
+  if (Array.isArray(contentPlan)) return contentPlan[0] ?? null;
+  return contentPlan;
+}
+
 function toDisplayDate(value: string | null) {
   if (!value) return '';
   const [year, month, day] = value.split('-');
@@ -245,6 +253,7 @@ function toDatabaseDate(value: string, label: string) {
 
 function mapTaskRow(row: VideoTaskRow): VideoTask {
   const profile = firstProfile(row.profiles);
+  const contentPlan = firstContentPlan(row.content_plan);
 
   return {
     dbId: row.id,
@@ -261,6 +270,7 @@ function mapTaskRow(row: VideoTaskRow): VideoTask {
     status: row.status ?? 'Chờ',
     priority: row.priority ?? '',
     link: row.result_link ?? '',
+    note: row.notes ?? contentPlan?.note ?? '',
   };
 }
 
@@ -299,6 +309,7 @@ async function toTaskPayload(data: TaskFormData, userId?: string | null, include
     status: data.status,
     priority: data.priority,
     result_link: data.link.trim() || null,
+    notes: (data.note ?? '').trim() || null,
     ...(includeCreatedBy ? { created_by: userId ?? null } : {}),
     updated_by: userId ?? null,
   };
@@ -381,7 +392,11 @@ export async function fetchVideoTasks(monthValue?: string): Promise<VideoTask[]>
       status,
       priority,
       result_link,
+      notes,
       content_plan_id,
+      content_plan:content_plan_id (
+        note
+      ),
       profiles!video_tasks_editor_id_fkey (
         id,
         editor_code,
@@ -398,11 +413,14 @@ export async function fetchVideoTasks(monthValue?: string): Promise<VideoTask[]>
   }
 
   const { data, error } = await query
+    .order('air_date', { ascending: true, nullsFirst: false })
     .order('stt', { ascending: true });
 
   if (error) throw new Error(mapDatabaseError(error));
 
-  return ((data ?? []) as unknown as VideoTaskRow[]).map(mapTaskRow);
+  return ((data ?? []) as unknown as VideoTaskRow[])
+    .map(mapTaskRow)
+    .map((task, index) => ({ ...task, id: index + 1 }));
 }
 
 export async function fetchVideoTaskById(taskId: string): Promise<VideoTaskDeepLinkTarget | null> {
@@ -423,7 +441,11 @@ export async function fetchVideoTaskById(taskId: string): Promise<VideoTaskDeepL
       status,
       priority,
       result_link,
+      notes,
       content_plan_id,
+      content_plan:content_plan_id (
+        note
+      ),
       profiles!video_tasks_editor_id_fkey (
         id,
         editor_code,
@@ -570,6 +592,53 @@ export async function updateVideoTask(
       air_date: data.airDate,
     },
   });
+}
+
+export async function deleteVideoTask(task: VideoTask, userId?: string | null) {
+  if (!task.dbId) {
+    throw new Error('Không tìm thấy mã task cần xóa.');
+  }
+
+  const client = requireSupabase();
+  const taskId = validateVideoTaskId(task.dbId);
+  let usedFallbackDelete = false;
+  const { error: rpcError } = await client.rpc('delete_video_task_with_notifications', {
+    p_video_task_id: taskId,
+  });
+
+  if (rpcError) {
+    const message = (rpcError.message ?? '').toLowerCase();
+    const isMissingRpc = rpcError.code === 'PGRST202'
+      || message.includes('could not find the function')
+      || message.includes('function public.delete_video_task_with_notifications');
+
+    if (!isMissingRpc) {
+      throw new Error(mapDatabaseError(rpcError));
+    }
+
+    const { error } = await client
+      .from('video_tasks')
+      .delete()
+      .eq('id', taskId);
+
+    if (error) throw new Error(mapDatabaseError(error));
+    usedFallbackDelete = true;
+  }
+
+  if (usedFallbackDelete) {
+    void logActivity({
+      actorId: userId,
+      entityType: 'video_task',
+      entityId: taskId,
+      action: 'deleted',
+      title: task.name,
+      description: `Đã xóa video task "${task.name}".`,
+      metadata: {
+        content_plan_id: task.contentPlanId,
+        linked_task: Boolean(task.contentPlanId),
+      },
+    });
+  }
 }
 
 export async function acceptLinkedVideoTask(input: AcceptLinkedVideoTaskInput): Promise<AcceptLinkedVideoTaskResult> {

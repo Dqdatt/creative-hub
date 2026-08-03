@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Clapperboard, CircleCheck } from 'lucide-react';
+import { X, Clapperboard, CircleCheck, Trash2 } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
 import type { Editor, VideoTask, TaskFormData, TaskStatus, TaskCategory, TaskPriority, LinkedVideoTaskExecutionData } from '../../types/task';
 import { ORDER_TEAMS } from '../../data/tasks';
@@ -17,6 +17,8 @@ interface TaskModalProps {
   onSaveExecution?: (data: LinkedVideoTaskExecutionData) => void | Promise<void>;
   onAccept?: (data: { receiveDate: string; returnDate: string }) => void | Promise<void>;
   onComplete?: (data: LinkedVideoTaskExecutionData) => void | Promise<void>;
+  onDelete?: () => void | Promise<void>;
+  canDelete?: boolean;
   canAcceptLinkedTask?: boolean;
   canCompleteLinkedTask?: boolean;
   readOnly?: boolean;
@@ -151,6 +153,8 @@ export function TaskModal({
   onSaveExecution,
   onAccept,
   onComplete,
+  onDelete,
+  canDelete = false,
   canAcceptLinkedTask = false,
   canCompleteLinkedTask = false,
   readOnly = false,
@@ -163,7 +167,6 @@ export function TaskModal({
   const fieldState = resolveTaskModalFieldState(task, canAcceptLinkedTask, canCompleteLinkedTask, readOnly);
   const isAcceptMode = fieldState.canAccept;
   const isCompleteMode = fieldState.canComplete;
-  const isLinkedDoneTask = fieldState.isLinkedTask && task?.status === 'Đã xong';
   const [acceptReceiveDate, setAcceptReceiveDate] = useState('');
   const [acceptReturnDate, setAcceptReturnDate] = useState('');
   const [completeLink, setCompleteLink] = useState('');
@@ -260,6 +263,7 @@ export function TaskModal({
       returnDate:  get('returnDate').trim(),
       airDate:     get('airDate').trim(),
       link:  get('resultLink').trim(),
+      note:  get('note').trim(),
     };
 
     if (!data.name) return; // Simple validation
@@ -267,11 +271,11 @@ export function TaskModal({
   };
 
   const dv: TaskFormData = task
-    ? { ...task }
+    ? { ...task, note: task.note ?? '' }
     : {
         name: '', status: 'Chờ', editorId: editors[0]?.id ?? '',
         orderTeam: ORDER_TEAMS[0], category: 'Video dài',
-        priority: '', resize: '', receiveDate: '', returnDate: '', airDate: '', link: '',
+        priority: '', resize: '', receiveDate: '', returnDate: '', airDate: '', link: '', note: '',
       };
   const acceptValidationError = !isAcceptMode
     ? null
@@ -329,12 +333,6 @@ export function TaskModal({
               />
             </div>
 
-            {fieldState.isLinkedTask ? (
-              <p className="text-[12px] font-semibold text-sub">
-                Thông tin kế hoạch được đồng bộ từ Content Plan và không thể chỉnh sửa tại Video tháng.
-              </p>
-            ) : null}
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="flabel">Người làm (Editor)</label>
@@ -390,7 +388,7 @@ export function TaskModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
               <div>
                 <label className="flabel">Ngày nhận</label>
                 <input
@@ -440,11 +438,19 @@ export function TaskModal({
                 onChange={isCompleteMode ? (event) => setCompleteLink(event.target.value) : undefined}
                 placeholder="Nhập link (Drive, Youtube, etc.)..."
               />
-              {isLinkedDoneTask ? (
-                <p className="mt-2 text-[12px] font-semibold text-sub">
-                  Link đã được đồng bộ về Content Plan.
-                </p>
-              ) : null}
+            </div>
+
+            <div className="pt-5" style={{ borderTop: '1px solid var(--border)' }}>
+              <label className="flabel">Ghi chú</label>
+              <textarea
+                name="note"
+                defaultValue={dv.note}
+                className="field content-note-input"
+                readOnly={fieldState.isLinkedTask || readOnly}
+                disabled={isSaving && !fieldState.isLinkedTask && !readOnly}
+                aria-readonly={fieldState.isLinkedTask || readOnly}
+                placeholder="Ghi chú thêm cho task..."
+              />
             </div>
           </div>
 
@@ -460,7 +466,14 @@ export function TaskModal({
             </div>
           ) : null}
 
-          <div className="mt-7 flex justify-end gap-3">
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            {isEditMode && canDelete && onDelete ? (
+              <button type="button" className="btn-ghost mr-auto" onClick={onDelete} disabled={isSaving} style={{ color: 'var(--danger)' }}>
+                <Trash2 style={{ width: '16px', height: '16px' }} />
+                Xóa Task
+              </button>
+            ) : null}
+            <div className="ml-auto flex gap-3">
             <button type="button" onClick={onClose} className="btn-ghost" disabled={isSaving}>Đóng</button>
             {fieldState.canSaveExecution ? (
               <button type="button" className="btn-ghost" onClick={handleSaveExecution} disabled={isSaving}>
@@ -474,6 +487,7 @@ export function TaskModal({
                 {isSaving ? 'Đang lưu...' : isAcceptMode ? 'Nhận Task' : isCompleteMode ? 'Hoàn thành' : 'Lưu thay đổi'}
               </button>
             ) : null}
+            </div>
           </div>
         </form>
       </div>

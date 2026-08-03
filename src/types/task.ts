@@ -33,6 +33,7 @@ export interface VideoTask {
   status: TaskStatus;
   priority: TaskPriority;
   link: string;
+  note?: string;
 }
 
 export interface TaskFormData {
@@ -47,6 +48,7 @@ export interface TaskFormData {
   status: TaskStatus;
   priority: TaskPriority;
   link: string;
+  note: string;
 }
 
 export interface CreateLinkedVideoTaskInput extends TaskFormData {
