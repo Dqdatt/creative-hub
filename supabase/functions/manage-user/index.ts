@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type ManageAction = "update_email" | "delete_user";
+type ManageAction = "update_email" | "delete_user" | "reset_password";
 type SupabaseLikeError = {
   code?: string;
   message?: string;
@@ -366,6 +366,98 @@ async function handleUpdateEmail(body: Record<string, unknown>, req: Request) {
   });
 }
 
+async function handleResetPassword(body: Record<string, unknown>, req: Request) {
+  const auth = await getAdminCaller(req);
+  if ("error" in auth) return auth.error;
+
+  const userId = cleanText(body.user_id);
+  const password = cleanText(body.password);
+
+  if (!userId) return validationError("validate_payload", "Thiếu mã thành viên.");
+  if (!password) return validationError("validate_payload", "Vui lòng nhập mật khẩu mới.");
+  if (password.length < 8) return validationError("validate_payload", "Mật khẩu mới cần tối thiểu 8 ký tự.");
+
+  const { adminClient, caller } = auth;
+  const loadProfileStep = "load_target_profile";
+  const { data: targetProfile, error: targetProfileError } = await adminClient
+    .from("profiles")
+    .select("id, email, full_name, display_name, short_name, role, is_active, active")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (targetProfileError) {
+    return stepErrorResponse(
+      loadProfileStep,
+      userId,
+      "Không thể kiểm tra hồ sơ thành viên.",
+      500,
+      "target_profile_load_failed",
+      targetProfileError,
+    );
+  }
+
+  if (!targetProfile) {
+    return validationError(loadProfileStep, "Không tìm thấy thành viên.", 404, "target_profile_not_found");
+  }
+
+  const authLookupStep = "load_auth_user";
+  const { data: authUserData, error: getAuthUserError } = await adminClient.auth.admin.getUserById(userId);
+
+  if (getAuthUserError || !authUserData.user) {
+    const normalized = normalizeError(getAuthUserError ?? { message: "Không tìm thấy Auth user." });
+    const normalizedStatus = Number(normalized.status);
+    const isNotFound = normalizedStatus === 404 || normalized.message.toLowerCase().includes("not found");
+    return stepErrorResponse(
+      authLookupStep,
+      userId,
+      "Không tìm thấy Auth user.",
+      isNotFound ? 404 : 500,
+      isNotFound ? "auth_user_not_found" : "auth_user_lookup_failed",
+      getAuthUserError,
+    );
+  }
+
+  const resetStep = "reset_auth_password";
+  const { data: updatedAuth, error: resetPasswordError } =
+    await adminClient.auth.admin.updateUserById(userId, { password });
+
+  if (resetPasswordError || !updatedAuth.user) {
+    return stepErrorResponse(
+      resetStep,
+      userId,
+      "Không thể reset mật khẩu tài khoản.",
+      400,
+      "password_reset_failed",
+      resetPasswordError,
+    );
+  }
+
+  const title =
+    targetProfile.display_name ||
+    targetProfile.short_name ||
+    targetProfile.full_name ||
+    targetProfile.email ||
+    "Thành viên";
+
+  await logActivitySafely(adminClient, {
+    actorId: caller.id,
+    entityId: userId,
+    action: "updated",
+    title,
+    description: `Đã reset mật khẩu cho tài khoản "${title}".`,
+    metadata: {
+      field: "password",
+      email: targetProfile.email,
+      role: targetProfile.role,
+    },
+  });
+
+  return jsonResponse({
+    message: "Đã reset mật khẩu.",
+    user_id: userId,
+  });
+}
+
 async function clearReference(
   adminClient: ReturnType<typeof createClient>,
   {
@@ -687,6 +779,7 @@ async function handleManageUser(req: Request) {
 
   if (action === "update_email") return await handleUpdateEmail(body, req);
   if (action === "delete_user") return await handleDeleteUser(body, req);
+  if (action === "reset_password") return await handleResetPassword(body, req);
 
   return jsonResponse({ error: "Hành động không được hỗ trợ.", code: "unsupported_action", step: "validate_action" }, 400);
 }

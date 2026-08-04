@@ -4,6 +4,7 @@ import {
   createManagedUser,
   deleteManagedUserAccount,
   fetchUserProfiles,
+  resetManagedUserPassword,
   updateManagedUserProfile,
 } from '../services/userManagementService';
 import type { CreateMemberFormData, ManagedUserProfile, UserProfileFormData } from '../types/userManagement';
@@ -18,6 +19,7 @@ export function useUsers() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -78,6 +80,23 @@ export function useUsers() {
     }
   }, [loadUsers]);
 
+  const resetPassword = useCallback(async (targetUser: ManagedUserProfile, password: string) => {
+    setIsResettingPassword(true);
+    setSaveError(null);
+    setMessage(null);
+
+    try {
+      await resetManagedUserPassword(targetUser, password);
+      setMessage('Đã reset mật khẩu tài khoản.');
+      return true;
+    } catch (error) {
+      setSaveError(getErrorMessage(error, 'Không thể reset mật khẩu. Vui lòng thử lại.'));
+      return false;
+    } finally {
+      setIsResettingPassword(false);
+    }
+  }, []);
+
   const createUser = useCallback(async (data: CreateMemberFormData) => {
     setIsSaving(true);
     setSaveError(null);
@@ -109,6 +128,7 @@ export function useUsers() {
     isLoading,
     isSaving,
     isDeleting,
+    isResettingPassword,
     loadError,
     saveError,
     message,
@@ -116,6 +136,7 @@ export function useUsers() {
     updateUser,
     createUser,
     deleteUser,
+    resetPassword,
     clearSaveError,
     clearMessage,
   };

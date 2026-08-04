@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, CircleCheck, Trash2, X } from 'lucide-react';
+import { AlertTriangle, CircleCheck, KeyRound, Trash2, X } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
 import { ROLE_LABELS, getPermissionOverrideSummary } from '../../config/permissions';
 import type { AppRole, PermissionOverrideFlags, PermissionOverrideKey } from '../../config/permissions';
@@ -16,11 +16,13 @@ interface UserModalProps {
   selectedUser?: ManagedUserProfile | null;
   isSaving: boolean;
   isDeleting?: boolean;
+  isResettingPassword?: boolean;
   errorMessage?: string | null;
   onClose: () => void;
   onChange: (patch: Partial<CreateMemberFormData>) => void;
   onSave: () => void;
   onDelete?: () => void;
+  onResetPassword?: (password: string) => Promise<boolean> | boolean;
 }
 
 const ROLE_OPTIONS: AppRole[] = ['admin', 'creative_manager', 'content_creator', 'editor'];
@@ -84,41 +86,52 @@ export function UserModal({
   selectedUser = null,
   isSaving,
   isDeleting = false,
+  isResettingPassword = false,
   errorMessage = null,
   onClose,
   onChange,
   onSave,
   onDelete,
+  onResetPassword,
 }: UserModalProps) {
   const titleId = useId();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [resetError, setResetError] = useState<string | null>(null);
 
   useDocumentScrollLock(isOpen);
 
   useEffect(() => {
     setDeleteOpen(false);
     setDeleteEmail('');
+    setResetOpen(false);
+    setResetPassword('');
+    setResetConfirmPassword('');
+    setResetError(null);
   }, [selectedUser?.id, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isSaving && !isDeleting) {
+      if (event.key === 'Escape' && !isSaving && !isDeleting && !isResettingPassword) {
         onClose();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isDeleting, isOpen, isSaving, onClose]);
+  }, [isDeleting, isOpen, isResettingPassword, isSaving, onClose]);
 
   if (!isOpen || !draft) return null;
 
   const isCreate = isCreateDraft(mode, draft);
   const title = mode === 'create' ? 'Thêm thành viên' : 'Sửa thành viên';
   const canDelete = mode === 'edit' && Boolean(selectedUser) && Boolean(onDelete);
+  const canResetPassword = mode === 'edit' && Boolean(selectedUser) && Boolean(onResetPassword);
   const permissionMode = draft.permissionMode;
   const permissionFlags = draft.permissionFlags ?? {};
   const usersManageLocked = true;
@@ -126,13 +139,40 @@ export function UserModal({
   const deleteConfirmed = selectedUser
     ? deleteEmail.trim().toLowerCase() === selectedUser.email.trim().toLowerCase()
     : false;
+  const isBusy = isSaving || isDeleting || isResettingPassword;
+
+  const handleResetPassword = async () => {
+    const password = resetPassword.trim();
+    setResetError(null);
+
+    if (!password) {
+      setResetError('Vui lòng nhập mật khẩu mới.');
+      return;
+    }
+    if (password.length < 8) {
+      setResetError('Mật khẩu mới cần tối thiểu 8 ký tự.');
+      return;
+    }
+    if (password !== resetConfirmPassword.trim()) {
+      setResetError('Mật khẩu xác nhận chưa khớp.');
+      return;
+    }
+
+    const reset = await onResetPassword?.(password);
+    if (reset) {
+      setResetOpen(false);
+      setResetPassword('');
+      setResetConfirmPassword('');
+      setResetError(null);
+    }
+  };
 
   return createPortal(
     <div
       className="member-modal-overlay modal-overlay fixed inset-0 z-50 flex items-center justify-center"
       role="presentation"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !isSaving && !isDeleting) onClose();
+        if (event.target === event.currentTarget && !isBusy) onClose();
       }}
     >
       <section className="modal-card member-modal-card" role="dialog" aria-modal="true" aria-labelledby={titleId}>
@@ -140,7 +180,7 @@ export function UserModal({
           <div>
             <h2 id={titleId} className="member-modal-title">{title}</h2>
           </div>
-          <button type="button" className="icon-btn" onClick={onClose} disabled={isSaving || isDeleting} aria-label="Đóng">
+          <button type="button" className="icon-btn" onClick={onClose} disabled={isBusy} aria-label="Đóng">
             <X />
           </button>
         </div>
@@ -154,7 +194,7 @@ export function UserModal({
                 id="memberFullName"
                 className="field"
                 value={draft.fullName}
-                disabled={isSaving}
+                disabled={isBusy}
                 onChange={(event) => onChange({ fullName: event.target.value })}
                 placeholder="Nhập họ tên"
               />
@@ -166,7 +206,7 @@ export function UserModal({
                 id="memberDisplayName"
                 className="field"
                 value={draft.displayName}
-                disabled={isSaving}
+                disabled={isBusy}
                 onChange={(event) => onChange({ displayName: event.target.value })}
                 placeholder="VD: Đạt Đoàn"
               />
@@ -179,7 +219,7 @@ export function UserModal({
                 className="field"
                 type="email"
                 value={draft.email}
-                disabled={isSaving}
+                disabled={isBusy}
                 onChange={(event) => onChange({ email: event.target.value })}
                 placeholder="email@company.com"
               />
@@ -193,7 +233,7 @@ export function UserModal({
                   className="field"
                   type="password"
                   value={draft.password}
-                  disabled={isSaving}
+                  disabled={isBusy}
                   onChange={(event) => onChange({ password: event.target.value })}
                   placeholder="Tối thiểu 8 ký tự"
                 />
@@ -205,7 +245,7 @@ export function UserModal({
                   id="memberPhone"
                   className="field"
                   value={draft.phone}
-                  disabled={isSaving}
+                  disabled={isBusy}
                   onChange={(event) => onChange({ phone: event.target.value })}
                   placeholder="VD: 0901 234 567"
                 />
@@ -219,7 +259,7 @@ export function UserModal({
               <StyledSelect
                 id="memberRole"
                 value={draft.role}
-                disabled={isSaving}
+                disabled={isBusy}
                 onChange={(event) => onChange({ role: event.target.value as AppRole })}
               >
                 {ROLE_OPTIONS.map((role) => (
@@ -234,7 +274,7 @@ export function UserModal({
                 id="memberDepartment"
                 className="field"
                 value={draft.department}
-                disabled={isSaving}
+                disabled={isBusy}
                 onChange={(event) => onChange({ department: event.target.value })}
                 placeholder="Team Marketing"
               />
@@ -244,7 +284,7 @@ export function UserModal({
               <input
                 type="checkbox"
                 checked={draft.isActive}
-                disabled={isSaving}
+                disabled={isBusy}
                 onChange={(event) => onChange({ isActive: event.target.checked })}
               />
               <span>
@@ -258,7 +298,7 @@ export function UserModal({
               <input
                 type="checkbox"
                 checked={draft.isEditorMember}
-                disabled={isSaving}
+                disabled={isBusy}
                 onChange={(event) => onChange({ isEditorMember: event.target.checked })}
               />
               <span>
@@ -273,7 +313,7 @@ export function UserModal({
                   id="memberEditorCode"
                   className="field"
                   value={draft.editorCode}
-                  disabled={isSaving}
+                  disabled={isBusy}
                   onChange={(event) => onChange({ editorCode: event.target.value })}
                   placeholder="dat, hai, minh..."
                 />
@@ -285,7 +325,7 @@ export function UserModal({
             <div className="sm:col-span-2">
               <StyledSelect
                 value={permissionMode}
-                disabled={isSaving}
+                disabled={isBusy}
                 onChange={(event) => onChange({ permissionMode: event.target.value as UserModalDraft['permissionMode'] })}
               >
                 <option value="role_default">Theo vai trò</option>
@@ -305,13 +345,13 @@ export function UserModal({
                     label="Xem"
                     checked={permissionFlags.calendar_view === true}
                     onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'calendar_view', checked) })}
-                    disabled={isSaving}
+                    disabled={isBusy}
                   />
                   <PermissionCheck
                     label="Tạo và chỉnh sửa"
                     checked={permissionFlags.calendar_edit === true}
                     onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'calendar_edit', checked) })}
-                    disabled={isSaving}
+                    disabled={isBusy}
                   />
                 </div>
 
@@ -321,13 +361,13 @@ export function UserModal({
                     label="Xem"
                     checked={permissionFlags.tasks_view === true}
                     onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'tasks_view', checked) })}
-                    disabled={isSaving}
+                    disabled={isBusy}
                   />
                   <PermissionCheck
                     label="Tạo và chỉnh sửa"
                     checked={permissionFlags.tasks_edit === true}
                     onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'tasks_edit', checked) })}
-                    disabled={isSaving}
+                    disabled={isBusy}
                   />
                 </div>
 
@@ -337,19 +377,19 @@ export function UserModal({
                     label="Xem"
                     checked={permissionFlags.content_plan_view === true}
                     onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'content_plan_view', checked) })}
-                    disabled={isSaving}
+                    disabled={isBusy}
                   />
                   <PermissionCheck
                     label="Chỉnh nội dung"
                     checked={permissionFlags.content_plan_edit_content === true}
                     onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'content_plan_edit_content', checked) })}
-                    disabled={isSaving}
+                    disabled={isBusy}
                   />
                   <PermissionCheck
                     label="Phân công editor"
                     checked={permissionFlags.content_plan_assign_editor === true}
                     onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'content_plan_assign_editor', checked) })}
-                    disabled={isSaving}
+                    disabled={isBusy}
                   />
                 </div>
 
@@ -359,19 +399,19 @@ export function UserModal({
                     label="Xem Dashboard"
                     checked={permissionFlags.dashboard_view === true}
                     onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'dashboard_view', checked) })}
-                    disabled={isSaving}
+                    disabled={isBusy}
                   />
                   <PermissionCheck
                     label="Sửa hồ sơ cá nhân"
                     checked={permissionFlags.profile_edit_self !== false}
                     onChange={(checked) => onChange({ permissionFlags: updateFlag(permissionFlags, 'profile_edit_self', checked) })}
-                    disabled={isSaving}
+                    disabled={isBusy}
                   />
                   <PermissionCheck
                     label="Quản lý thành viên"
                     checked={usersManageChecked}
                     onChange={() => undefined}
-                    disabled={isSaving || usersManageLocked}
+                    disabled={isBusy || usersManageLocked}
                   />
                 </div>
               </div>
@@ -387,12 +427,108 @@ export function UserModal({
                   id="memberCrewKey"
                   className="field"
                   value={draft.crewKey}
-                  disabled={isSaving}
+                  disabled={isBusy}
                   onChange={(event) => onChange({ crewKey: event.target.value })}
                   placeholder="ĐẠT, HẢI, MINH..."
                 />
               </div>
             </details>
+          ) : null}
+
+          {canResetPassword ? (
+            <section className="member-modal-section rounded-[18px] border" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
+              {!resetOpen ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-[13px] font-extrabold text-ink">Reset mật khẩu</h3>
+                    <p className="mt-1 text-[12.5px] font-semibold text-sub">Đặt mật khẩu mới cho tài khoản này.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => setResetOpen(true)}
+                    disabled={isBusy}
+                  >
+                    <KeyRound /> Reset mật khẩu
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <span className="confirm-icon">
+                      <KeyRound />
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="text-[15px] font-extrabold text-ink">Đặt mật khẩu mới</h3>
+                      <p className="mt-1 text-[12.5px] font-semibold leading-5 text-sub">
+                        Mật khẩu cần tối thiểu 8 ký tự. Thành viên sẽ dùng mật khẩu mới ở lần đăng nhập tiếp theo.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="flabel" htmlFor="memberResetPassword">Mật khẩu mới</label>
+                      <input
+                        id="memberResetPassword"
+                        className="field"
+                        type="password"
+                        value={resetPassword}
+                        disabled={isBusy}
+                        onChange={(event) => {
+                          setResetPassword(event.target.value);
+                          setResetError(null);
+                        }}
+                        placeholder="Tối thiểu 8 ký tự"
+                      />
+                    </div>
+                    <div>
+                      <label className="flabel" htmlFor="memberResetConfirmPassword">Nhập lại mật khẩu</label>
+                      <input
+                        id="memberResetConfirmPassword"
+                        className="field"
+                        type="password"
+                        value={resetConfirmPassword}
+                        disabled={isBusy}
+                        onChange={(event) => {
+                          setResetConfirmPassword(event.target.value);
+                          setResetError(null);
+                        }}
+                        placeholder="Nhập lại mật khẩu mới"
+                      />
+                    </div>
+                  </div>
+
+                  {resetError ? (
+                    <div className="profile-inline-error">{resetError}</div>
+                  ) : null}
+
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={() => {
+                        setResetOpen(false);
+                        setResetPassword('');
+                        setResetConfirmPassword('');
+                        setResetError(null);
+                      }}
+                      disabled={isResettingPassword}
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => void handleResetPassword()}
+                      disabled={isBusy || !resetPassword || !resetConfirmPassword}
+                    >
+                      <KeyRound /> {isResettingPassword ? 'Đang reset...' : 'Cập nhật mật khẩu'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
           ) : null}
 
           {canDelete ? (
@@ -407,7 +543,7 @@ export function UserModal({
                     type="button"
                     className="btn-ghost text-danger"
                     onClick={() => setDeleteOpen(true)}
-                    disabled={isSaving || isDeleting}
+                    disabled={isBusy}
                   >
                     <Trash2 /> Xóa tài khoản
                   </button>
@@ -432,7 +568,7 @@ export function UserModal({
                       id="memberDeleteEmail"
                       className="field"
                       value={deleteEmail}
-                      disabled={isSaving || isDeleting}
+                      disabled={isBusy}
                       onChange={(event) => setDeleteEmail(event.target.value)}
                       placeholder={selectedUser?.email}
                     />
@@ -446,7 +582,7 @@ export function UserModal({
                         setDeleteOpen(false);
                         setDeleteEmail('');
                       }}
-                      disabled={isDeleting}
+                      disabled={isBusy}
                     >
                       Hủy
                     </button>
@@ -454,7 +590,7 @@ export function UserModal({
                       type="button"
                       className="btn btn-danger"
                       onClick={onDelete}
-                      disabled={!deleteConfirmed || isSaving || isDeleting}
+                      disabled={!deleteConfirmed || isBusy}
                     >
                       <Trash2 /> {isDeleting ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
                     </button>
@@ -472,10 +608,10 @@ export function UserModal({
           ) : null}
 
           <div className="member-modal-actions">
-            <button type="button" className="btn-ghost" onClick={onClose} disabled={isSaving || isDeleting}>
+            <button type="button" className="btn-ghost" onClick={onClose} disabled={isBusy}>
               Hủy
             </button>
-            <button type="button" className="btn" onClick={onSave} disabled={isSaving || isDeleting}>
+            <button type="button" className="btn" onClick={onSave} disabled={isBusy}>
               <CircleCheck /> {isSaving ? 'Đang lưu...' : 'Lưu'}
             </button>
           </div>

@@ -75,7 +75,7 @@ export function useTasks(monthValue: string) {
   }, [loadTasks]);
 
   useRealtimeSubscription({
-    tables: ['video_tasks'],
+    tables: ['video_tasks', 'content_plan'],
     onChange: () => loadTasks({ silent: true }),
   });
 

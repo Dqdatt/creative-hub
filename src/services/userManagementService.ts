@@ -507,3 +507,11 @@ export async function deleteManagedUserAccount(targetUser: ManagedUserProfile) {
     user_id: targetUser.id,
   });
 }
+
+export async function resetManagedUserPassword(targetUser: ManagedUserProfile, password: string) {
+  await invokeManageUser({
+    action: 'reset_password',
+    user_id: targetUser.id,
+    password,
+  });
+}

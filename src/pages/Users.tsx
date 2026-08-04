@@ -67,6 +67,7 @@ export default function Users() {
     isLoading,
     isSaving,
     isDeleting,
+    isResettingPassword,
     loadError,
     saveError,
     message,
@@ -74,6 +75,7 @@ export default function Users() {
     updateUser,
     createUser,
     deleteUser,
+    resetPassword,
     clearSaveError,
     clearMessage,
   } = useUsers();
@@ -130,7 +132,7 @@ export default function Users() {
   };
 
   const closeModal = () => {
-    if (isSaving || isDeleting) return;
+    if (isSaving || isDeleting || isResettingPassword) return;
     setSelectedUser(null);
     setDraft(null);
     setFormError(null);
@@ -199,6 +201,11 @@ export default function Users() {
     }
   };
 
+  const handleResetPassword = async (password: string) => {
+    if (!selectedUser || modalMode !== 'edit') return false;
+    return resetPassword(selectedUser, password);
+  };
+
   return (
     <div className="space-y-4" data-view="users">
       <UserFilters
@@ -246,12 +253,14 @@ export default function Users() {
         draft={draft}
         isSaving={isSaving}
         isDeleting={isDeleting}
+        isResettingPassword={isResettingPassword}
         errorMessage={formError ?? saveError}
         onClose={closeModal}
         onChange={updateDraft}
         onSave={() => void handleSave()}
         selectedUser={selectedUser}
         onDelete={() => void handleDeleteUser()}
+        onResetPassword={handleResetPassword}
       />
     </div>
   );

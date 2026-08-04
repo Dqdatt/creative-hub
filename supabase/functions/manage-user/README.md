@@ -5,6 +5,7 @@ Privileged admin operations for CreativeHub user management.
 ## Actions
 
 - `update_email`: đổi email đăng nhập thật trong Supabase Auth và đồng bộ `public.profiles.email`.
+- `reset_password`: admin đặt mật khẩu mới cho một Auth user.
 - `delete_user`: xóa vĩnh viễn Auth user và dọn các quan hệ thử nghiệm liên quan.
 
 ## Required Secrets
@@ -41,6 +42,15 @@ curl -X POST "https://YOUR_PROJECT_REF.supabase.co/functions/v1/manage-user" \
   -d '{"action":"delete_user","user_id":"USER_ID"}'
 ```
 
+Reset password:
+
+```bash
+curl -X POST "https://YOUR_PROJECT_REF.supabase.co/functions/v1/manage-user" \
+  -H "Authorization: Bearer USER_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"reset_password","user_id":"USER_ID","password":"NEW_PASSWORD"}'
+```
+
 ## Security Notes
 
 - The function validates the caller from the bearer token.
@@ -48,6 +58,7 @@ curl -X POST "https://YOUR_PROJECT_REF.supabase.co/functions/v1/manage-user" \
 - The frontend never calls Supabase Auth Admin APIs directly.
 - The frontend never receives or stores the service role key.
 - All input is validated server-side.
+- Password reset activity logs never include the new password.
 
 ## Deletion Behavior
 

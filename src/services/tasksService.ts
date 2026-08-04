@@ -45,7 +45,21 @@ interface VideoTaskRow {
   priority: Nullable<TaskPriority>;
   result_link: Nullable<string>;
   notes: Nullable<string>;
-  content_plan: { note: Nullable<string> } | Array<{ note: Nullable<string> }> | null;
+  content_plan: {
+    title: string;
+    note: Nullable<string>;
+    category: Nullable<string>;
+    air_date: Nullable<string>;
+    editor_id: Nullable<string>;
+    profiles: ProfileRow | ProfileRow[] | null;
+  } | Array<{
+    title: string;
+    note: Nullable<string>;
+    category: Nullable<string>;
+    air_date: Nullable<string>;
+    editor_id: Nullable<string>;
+    profiles: ProfileRow | ProfileRow[] | null;
+  }> | null;
   content_plan_id: Nullable<string>;
   profiles: ProfileRow | ProfileRow[] | null;
 }
@@ -216,6 +230,15 @@ function firstContentPlan(contentPlan: VideoTaskRow['content_plan']) {
   return contentPlan;
 }
 
+function isVideoTaskCategory(value: string | null | undefined): value is TaskCategory {
+  return value === 'Video dài' || value === 'Motion' || value === 'Ads';
+}
+
+function getEffectiveAirDate(row: VideoTaskRow) {
+  const contentPlan = firstContentPlan(row.content_plan);
+  return row.content_plan_id && contentPlan ? contentPlan.air_date : row.air_date;
+}
+
 function toDisplayDate(value: string | null) {
   if (!value) return '';
   const [year, month, day] = value.split('-');
@@ -252,25 +275,31 @@ function toDatabaseDate(value: string, label: string) {
 }
 
 function mapTaskRow(row: VideoTaskRow): VideoTask {
-  const profile = firstProfile(row.profiles);
   const contentPlan = firstContentPlan(row.content_plan);
+  const isLinkedTask = Boolean(row.content_plan_id && contentPlan);
+  const taskProfile = firstProfile(row.profiles);
+  const contentPlanProfile = contentPlan ? firstProfile(contentPlan.profiles) : null;
+  const profile = isLinkedTask ? contentPlanProfile ?? taskProfile : taskProfile;
+  const category = isLinkedTask && isVideoTaskCategory(contentPlan?.category)
+    ? contentPlan.category
+    : row.category ?? 'Video dài';
 
   return {
     dbId: row.id,
     contentPlanId: row.content_plan_id,
     id: row.stt ?? 0,
-    name: row.title,
+    name: isLinkedTask ? contentPlan?.title ?? row.title : row.title,
     resize: row.resize_reqs ?? '',
     editorId: profile?.editor_code ?? '',
     orderTeam: row.order_team ?? '',
-    category: row.category ?? 'Video dài',
+    category,
     receiveDate: toDisplayDate(row.receive_date),
     returnDate: toDisplayDate(row.return_date),
-    airDate: toDisplayDate(row.air_date),
+    airDate: toDisplayDate(isLinkedTask ? contentPlan?.air_date ?? row.air_date : row.air_date),
     status: row.status ?? 'Chờ',
     priority: row.priority ?? '',
     link: row.result_link ?? '',
-    note: row.notes ?? contentPlan?.note ?? '',
+    note: isLinkedTask ? contentPlan?.note ?? '' : row.notes ?? '',
   };
 }
 
@@ -395,7 +424,19 @@ export async function fetchVideoTasks(monthValue?: string): Promise<VideoTask[]>
       notes,
       content_plan_id,
       content_plan:content_plan_id (
-        note
+        title,
+        note,
+        category,
+        air_date,
+        editor_id,
+        profiles!content_plan_editor_id_fkey (
+          id,
+          editor_code,
+          short_name,
+          display_name,
+          full_name,
+          ui_color
+        )
       ),
       profiles!video_tasks_editor_id_fkey (
         id,
@@ -407,18 +448,27 @@ export async function fetchVideoTasks(monthValue?: string): Promise<VideoTask[]>
       )
     `);
 
-  if (monthValue) {
-    const { startDate, endDate } = getMonthRange(monthValue);
-    query = query.gte('air_date', startDate).lte('air_date', endDate);
-  }
-
   const { data, error } = await query
     .order('air_date', { ascending: true, nullsFirst: false })
     .order('stt', { ascending: true });
 
   if (error) throw new Error(mapDatabaseError(error));
 
-  return ((data ?? []) as unknown as VideoTaskRow[])
+  const rows = (data ?? []) as unknown as VideoTaskRow[];
+  const monthRange = monthValue ? getMonthRange(monthValue) : null;
+  const filteredRows = monthRange
+    ? rows.filter((row) => {
+      const airDate = getEffectiveAirDate(row);
+      return Boolean(airDate && airDate >= monthRange.startDate && airDate <= monthRange.endDate);
+    })
+    : rows;
+
+  return filteredRows
+    .sort((a, b) => {
+      const airDateCompare = (getEffectiveAirDate(a) ?? '9999-12-31').localeCompare(getEffectiveAirDate(b) ?? '9999-12-31');
+      if (airDateCompare !== 0) return airDateCompare;
+      return (a.stt ?? 0) - (b.stt ?? 0);
+    })
     .map(mapTaskRow)
     .map((task, index) => ({ ...task, id: index + 1 }));
 }
@@ -444,7 +494,19 @@ export async function fetchVideoTaskById(taskId: string): Promise<VideoTaskDeepL
       notes,
       content_plan_id,
       content_plan:content_plan_id (
-        note
+        title,
+        note,
+        category,
+        air_date,
+        editor_id,
+        profiles!content_plan_editor_id_fkey (
+          id,
+          editor_code,
+          short_name,
+          display_name,
+          full_name,
+          ui_color
+        )
       ),
       profiles!video_tasks_editor_id_fkey (
         id,
@@ -464,7 +526,7 @@ export async function fetchVideoTaskById(taskId: string): Promise<VideoTaskDeepL
   const row = data as unknown as VideoTaskRow;
   return {
     task: mapTaskRow(row),
-    monthValue: row.air_date?.slice(0, 7) ?? null,
+    monthValue: getEffectiveAirDate(row)?.slice(0, 7) ?? null,
   };
 }
 
