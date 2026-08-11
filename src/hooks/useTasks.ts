@@ -95,7 +95,11 @@ export function useTasks(monthValue: string) {
     }
   }, [loadTasks, user?.id]);
 
-  const updateTask = useCallback(async (task: VideoTask, data: TaskFormData) => {
+  const updateTask = useCallback(async (
+    task: VideoTask,
+    data: TaskFormData,
+    options?: { allowLinkedOverride?: boolean },
+  ) => {
     setIsSaving(true);
     setSaveError(null);
 
@@ -103,7 +107,7 @@ export function useTasks(monthValue: string) {
       if (!task.dbId) {
         throw new Error('Không tìm thấy mã task cần cập nhật.');
       }
-      await updateVideoTask(task.dbId, data, user?.id, task);
+      await updateVideoTask(task.dbId, data, user?.id, task, options);
       await loadTasks();
       return true;
     } catch (error) {

@@ -10,6 +10,7 @@ export interface ShootSchedule {
   editorLabels: string[];
   displayCrew: string;
   place: string;     // e.g. "LIVESTREAM SHOPEE"
+  content: string;
   time: string;      // e.g. "BUỔI TỐI" or "ALL MORNING"
   note: string;
 }
@@ -20,6 +21,7 @@ export interface ShootFormData {
   crew: string;
   editorIds: string[];
   place: string;
+  content: string;
   time: string;
   note: string;
 }

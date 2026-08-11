@@ -69,11 +69,12 @@ export function ShootModal({
       crew:  get('crew').trim(),
       editorIds: Array.from(form.querySelectorAll<HTMLInputElement>('input[name="editorIds"]:checked')).map((input) => input.value),
       place: get('place').trim(),
+      content: get('content').trim(),
       time:  get('time').trim(),
       note:  get('note').trim(),
     };
 
-    if (!data.date || !data.place) return; // Basic validation
+    if (!data.date || !data.place || !data.content) return; // Basic validation
     onSave(data);
   };
 
@@ -83,12 +84,12 @@ export function ShootModal({
     ? {
         date: shoot.date, type: shoot.type, crew: shoot.crew,
         editorIds: shoot.editorIds,
-        place: shoot.place, time: shoot.time, note: shoot.note,
+        place: shoot.place, content: shoot.content, time: shoot.time, note: shoot.note,
       }
     : {
         date: defaultDate, type: 'lichquay', crew: '',
         editorIds: [],
-        place: '', time: 'ALL MORNING', note: '',
+        place: '', content: '', time: 'ALL MORNING', note: '',
       };
 
   return createPortal(
@@ -201,12 +202,24 @@ export function ShootModal({
             </div>
 
             <div>
+              <label className="flabel">Nội dung <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <textarea
+                name="content"
+                defaultValue={dv.content}
+                placeholder="VD: DRAP MỚI / KỊCH BẢN CONTENT THÁNG..."
+                required
+                className="field shoot-textarea-field"
+                disabled={isBusy || !canEdit}
+              />
+            </div>
+
+            <div>
               <label className="flabel">Ghi chú</label>
-              <input
+              <textarea
                 name="note"
                 defaultValue={dv.note}
                 placeholder="Ghi chú thêm..."
-                className="field"
+                className="field shoot-textarea-field shoot-note-field"
                 disabled={isBusy || !canEdit}
               />
             </div>

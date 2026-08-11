@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import {
   Clapperboard,
   ClipboardList,
   LayoutDashboard,
   CalendarDays,
   UsersRound,
-  LogOut,
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
@@ -31,19 +30,12 @@ interface SidebarProps {
 
 export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate();
-  const { role, permissions, signOut } = useAuth();
+  const { role, permissions } = useAuth();
   const navigation = getVisibleNavigationForPermissions(role, permissions);
   const defaultRoute = getDefaultAuthenticatedRoute(role, permissions);
   const isCollapsed = !mobileOpen && collapsed;
   const ToggleIcon = isCollapsed ? PanelLeftOpen : PanelLeftClose;
   const toggleLabel = isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng';
-
-  const logout = async () => {
-    onClose?.();
-    await signOut();
-    navigate('/login', { replace: true });
-  };
 
   return (
     <aside
@@ -122,12 +114,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           </nav>
         </div>
 
-        <div className="sb-foot">
-          <button className="nav-item nav-logout" onClick={logout}>
-            <span className="nav-ic"><LogOut /></span>
-            <span className="nav-txt">Đăng xuất</span>
-          </button>
-        </div>
+        <div className="sb-foot" />
       </div>
     </aside>
   );

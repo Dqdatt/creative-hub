@@ -104,9 +104,9 @@ function DayAgendaModal({
               >
                 <span className="day-agenda-type" style={{ background: meta.dot }} />
                 <span className="min-w-0">
-                  <strong>{event.place}</strong>
-                  <span>{meta.label}{event.time ? ` · ${event.time}` : ''}</span>
-                  <span>{event.displayCrew || event.crew || 'Chưa có crew/editor'}</span>
+                  <strong>{event.displayCrew || event.crew || 'Chưa có crew'} · {event.place}</strong>
+                  <span>{event.content}{event.time ? ` · ${event.time}` : ''}</span>
+                  <span>{meta.label}</span>
                   {event.note ? <em>{event.note}</em> : null}
                 </span>
               </button>

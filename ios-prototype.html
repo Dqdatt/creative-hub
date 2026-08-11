@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CreativeHub iOS Prototype</title>
+<style>
+  :root{
+    --bg:#EAECF5;
+    --bg2:#F6F7FB;
+    --card:#FFFFFF;
+    --border:rgba(17,24,39,.07);
+    --border-strong:rgba(17,24,39,.11);
+    --text:#14151C;
+    --text-2:#6B7280;
+    --muted:#9AA1AE;
+    --accent:#7C5CFF;
+    --accent-2:#5B8CFF;
+    --success:#10B981;
+    --danger:#EF4444;
+    --warning:#F59E0B;
+    --chip:rgba(17,24,39,.05);
+    --chip-2:rgba(124,92,255,.10);
+    --grad:linear-gradient(130deg,#7C5CFF 0%,#5B8CFF 100%);
+    --shadow-card:0 22px 48px rgba(21,26,58,.10);
+    --shadow-soft:0 12px 30px rgba(21,26,58,.07);
+    --phone-w:390px;
+    --phone-h:844px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden}
+  body{
+    margin:0;
+    display:grid;
+    place-items:center;
+    background:
+      radial-gradient(980px 420px at 84% -12%,rgba(124,92,255,.14),transparent 62%),
+      radial-gradient(720px 420px at -10% 12%,rgba(91,140,255,.12),transparent 58%),
+      var(--bg);
+    color:var(--text);
+    font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
+    letter-spacing:-.01em;
+  }
+  button,input,select,textarea{font:inherit}
+  button{border:0;background:none;color:inherit;cursor:pointer}
+  .stage{width:100%;min-height:100dvh;display:grid;place-items:center;padding:28px;overflow:hidden}
+  .phone{
+    width:min(var(--phone-w),100vw);
+    height:min(var(--phone-h),100dvh);
+    position:relative;
+    padding:10px;
+    border-radius:54px;
+    background:linear-gradient(145deg,#25252b,#050507 58%,#4a4a52);
+    box-shadow:0 30px 82px rgba(0,0,0,.34),inset 0 0 0 2px rgba(255,255,255,.16);
+  }
+  .screen{
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    border-radius:45px;
+    background:
+      radial-gradient(420px 180px at 84% 1%,rgba(124,92,255,.12),transparent 62%),
+      linear-gradient(180deg,#FBFBFD 0%,var(--bg) 100%);
+  }
+  .island{position:absolute;z-index:30;top:12px;left:50%;width:126px;height:35px;border-radius:999px;background:#030305;transform:translateX(-50%)}
+  .statusbar{
+    position:absolute;z-index:29;top:0;left:0;right:0;height:48px;padding:17px 28px 0;
+    display:flex;justify-content:space-between;font-size:14px;font-weight:800;pointer-events:none;
+  }
+  .sys{display:flex;align-items:center;gap:6px}
+  .bars{display:flex;gap:2px;align-items:flex-end;height:12px}
+  .bars span{width:3px;border-radius:2px;background:var(--text)}
+  .bars span:nth-child(1){height:5px}.bars span:nth-child(2){height:7px}.bars span:nth-child(3){height:9px}.bars span:nth-child(4){height:11px}
+  .wifi{width:15px;height:10px;border:2px solid var(--text);border-bottom:0;border-left-color:transparent;border-right-color:transparent;border-radius:14px 14px 0 0;position:relative}
+  .wifi:after{content:"";position:absolute;left:50%;bottom:-3px;width:4px;height:4px;border-radius:50%;background:var(--text);transform:translateX(-50%)}
+  .battery{width:23px;height:11px;border:2px solid var(--text);border-radius:4px;position:relative}
+  .battery:after{content:"";position:absolute;right:-4px;top:2px;width:2px;height:5px;border-radius:1px;background:var(--text)}
+  .topbar{
+    position:absolute;z-index:22;top:54px;left:0;right:0;height:46px;
+    display:grid;grid-template-columns:54px 1fr 54px;align-items:center;padding:0 18px;
+  }
+  .brand-btn,.icon-btn{
+    width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+    background:rgba(255,255,255,.74);border:1px solid rgba(255,255,255,.86);
+    box-shadow:var(--shadow-soft);
+    backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
+  }
+  .brand-btn img{width:24px;height:24px;object-fit:contain}
+  .icon-btn.right{justify-self:end}
+  .page-meta{text-align:center;min-width:0}
+  .page-meta b{display:block;font-size:14px;line-height:1.05;font-weight:800;letter-spacing:-.02em}
+  .page-meta span{display:block;margin-top:4px;color:var(--text-2);font-size:9px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .content{position:absolute;inset:104px 0 0;overflow:auto;padding:0 14px 98px;scrollbar-width:none}
+  .content::-webkit-scrollbar{display:none}
+  .view{display:none;animation:fade-up .22s ease both}
+  .view.active{display:block}
+  @keyframes fade-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .section{margin-top:11px}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin:0 1px 7px}
+  .section-head h2{margin:0;font-size:12px;font-weight:850;letter-spacing:-.01em}
+  .section-head span,.section-head button{font-size:9.5px;color:var(--text-2);font-weight:750}
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+  .kpi{
+    min-height:86px;padding:10px;border-radius:18px;background:var(--card);border:1px solid var(--border);
+    box-shadow:var(--shadow-card);overflow:hidden;position:relative;
+  }
+  .kpi:after{content:"";position:absolute;right:-22px;top:-22px;width:72px;height:72px;border-radius:50%;background:var(--tone);opacity:.14;filter:blur(5px)}
+  .kpi-ic{width:27px;height:27px;border-radius:10px;display:grid;place-items:center;background:var(--tone);color:white}
+  .kpi-label{display:block;margin-top:10px;color:var(--text-2);font-size:7.8px;font-weight:850;text-transform:uppercase;letter-spacing:.035em}
+  .kpi-value{display:block;margin-top:4px;font-size:20px;font-weight:900;line-height:1;letter-spacing:-.04em}
+  .panel{border-radius:18px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-card);overflow:hidden}
+  .row{
+    width:100%;min-height:50px;padding:9px 11px;display:grid;grid-template-columns:32px 1fr auto;gap:9px;align-items:center;
+    border-bottom:1px solid var(--border);text-align:left;
+  }
+  .row:last-child{border-bottom:0}
+  .avatar{
+    width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:white;font-size:9.5px;font-weight:900;background:var(--accent);
+  }
+  .row-title{display:block;max-width:212px;font-size:11px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row-sub{display:block;margin-top:3px;color:var(--text-2);font-size:9px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .badge{height:20px;display:inline-flex;align-items:center;padding:0 7px;border-radius:999px;font-size:8.5px;font-weight:800;white-space:nowrap;background:var(--chip);color:var(--text-2)}
+  .badge.done{background:rgba(16,185,129,.12);color:var(--success)}
+  .badge.doing{background:rgba(91,140,255,.13);color:var(--accent-2)}
+  .badge.wait{background:rgba(245,158,11,.14);color:var(--warning)}
+  .badge.hot{background:rgba(239,68,68,.12);color:var(--danger)}
+  .team-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+  .team-card{padding:10px;border-radius:17px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-card)}
+  .team-card div{display:flex;align-items:center;justify-content:space-between}
+  .team-card b{font-size:10.5px}.team-card strong{font-size:17px;letter-spacing:-.04em}
+  .bar{height:4px;margin-top:8px;border-radius:999px;background:var(--chip);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:inherit;background:var(--grad)}
+  .summary-card{
+    position:relative;overflow:hidden;border-radius:26px;padding:16px;
+    color:white;background:
+      radial-gradient(150px 110px at 82% 8%,rgba(255,255,255,.25),transparent 66%),
+      linear-gradient(135deg,#6F55F7 0%,#5B8CFF 100%);
+    box-shadow:0 24px 56px rgba(92,115,255,.28),inset 0 1px 0 rgba(255,255,255,.24);
+  }
+  .summary-card:after{
+    content:"";position:absolute;inset:auto -38px -54px auto;width:160px;height:160px;border-radius:50%;
+    background:rgba(255,255,255,.13);filter:blur(4px);
+  }
+  .summary-top{position:relative;z-index:1;display:grid;grid-template-columns:1fr 76px;gap:12px;align-items:start}
+  .summary-kicker{display:block;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.72)}
+  .summary-title{margin:6px 0 0;font-size:22px;line-height:1.02;font-weight:950;letter-spacing:-.045em}
+  .summary-sub{margin:7px 0 0;color:rgba(255,255,255,.78);font-size:10.5px;font-weight:700;line-height:1.35}
+  .ring{
+    --pct:0;width:72px;height:72px;border-radius:50%;display:grid;place-items:center;justify-self:end;
+    background:conic-gradient(#fff calc(var(--pct) * 1%),rgba(255,255,255,.22) 0);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);
+  }
+  .ring span{
+    width:54px;height:54px;border-radius:50%;display:grid;place-items:center;
+    background:rgba(31,37,70,.28);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    font-size:16px;font-weight:950;letter-spacing:-.04em;
+  }
+  .summary-metrics{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px}
+  .metric-pill{min-height:50px;padding:9px;border-radius:16px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.16)}
+  .metric-pill b{display:block;font-size:18px;line-height:1;font-weight:950;letter-spacing:-.04em}
+  .metric-pill span{display:block;margin-top:5px;font-size:8px;font-weight:850;color:rgba(255,255,255,.72);text-transform:uppercase;letter-spacing:.04em}
+  .priority-panel{border-radius:20px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-card);overflow:hidden}
+  .priority-row{
+    width:100%;min-height:58px;padding:11px 12px;display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;
+    border-bottom:1px solid var(--border);text-align:left;
+  }
+  .priority-row:last-child{border-bottom:0}
+  .priority-row .row-title{font-size:11.5px}
+  .editor-strip{display:grid;grid-auto-flow:column;grid-auto-columns:148px;gap:8px;overflow:auto;padding-bottom:2px;scrollbar-width:none}
+  .editor-strip::-webkit-scrollbar{display:none}
+  .editor-card{
+    min-height:116px;padding:12px;border-radius:20px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-card);
+  }
+  .editor-head{display:flex;align-items:center;gap:8px;min-width:0}
+  .editor-head>span{display:block;min-width:0}
+  .editor-name{min-width:0;font-size:11px;font-weight:900;line-height:1.12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .editor-role{display:block;margin-top:2px;font-size:8.5px;font-weight:800;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .editor-total{display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px}
+  .editor-total strong{font-size:26px;line-height:.9;font-weight:950;letter-spacing:-.05em}
+  .editor-total span{font-size:8.5px;color:var(--text-2);font-weight:800;text-align:right}
+  .mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:10px}
+  .mini-stats span{height:22px;display:grid;place-items:center;border-radius:9px;background:var(--bg2);font-size:8.5px;font-weight:850;color:var(--text-2)}
+  .team-list{display:grid;gap:8px;padding:12px;border-radius:20px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-card)}
+  .team-line{display:grid;grid-template-columns:54px 1fr 26px;align-items:center;gap:8px}
+  .team-line b{font-size:10px;font-weight:900}
+  .team-line strong{font-size:13px;text-align:right}
+  .team-line .bar{margin:0}
+  .toolbar{
+    position:sticky;top:0;z-index:8;padding:1px 0 10px;
+    background:linear-gradient(180deg,var(--bg) 0%,rgba(234,236,245,.88) 82%,transparent);
+  }
+  .search{
+    height:38px;display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:15px;
+    background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-soft);
+  }
+  .search input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:var(--text);font-size:11px;font-weight:650}
+  .filters{display:flex;gap:6px;overflow:auto;padding-top:7px;scrollbar-width:none}
+  .filters::-webkit-scrollbar{display:none}
+  .filter{height:27px;padding:0 10px;border-radius:999px;background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.84);color:var(--text-2);font-size:9.5px;font-weight:800;white-space:nowrap}
+  .filter.active{background:var(--grad);color:white}
+  .list{display:grid;gap:8px}
+  .task-card{
+    width:100%;padding:11px;border-radius:18px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-card);text-align:left;
+  }
+  .task-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .task-top h3{margin:0;max-width:236px;font-size:12px;line-height:1.22;font-weight:850;letter-spacing:-.01em}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .date-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+  .datebox{padding:7px;border-radius:13px;background:var(--bg2)}
+  .datebox span{display:block;color:var(--text-2);font-size:8.5px;font-weight:800}
+  .datebox b{display:block;margin-top:3px;font-size:11px}
+  .calendar-strip{display:flex;gap:6px;overflow:auto;padding-bottom:8px;scrollbar-width:none}
+  .calendar-strip::-webkit-scrollbar{display:none}
+  .day{min-width:46px;min-height:56px;border-radius:16px;display:grid;place-items:center;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-soft)}
+  .day span{display:block;color:var(--text-2);font-size:8.5px;font-weight:800;text-align:center}
+  .day b{display:block;margin-top:4px;font-size:15px}
+  .day.active{background:var(--grad);color:white}.day.active span{color:rgba(255,255,255,.72)}
+  .shoot-card{width:100%;padding:10px;border-radius:18px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-card);display:grid;grid-template-columns:36px 1fr;gap:9px;text-align:left}
+  .type-dot{width:32px;height:32px;border-radius:12px;display:grid;place-items:center;color:white;font-size:7.5px;font-weight:900;background:var(--accent)}
+  .shoot-card h3{margin:0;font-size:11.5px;line-height:1.15}
+  .shoot-card p{margin:4px 0 0;color:var(--text-2);font-size:9.5px;font-weight:650;line-height:1.32}
+  .plan-row{width:100%;min-height:54px;padding:9px 11px;display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:center;border-bottom:1px solid var(--border);text-align:left}
+  .plan-row:last-child{border-bottom:0}
+  .date-tile{width:36px;height:36px;border-radius:13px;display:grid;place-items:center;background:var(--chip-2);color:var(--accent);font-size:9.5px;font-weight:900;text-align:center}
+  .date-tile span{display:block;font-size:8px;font-weight:800;color:var(--text-2)}
+  .user-card{width:100%;min-height:52px;padding:9px 11px;display:grid;grid-template-columns:34px 1fr auto;gap:9px;align-items:center;border-bottom:1px solid var(--border);text-align:left}
+  .user-card:last-child{border-bottom:0}
+  .nav{
+    --active-index:0;--nav-pad:7px;--nav-item:calc((100% - (var(--nav-pad) * 2)) / 5);
+    position:absolute;z-index:25;left:18px;right:18px;bottom:14px;height:70px;
+    display:grid;grid-template-columns:repeat(5,1fr);align-items:end;padding:var(--nav-pad);border-radius:34px;overflow:visible;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.86),rgba(255,255,255,.46)),
+      rgba(255,255,255,.58);
+    border:1px solid rgba(255,255,255,.92);
+    box-shadow:0 20px 48px rgba(21,26,58,.16),inset 0 1px 0 rgba(255,255,255,.98),inset 0 -14px 28px rgba(255,255,255,.25);
+    backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);
+  }
+  .nav:before{content:"";position:absolute;inset:1px 18px auto;height:22px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.86),transparent);pointer-events:none}
+  .nav-liquid{
+    position:absolute;z-index:0;left:var(--nav-pad);top:var(--nav-pad);width:var(--nav-item);height:56px;
+    transform:translateX(calc(var(--active-index) * 100%));transition:transform .34s cubic-bezier(.2,.8,.2,1);pointer-events:none;
+  }
+  .nav-liquid:before{
+    content:"";position:absolute;left:6px;right:6px;bottom:3px;height:36px;border-radius:999px;
+    background:linear-gradient(180deg,rgba(124,92,255,.18),rgba(91,140,255,.10));
+    border:1px solid rgba(255,255,255,.36);box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  .nav-liquid:after{
+    content:"";position:absolute;left:50%;top:-13px;width:44px;height:44px;border-radius:50%;
+    transform:translateX(-50%);background:var(--grad);
+    border:4px solid rgba(255,255,255,.82);
+    box-shadow:0 14px 28px rgba(124,92,255,.32),inset 0 1px 0 rgba(255,255,255,.38),inset 0 -12px 22px rgba(20,21,28,.13);
+  }
+  .nav-item{
+    position:relative;z-index:1;height:56px;display:grid;grid-template-rows:22px 13px;align-content:end;justify-items:center;gap:5px;
+    border-radius:27px;text-align:center;color:var(--text-2);
+    transition:color .20s ease,transform .18s ease;
+  }
+  .nav-item .icon,.nav-item span:last-child{transition:transform .30s cubic-bezier(.2,.8,.2,1),color .20s ease}
+  .nav-item span:last-child{font-size:8px;font-weight:850;line-height:1;max-width:58px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nav-item.active{color:var(--accent)}
+  .nav-item.active .icon{color:white;transform:translateY(-15px)}
+  .nav-item.active span:last-child{color:var(--accent);transform:translateY(-2px)}
+  .modal-backdrop{position:absolute;z-index:40;inset:0;background:rgba(20,21,28,.28);opacity:0;pointer-events:none;transition:opacity .22s ease}
+  .modal-backdrop.open{opacity:1;pointer-events:auto}
+  .sheet{
+    position:absolute;z-index:41;left:10px;right:10px;bottom:10px;max-height:82%;overflow:auto;scrollbar-width:none;
+    padding:10px 14px 18px;border-radius:30px 30px 38px 38px;background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.88);
+    box-shadow:0 -20px 60px rgba(21,26,58,.22);transform:translateY(110%);transition:transform .30s cubic-bezier(.2,.8,.2,1);
+    backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);
+  }
+  .sheet::-webkit-scrollbar{display:none}.sheet.open{transform:translateY(0)}
+  .grabber{width:40px;height:5px;margin:0 auto 13px;border-radius:999px;background:#D7DAE2}
+  .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .modal-head h2{margin:0;max-width:286px;font-size:15px;line-height:1.18;font-weight:850}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}
+  .field{display:grid;gap:5px}.field.full{grid-column:1/-1}
+  .field label{font-size:9px;font-weight:800;color:var(--text-2)}
+  .field input,.field select,.field textarea{width:100%;min-height:36px;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:13px;padding:0 10px;outline:0;font-size:10.5px;font-weight:650}
+  .field textarea{min-height:62px;padding:9px 10px;resize:none}
+  .sheet-actions{display:grid;grid-template-columns:1fr 1.1fr;gap:9px;margin-top:14px}
+  .secondary,.primary{height:40px;border-radius:16px;text-align:center;font-size:11px;font-weight:850}
+  .secondary{background:var(--chip);color:var(--text)}.primary{background:var(--grad);color:white}
+  .icon svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .nav-item .icon svg{width:18px;height:18px}
+  @media (max-width:520px){
+    .stage{padding:0}.phone{position:fixed;inset:0;width:100%;height:100dvh;padding:0;border-radius:0;background:#000;box-shadow:none}.screen{border-radius:0}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.brand-btn,.icon-btn,.nav,.sheet{background:white}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone" role="application" aria-label="CreativeHub iOS Prototype">
+    <div class="screen">
+      <div class="island" aria-hidden="true"></div>
+      <div class="statusbar" aria-hidden="true">
+        <div>9:41</div>
+        <div class="sys">
+          <div class="bars"><span></span><span></span><span></span><span></span></div>
+          <div class="wifi"></div>
+          <div class="battery"></div>
+        </div>
+      </div>
+      <header class="topbar">
+        <button class="brand-btn" type="button" aria-label="CreativeHub"><img src="src/assets/logo.png" alt="" /></button>
+        <div class="page-meta"><b id="screenTitle">Tổng quan</b><span id="screenSub">Báo cáo công việc theo tháng</span></div>
+        <button class="icon-btn right" type="button" aria-label="Thêm Task" onclick="openTaskModal(null)"><span class="icon" data-icon="plus"></span></button>
+      </header>
+
+      <main class="content">
+        <section id="view-dashboard" class="view active"></section>
+        <section id="view-calendar" class="view"></section>
+        <section id="view-tasks" class="view"></section>
+        <section id="view-content-plan" class="view"></section>
+        <section id="view-users" class="view"></section>
+      </main>
+
+      <nav class="nav" aria-label="Điều hướng chính">
+        <span class="nav-liquid" aria-hidden="true"></span>
+        <button class="nav-item active" type="button" data-tab="dashboard" onclick="switchTab(this)"><span class="icon" data-icon="dashboard"></span><span>Tổng quan</span></button>
+        <button class="nav-item" type="button" data-tab="calendar" onclick="switchTab(this)"><span class="icon" data-icon="calendar"></span><span>Lịch quay</span></button>
+        <button class="nav-item" type="button" data-tab="tasks" onclick="switchTab(this)"><span class="icon" data-icon="video"></span><span>Video</span></button>
+        <button class="nav-item" type="button" data-tab="content-plan" onclick="switchTab(this)"><span class="icon" data-icon="clipboard"></span><span>Plan</span></button>
+        <button class="nav-item" type="button" data-tab="users" onclick="switchTab(this)"><span class="icon" data-icon="users"></span><span>Thành viên</span></button>
+      </nav>
+
+      <div id="taskBackdrop" class="modal-backdrop" onclick="closeTaskModal()"></div>
+      <aside id="taskSheet" class="sheet" aria-live="polite">
+        <div class="grabber"></div>
+        <div class="modal-head">
+          <h2 id="modalTitle">Chi tiết Task</h2>
+          <span id="modalStatus" class="badge">Chờ</span>
+        </div>
+        <div class="form-grid">
+          <div class="field full"><label>Tên video</label><input id="mName" /></div>
+          <div class="field"><label>Editor</label><select id="mEditor"></select></div>
+          <div class="field"><label>Trạng thái</label><select id="mStatus"><option>Chờ</option><option>Đang làm</option><option>Đã xong</option></select></div>
+          <div class="field"><label>Team Order</label><select id="mOrder"></select></div>
+          <div class="field"><label>Thể loại</label><select id="mCategory"><option>Video dài</option><option>Motion</option><option>Ads</option></select></div>
+          <div class="field"><label>Nhận</label><input id="mReceive" /></div>
+          <div class="field"><label>Trả</label><input id="mReturn" /></div>
+          <div class="field"><label>Air</label><input id="mAir" /></div>
+          <div class="field"><label>Ưu tiên</label><select id="mPriority"><option value="">Bình thường</option><option>Gấp</option></select></div>
+          <div class="field full"><label>Resize</label><input id="mResize" /></div>
+          <div class="field full"><label>Link thành phẩm</label><input id="mLink" /></div>
+          <div class="field full"><label>Ghi chú</label><textarea id="mNote"></textarea></div>
+        </div>
+        <div class="sheet-actions">
+          <button class="secondary" type="button" onclick="closeTaskModal()">Đóng</button>
+          <button class="primary" type="button" onclick="saveTask()">Lưu</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script>
+const ICONS = {
+  plus:'<path d="M12 5v14"/><path d="M5 12h14"/>',
+  dashboard:'<rect x="3" y="3" width="7" height="8" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="15" width="7" height="6" rx="2"/>',
+  calendar:'<path d="M8 3v4"/><path d="M16 3v4"/><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16"/>',
+  video:'<path d="m21 8-5 3.2v5.6l5 3.2V8Z"/><rect x="3" y="6" width="13" height="12" rx="3"/>',
+  clipboard:'<path d="M9 5h6"/><path d="M9 3h6v4H9z"/><path d="M7 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M8 12h8"/><path d="M8 16h5"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  search:'<circle cx="11" cy="11" r="7.5"/><path d="m20 20-3.8-3.8"/>',
+  mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>'
+};
+const PAGE_META = {
+  dashboard:['Tổng quan','Báo cáo công việc theo tháng'],
+  calendar:['Lịch quay','Lịch buổi quay theo tháng'],
+  tasks:['Video tháng','Tổng hợp video theo tháng'],
+  'content-plan':['Content Plan','Lịch air nội dung theo tháng'],
+  users:['Thành viên','Quản lý tài khoản và vai trò nội bộ']
+};
+const EDITORS = [
+  { id:'dat', name:'Đoàn Quốc Đạt', short:'Đạt Đoàn', color:'#0ea5e9', bgColor:'#e0f2fe', initial:'Đ', crewKey:'ĐẠT' },
+  { id:'hai', name:'Nguyễn Thanh Hải', short:'Thanh Hải', color:'#22c55e', bgColor:'#dcfce7', initial:'H', crewKey:'HẢI' },
+  { id:'minh', name:'Hoàng Hữu Lê Minh', short:'Hữu Minh', color:'#f59e0b', bgColor:'#fef3c7', initial:'M', crewKey:'MINH' }
+];
+const ORDER_TEAMS = ['BRAND','DIGITAL','ECOM','HR','ISD','IT','CS','GT','PUR'];
+const TASKS = [
+  { id:1, name:'Video Motion Shopee sale 7.7', resize:'', editorId:'minh', orderTeam:'ECOM', category:'Motion', receiveDate:'26/6', returnDate:'26/6', airDate:'2/7', status:'Đã xong', priority:'', link:'' },
+  { id:2, name:'Video Chạm vào an yên tập 9', resize:'9x16 & 1x1', editorId:'minh', orderTeam:'BRAND', category:'Video dài', receiveDate:'30/6', returnDate:'1/7', airDate:'2/7', status:'Đã xong', priority:'', link:'' },
+  { id:3, name:'Video Review IKI Premium', resize:'9x16 & 1x1', editorId:'hai', orderTeam:'BRAND', category:'Video dài', receiveDate:'30/6', returnDate:'6/7', airDate:'8/7', status:'Đang làm', priority:'', link:'' },
+  { id:4, name:"Video Motion Nệm L'ADOME", resize:'', editorId:'hai', orderTeam:'BRAND', category:'Motion', receiveDate:'30/6', returnDate:'1/7', airDate:'1/7', status:'Đã xong', priority:'', link:'' },
+  { id:5, name:'Video Motion Combo kháng khuẩn', resize:'1x1', editorId:'minh', orderTeam:'DIGITAL', category:'Ads', receiveDate:'1/7', returnDate:'1/7', airDate:'1/7', status:'Đã xong', priority:'', link:'' },
+  { id:6, name:'Video Những thứ khiến phòng ngủ đắt tiền', resize:'9x16 & 1x1', editorId:'minh', orderTeam:'BRAND', category:'Video dài', receiveDate:'2/7', returnDate:'6/7', airDate:'7/7', status:'Đang làm', priority:'', link:'' },
+  { id:7, name:'Video Motion Nệm Cocoon Grey', resize:'1x1', editorId:'hai', orderTeam:'DIGITAL', category:'Ads', receiveDate:'2/7', returnDate:'3/7', airDate:'3/7', status:'Đã xong', priority:'Gấp', link:'' },
+  { id:8, name:'Video COCOON - 3 Lợi ích khi sử dụng nệm lò xo túi độc lập', resize:'9x16 & 1x1', editorId:'dat', orderTeam:'BRAND', category:'Video dài', receiveDate:'1/7', returnDate:'7/7', airDate:'10/7', status:'Đang làm', priority:'', link:'' },
+  { id:9, name:"Video Motion Nệm L'ADOME Cool", resize:'1x1', editorId:'hai', orderTeam:'DIGITAL', category:'Ads', receiveDate:'2/7', returnDate:'3/7', airDate:'3/7', status:'Đã xong', priority:'Gấp', link:'' }
+];
+const SHOOTS = [
+  { id:'s1', date:'2026-07-07', type:'livestream', crew:'KHANG + ĐẠT', place:'LIVESTREAM SHOPEE', time:'BUỔI TỐI', note:'' },
+  { id:'s2', date:'2026-07-08', type:'lichquay', crew:'HẰNG - ĐẠT - BUMI', place:'SHOWROOM HÒA BÌNH', time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { id:'s3', date:'2026-07-09', type:'lichquay', crew:'LINH - MINH - BUMI', place:'SHOWROOM AN SƯƠNG', time:'ALL MORNING', note:'THEO DẤU GIẤC NGỦ TẬP 2 - SHOWROOM TRƯỜNG CHINH' },
+  { id:'s4', date:'2026-07-10', type:'livestream', crew:'MINH + HẢI', place:'LIVESTREAM SHOPEE', time:'BUỔI TỐI', note:'' },
+  { id:'s5', date:'2026-07-10', type:'onset', crew:'ĐẠT - BUMI', place:'ONSET TIDO', time:'', note:'' },
+  { id:'s7', date:'2026-07-14', type:'lichquay', crew:'MY - ĐẠT - BUMI', place:'SHOWROOM HÒA BÌNH', time:'ALL MORNING', note:'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
+  { id:'s12', date:'2026-07-21', type:'lichquay', crew:'HẰNG - ĐẠT - BUMI', place:'SHOWROOM AN SƯƠNG', time:'ALL MORNING', note:'CONTENT THÁNG 8' },
+  { id:'s14', date:'2026-07-24', type:'onset', crew:'ĐẠT - BUMI', place:'ON SET TIDO', time:'', note:'' }
+];
+const CONTENT_PLAN = [
+  { id:'CP-010', air_date:'2026-07-14', video_name:'Hiểu đúng nệm - Sống vui khỏe tập tháng 8', category:'Video dài', editor_id:'dat', note:'', hasLinkedTask:false },
+  { id:'CP-011', air_date:'2026-07-15', video_name:'Livestream Shopee - Combo phòng ngủ mùa mưa', category:'Livestream', editor_id:'minh', note:'', hasLinkedTask:false },
+  { id:'CP-012', air_date:'2026-07-16', video_name:'Short review IKI Premium cho TikTok', category:'Short/Reels', editor_id:'hai', note:'', hasLinkedTask:false },
+  { id:'CP-014', air_date:'2026-07-22', video_name:'Motion ưu đãi Cocoon Grey cuối tháng', category:'Motion', editor_id:'minh', note:'', hasLinkedTask:false },
+  { id:'CP-016', air_date:'2026-07-28', video_name:'Ảnh sản phẩm drap mới phông trắng', category:'Ảnh', editor_id:'dat', note:'', hasLinkedTask:false }
+];
+const USERS = [
+  { fullName:'Đoàn Quốc Đạt', email:'dat@creativehub.local', roleLabel:'Quản trị viên', department:'Team Marketing', editorCode:'DAT', active:true, editor:true, initial:'Đ', color:'#0ea5e9' },
+  { fullName:'Nguyễn Thanh Hải', email:'hai@creativehub.local', roleLabel:'Editor', department:'Team Marketing', editorCode:'HAI', active:true, editor:true, initial:'H', color:'#22c55e' },
+  { fullName:'Hoàng Hữu Lê Minh', email:'minh@creativehub.local', roleLabel:'Editor', department:'Team Marketing', editorCode:'MINH', active:true, editor:true, initial:'M', color:'#f59e0b' }
+];
+let filters = { editor:'all', status:'all', search:'', shoot:'all' };
+let selectedTask = null;
+
+function esc(v){return String(v ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function mountIcons(root=document){root.querySelectorAll('[data-icon]').forEach(n=>{const body=ICONS[n.dataset.icon];if(body)n.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;});}
+function editor(id){return EDITORS.find(e=>e.id===id) || EDITORS[0];}
+function statusClass(t){if(t.priority==='Gấp')return'hot';if(t.status==='Đã xong')return'done';if(t.status==='Đang làm')return'doing';return'wait';}
+function dateValue(v){const [d,m]=String(v).split('/').map(Number);return (m||7)*100+(d||99)}
+function formatDate(v){const [,m,d]=String(v).split('-');return `${d}/${m}`;}
+function resizeCount(r){return !r ? 0 : r.split('&').filter(Boolean).length;}
+function switchTab(btn){
+  const tab=btn.dataset.tab;
+  const navItems = [...document.querySelectorAll('.nav-item')];
+  navItems.forEach(n=>n.classList.toggle('active',n===btn));
+  document.querySelector('.nav').style.setProperty('--active-index', navItems.indexOf(btn));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===`view-${tab}`));
+  document.getElementById('screenTitle').textContent=PAGE_META[tab][0];
+  document.getElementById('screenSub').textContent=PAGE_META[tab][1];
+  closeTaskModal();
+}
+function renderDashboard(){
+  const done=TASKS.filter(t=>t.status==='Đã xong').length;
+  const totalShoots=SHOOTS.filter(s=>s.type!=='livestream').length;
+  const pct=TASKS.length ? Math.round(done/TASKS.length*100) : 0;
+  const upcomingAirTasks = TASKS.filter(t=>t.airDate && t.status!=='Đã xong').sort((a,b)=>dateValue(a.airDate)-dateValue(b.airDate)).slice(0,2);
+  const focusShoots = SHOOTS.filter(s=>s.type!=='livestream').slice(0,1);
+  const doing=TASKS.filter(t=>t.status==='Đang làm').length;
+  const urgent=TASKS.filter(t=>t.priority==='Gấp').length;
+  const activeTeams=['BRAND','DIGITAL','ECOM'].map(team=>({team,count:TASKS.filter(t=>t.orderTeam===team).length})).filter(x=>x.count);
+  const view = document.getElementById('view-dashboard');
+  view.innerHTML = `
+    <div class="summary-card">
+      <div class="summary-top">
+        <div>
+          <span class="summary-kicker">CreativeHub · Tháng 7/2026</span>
+          <h1 class="summary-title">${TASKS.length} video trong tháng</h1>
+          <p class="summary-sub">${done} đã hoàn thành, ${doing} đang làm, ${totalShoots} buổi quay cần theo dõi.</p>
+        </div>
+        <div class="ring" style="--pct:${pct}"><span>${pct}%</span></div>
+      </div>
+      <div class="summary-metrics">
+        <div class="metric-pill"><b>${done}</b><span>Hoàn thành</span></div>
+        <div class="metric-pill"><b>${doing}</b><span>Đang làm</span></div>
+        <div class="metric-pill"><b>${urgent}</b><span>Gấp</span></div>
+      </div>
+    </div>
+    <div class="section"><div class="section-head"><h2>Cần xử lý</h2><span>Air gần nhất</span></div><div class="priority-panel">
+      ${upcomingAirTasks.map(t=>`<button class="priority-row" type="button" onclick="openTaskModal(${t.id})"><span class="avatar" style="background:${editor(t.editorId).color}">${editor(t.editorId).initial}</span><span><span class="row-title">${esc(t.name)}</span><span class="row-sub">Air ${esc(t.airDate)} · ${esc(editor(t.editorId).short)} · ${esc(t.orderTeam)}</span></span><span class="badge ${statusClass(t)}">${esc(t.status)}</span></button>`).join('')}
+      ${focusShoots.map(s=>`<button class="priority-row" type="button"><span class="type-dot" style="background:${s.type==='onset'?'#2563EB':'#A855F7'}">${s.type==='onset'?'SET':'QUAY'}</span><span><span class="row-title">${esc(s.place)}</span><span class="row-sub">${formatDate(s.date)} · ${esc(s.crew)}</span></span><span class="badge">${esc(s.time || 'Cả ngày')}</span></button>`).join('')}
+    </div></div>
+    <div class="section"><div class="section-head"><h2>Editor</h2><span>${TASKS.length} video</span></div><div class="editor-strip">
+      ${EDITORS.map(e=>{
+        const tasks=TASKS.filter(t=>t.editorId===e.id);
+        const editorShoots=SHOOTS.filter(s=>s.type!=='livestream'&&s.crew.includes(e.crewKey));
+        const doneCount=tasks.filter(t=>t.status==='Đã xong').length;
+        const resize=tasks.reduce((acc,t)=>acc+resizeCount(t.resize),0);
+        return `<button class="editor-card" type="button">
+          <div class="editor-head"><span class="avatar" style="background:${e.color}">${e.initial}</span><span><span class="editor-name">${esc(e.short)}</span><span class="editor-role">Editor</span></span></div>
+          <div class="editor-total"><strong style="color:${e.color}">${tasks.length+editorShoots.length}</strong><span>tổng<br>task</span></div>
+          <div class="mini-stats"><span>${doneCount} xong</span><span>${resize} resize</span><span>${editorShoots.length} quay</span></div>
+        </button>`}).join('')}
+    </div></div>
+    <div class="section"><div class="section-head"><h2>Team order</h2><span>${TASKS.length} video</span></div><div class="team-list">
+      ${activeTeams.map(({team,count})=>{const w=Math.max(8,Math.round(count/TASKS.length*100));return `<div class="team-line"><b>${team}</b><div class="bar"><i style="width:${w}%"></i></div><strong>${count}</strong></div>`}).join('')}
+    </div></div>`;
+  mountIcons(view);
+}
+function renderCalendar(){
+  const rows=SHOOTS.filter(s=>filters.shoot==='all'||s.type===filters.shoot);
+  const view = document.getElementById('view-calendar');
+  view.innerHTML = `
+    <div class="toolbar"><div class="filters">
+      ${[['all','Tất cả'],['lichquay','Lịch quay'],['onset','On set'],['livestream','Livestream']].map(([k,l])=>`<button class="filter ${filters.shoot===k?'active':''}" onclick="filters.shoot='${k}';renderCalendar()">${l}</button>`).join('')}
+    </div></div>
+    <div class="calendar-strip">${[7,8,9,10,14,15,16,21,24].map((d,i)=>`<button class="day ${i===1?'active':''}"><span>TH7</span><b>${d}</b></button>`).join('')}</div>
+    <div class="list">${rows.map(s=>`<button class="shoot-card"><span class="type-dot" style="background:${s.type==='livestream'?'#F59E0B':s.type==='onset'?'#2563EB':s.type==='lichquay'?'#A855F7':'#6B7280'}">${s.type==='livestream'?'LIVE':s.type==='onset'?'SET':'QUAY'}</span><span><h3>${esc(s.place)}</h3><p>${formatDate(s.date)} · ${esc(s.crew || 'Chưa phân công')} ${s.time ? '· '+esc(s.time) : ''}</p>${s.note?`<p>${esc(s.note)}</p>`:''}</span></button>`).join('')}</div>`;
+}
+function renderTasks(){
+  const view = document.getElementById('view-tasks');
+  view.innerHTML = `
+    <div class="toolbar">
+      <label class="search"><span class="icon" data-icon="search"></span><input placeholder="Tìm tên video..." value="${esc(filters.search)}" oninput="filters.search=this.value;drawTasks()" /></label>
+      <div class="filters">${[['all','Tất cả editor'],['dat','Đạt'],['hai','Hải'],['minh','Minh']].map(([k,l])=>`<button class="filter ${filters.editor===k?'active':''}" onclick="filters.editor='${k}';renderTasks()">${l}</button>`).join('')}</div>
+      <div class="filters">${[['all','Tất cả trạng thái'],['Đã xong','Đã xong'],['Đang làm','Đang làm'],['Chờ','Chờ'],['Gấp','Gấp']].map(([k,l])=>`<button class="filter ${filters.status===k?'active':''}" onclick="filters.status='${k}';renderTasks()">${l}</button>`).join('')}</div>
+    </div><div id="taskList" class="list"></div>`;
+  mountIcons(view);drawTasks();
+}
+function drawTasks(){
+  const list = document.getElementById('taskList');
+  if(!list) return;
+  const rows=TASKS.filter(t=>filters.editor==='all'||t.editorId===filters.editor)
+    .filter(t=>filters.status==='all'||(filters.status==='Gấp'?t.priority==='Gấp':t.status===filters.status))
+    .filter(t=>!filters.search||[t.name,t.category,t.orderTeam,editor(t.editorId).short].some(v=>v.toLowerCase().includes(filters.search.toLowerCase())))
+    .sort((a,b)=>dateValue(a.airDate)-dateValue(b.airDate));
+  list.innerHTML = rows.map(t=>`<button class="task-card" onclick="openTaskModal(${t.id})"><div class="task-top"><h3>${esc(t.name)}</h3><span class="badge ${statusClass(t)}">${esc(t.priority||t.status)}</span></div><div class="meta"><span class="badge">${esc(editor(t.editorId).short)}</span><span class="badge">${esc(t.orderTeam)}</span><span class="badge">${esc(t.category)}</span><span class="badge">${esc(t.resize||'Resize -')}</span></div><div class="date-grid"><div class="datebox"><span>Nhận</span><b>${esc(t.receiveDate)}</b></div><div class="datebox"><span>Trả</span><b>${esc(t.returnDate)}</b></div><div class="datebox"><span>Air</span><b>${esc(t.airDate)}</b></div></div></button>`).join('') || `<div class="panel" style="padding:18px;text-align:center;color:var(--text-2);font-size:11px;font-weight:750">Không có video phù hợp</div>`;
+}
+function renderContentPlan(){
+  const view = document.getElementById('view-content-plan');
+  view.innerHTML = `<div class="section-head" style="margin-top:2px"><h2>Lịch air nội dung</h2><span>${CONTENT_PLAN.length} dòng</span></div><div class="panel">${CONTENT_PLAN.map(item=>{const e=editor(item.editor_id);return `<button class="plan-row"><span class="date-tile">${formatDate(item.air_date)}<span>Air</span></span><span><span class="row-title">${esc(item.video_name)}</span><span class="row-sub">${esc(item.category)} · ${esc(e.short)}</span></span><span class="badge">${item.hasLinkedTask?'Task':'Plan'}</span></button>`}).join('')}</div>`;
+}
+function renderUsers(){
+  const view = document.getElementById('view-users');
+  view.innerHTML = `<div class="section-head" style="margin-top:2px"><h2>Thành viên</h2><span>${USERS.length} người</span></div><div class="panel">${USERS.map(u=>`<button class="user-card"><span class="avatar" style="background:${u.color}">${u.initial}</span><span><span class="row-title">${esc(u.fullName)}</span><span class="row-sub">${esc(u.email)} · ${esc(u.department)}</span></span><span class="badge ${u.active?'done':'wait'}">${esc(u.roleLabel)}</span></button>`).join('')}</div>`;
+}
+function setupModalOptions(){
+  mEditor.innerHTML=EDITORS.map(e=>`<option value="${e.id}">${e.short}</option>`).join('');
+  mOrder.innerHTML=ORDER_TEAMS.map(t=>`<option>${t}</option>`).join('');
+}
+function openTaskModal(id){
+  selectedTask=id?TASKS.find(t=>t.id===id):null;
+  const t=selectedTask||{name:'',editorId:'dat',status:'Chờ',orderTeam:'BRAND',category:'Video dài',receiveDate:'',returnDate:'',airDate:'',priority:'',resize:'',link:'',note:''};
+  modalTitle.textContent=selectedTask?'Chỉnh sửa Task':'Thêm Task';
+  modalStatus.textContent=t.priority||t.status;modalStatus.className=`badge ${statusClass(t)}`;
+  mName.value=t.name;mEditor.value=t.editorId;mStatus.value=t.status;mOrder.value=t.orderTeam;mCategory.value=t.category;
+  mReceive.value=t.receiveDate;mReturn.value=t.returnDate;mAir.value=t.airDate;mPriority.value=t.priority;mResize.value=t.resize;mLink.value=t.link;mNote.value=t.note||'';
+  taskBackdrop.classList.add('open');taskSheet.classList.add('open');
+}
+function closeTaskModal(){taskBackdrop.classList.remove('open');taskSheet.classList.remove('open')}
+function saveTask(){
+  if(!mName.value.trim())return;
+  let t=selectedTask;if(!t){t={id:Math.max(...TASKS.map(x=>x.id))+1};TASKS.push(t)}
+  Object.assign(t,{name:mName.value.trim(),editorId:mEditor.value,status:mStatus.value,orderTeam:mOrder.value,category:mCategory.value,receiveDate:mReceive.value.trim(),returnDate:mReturn.value.trim(),airDate:mAir.value.trim(),priority:mPriority.value,resize:mResize.value.trim(),link:mLink.value.trim(),note:mNote.value.trim()});
+  closeTaskModal();renderDashboard();renderTasks();
+}
+mountIcons();setupModalOptions();renderDashboard();renderCalendar();renderTasks();renderContentPlan();renderUsers();
+</script>
+</body>
+</html>

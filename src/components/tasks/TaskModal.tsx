@@ -19,6 +19,7 @@ interface TaskModalProps {
   onComplete?: (data: LinkedVideoTaskExecutionData) => void | Promise<void>;
   onDelete?: () => void | Promise<void>;
   canDelete?: boolean;
+  adminOverrideLinkedTask?: boolean;
   canAcceptLinkedTask?: boolean;
   canCompleteLinkedTask?: boolean;
   readOnly?: boolean;
@@ -50,6 +51,7 @@ function resolveTaskModalFieldState(
   canAcceptLinkedTask: boolean,
   canCompleteLinkedTask: boolean,
   readOnly: boolean,
+  adminOverrideLinkedTask: boolean,
 ): TaskModalFieldState {
   const isLinkedTask = Boolean(task?.contentPlanId);
 
@@ -87,6 +89,27 @@ function resolveTaskModalFieldState(
       canEditReceiveDate: true,
       canEditReturnDate: true,
       canEditAirDate: true,
+      canEditResultLink: true,
+      canAccept: false,
+      canSaveExecution: false,
+      canComplete: false,
+      canUseGenericSave: true,
+    };
+  }
+
+  if (adminOverrideLinkedTask) {
+    return {
+      isLinkedTask: true,
+      canEditTitle: false,
+      canEditEditor: false,
+      canEditStatus: true,
+      canEditOrderTeam: true,
+      canEditCategory: false,
+      canEditPriority: true,
+      canEditResize: true,
+      canEditReceiveDate: true,
+      canEditReturnDate: true,
+      canEditAirDate: false,
       canEditResultLink: true,
       canAccept: false,
       canSaveExecution: false,
@@ -155,6 +178,7 @@ export function TaskModal({
   onComplete,
   onDelete,
   canDelete = false,
+  adminOverrideLinkedTask = false,
   canAcceptLinkedTask = false,
   canCompleteLinkedTask = false,
   readOnly = false,
@@ -164,7 +188,7 @@ export function TaskModal({
   const formRef = useRef<HTMLFormElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const isEditMode = task !== null;
-  const fieldState = resolveTaskModalFieldState(task, canAcceptLinkedTask, canCompleteLinkedTask, readOnly);
+  const fieldState = resolveTaskModalFieldState(task, canAcceptLinkedTask, canCompleteLinkedTask, readOnly, adminOverrideLinkedTask);
   const isAcceptMode = fieldState.canAccept;
   const isCompleteMode = fieldState.canComplete;
   const [acceptReceiveDate, setAcceptReceiveDate] = useState('');

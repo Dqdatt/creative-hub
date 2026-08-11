@@ -407,9 +407,21 @@ html.dark .sticky-filter-bar{
 .cal-ev span{
   display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+.cal-ev-row{
+  display:grid!important;
+  grid-template-columns:minmax(0,auto) auto minmax(0,1fr);
+  align-items:center;
+  gap:3px;
+  min-width:0;
+  overflow:hidden;
+}
+.cal-ev-row-main{ font-weight:850; }
 .cal-ev-title{ font-size:var(--cal-event-title-font,var(--cal-event-font));font-weight:850;line-height:1.1; }
-.cal-ev-place{ font-size:var(--cal-event-place-font,var(--cal-event-font));font-weight:700;line-height:1.12; }
-.cal-ev-time{ font-size:var(--cal-event-time-font,calc(var(--cal-event-font) - .75px));font-weight:650;line-height:1.1; }
+.cal-ev-place{ font-size:var(--cal-event-place-font,var(--cal-event-font));font-weight:750;line-height:1.12; }
+.cal-ev-sep{ color:color-mix(in srgb,var(--text-2) 60%,transparent);font-weight:800; }
+.cal-ev-content{ color:var(--text);font-size:var(--cal-event-content-font,calc(var(--cal-event-font) - .35px));font-weight:700;line-height:1.1; }
+.cal-ev-time{ color:var(--text-2);font-size:var(--cal-event-time-font,calc(var(--cal-event-font) - .75px));font-weight:650;line-height:1.08; }
+.cal-ev-note{ color:var(--text);font-size:var(--cal-event-note-font,calc(var(--cal-event-font) - 1px));font-weight:500;line-height:1.08; }
 .cal-more{
   flex:0 0 auto;align-self:flex-start;border:0;background:var(--chip);color:var(--text-2);
   min-height:18px;padding:0 7px;border-radius:999px;font-size:9.5px;font-weight:800;line-height:18px;
@@ -430,7 +442,7 @@ html.dark .sticky-filter-bar{
 .day-agenda-type{ width:9px;height:9px;border-radius:999px;margin-top:5px; }
 .day-agenda-item strong{ display:block;font-size:13px;font-weight:850;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .day-agenda-item span span{ display:block;margin-top:3px;font-size:12px;font-weight:650;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-.day-agenda-item em{ display:block;margin-top:5px;font-size:11.5px;font-style:normal;font-weight:750;color:var(--danger);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.day-agenda-item em{ display:block;margin-top:5px;font-size:11.5px;font-style:normal;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 #calLegend button{ border-color:var(--border)!important;background:var(--chip)!important;color:var(--text-2)!important; }
 #calLegend button.bg-ink{ background:var(--grad)!important;color:#fff!important;border-color:transparent!important;box-shadow:var(--shadow-btn); }
 #calLegend button.bg-white{ background:var(--chip)!important;color:var(--text-2)!important; }
@@ -444,7 +456,9 @@ html.dark .sticky-filter-bar{
   }
   .cal-ev-title{ font-size:10px; }
   .cal-ev-place{ font-size:9.5px; }
-  .cal-ev-time{ display:none; }
+  .cal-ev-content{ font-size:9.25px; }
+  .cal-ev-time{ font-size:9px; }
+  .cal-ev-note{ font-size:8.75px; }
   .cal-more{ min-height:17px;line-height:17px;font-size:9px;padding:0 6px; }
 }
 @container (max-height: 540px){
@@ -458,6 +472,9 @@ html.dark .sticky-filter-bar{
   }
   .cal-ev-title{ font-size:9.5px; }
   .cal-ev-place{ font-size:9px; }
+  .cal-ev-content{ font-size:8.75px; }
+  .cal-ev-time{ font-size:8.5px; }
+  .cal-ev-note{ font-size:8.25px; }
 }
 
 /* ---------- nav pills ---------- */
@@ -656,6 +673,15 @@ html.dark .sb-shell{ background:#18181B; }
   width:16px;
   height:16px;
   color:var(--text-2);
+}
+.header-account-item-danger{
+  color:var(--danger);
+}
+.header-account-item-danger:hover{
+  background:color-mix(in srgb,var(--danger) 10%,transparent);
+}
+.header-account-item-danger svg{
+  color:var(--danger);
 }
 .notification-center{ position:relative;display:grid;place-items:center; }
 .notification-bell{ position:relative; }
@@ -1370,6 +1396,16 @@ html.dark .sb-shell{ background:#18181B; }
 .shoot-modal-card .flabel{
   margin-bottom:4px;
   font-size:11px;
+}
+.shoot-modal-card .shoot-textarea-field{
+  min-height:58px;
+  height:auto;
+  resize:vertical;
+  padding-top:9px;
+  line-height:1.35;
+}
+.shoot-modal-card .shoot-note-field{
+  min-height:46px;
 }
 .shoot-editor-list{
   gap:5px!important;

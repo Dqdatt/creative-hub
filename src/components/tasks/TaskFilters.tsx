@@ -1,17 +1,22 @@
 import { Search, Plus } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
-import type { Editor } from '../../types/task';
+import { ORDER_TEAMS } from '../../data/tasks';
+import type { Editor, TaskCategory } from '../../types/task';
 
 interface TaskFiltersProps {
   editors: Editor[];
   search: string;
   editorFilter: string;
   statusFilter: string;
+  orderFilter: string;
+  categoryFilter: TaskCategory | 'all';
   totalCount: number;
   filteredCount: number;
   onSearchChange: (val: string) => void;
   onEditorChange: (val: string) => void;
   onStatusChange: (val: string) => void;
+  onOrderChange: (val: string) => void;
+  onCategoryChange: (val: TaskCategory | 'all') => void;
   onAddTask: () => void;
   canAddTask?: boolean;
 }
@@ -21,11 +26,15 @@ export function TaskFilters({
   search,
   editorFilter,
   statusFilter,
+  orderFilter,
+  categoryFilter,
   totalCount,
   filteredCount,
   onSearchChange,
   onEditorChange,
   onStatusChange,
+  onOrderChange,
+  onCategoryChange,
   onAddTask,
   canAddTask = true,
 }: TaskFiltersProps) {
@@ -60,6 +69,26 @@ export function TaskFilters({
         <option value="Đã xong">Đã xong</option>
         <option value="Đang làm">Đang làm</option>
         <option value="Chờ">Chờ</option>
+      </StyledSelect>
+      <StyledSelect
+        style={{ width: 'auto', minWidth: '140px' }}
+        value={orderFilter}
+        onChange={(e) => onOrderChange(e.target.value)}
+      >
+        <option value="all">Tất cả order</option>
+        {ORDER_TEAMS.map((team) => (
+          <option key={team} value={team}>{team}</option>
+        ))}
+      </StyledSelect>
+      <StyledSelect
+        style={{ width: 'auto', minWidth: '150px' }}
+        value={categoryFilter}
+        onChange={(e) => onCategoryChange(e.target.value as TaskCategory | 'all')}
+      >
+        <option value="all">Tất cả thể loại</option>
+        <option value="Video dài">Video dài</option>
+        <option value="Motion">Motion</option>
+        <option value="Ads">Ads</option>
       </StyledSelect>
       <div className="ml-auto text-[13px] text-sub font-semibold flex items-center mr-1">
         {filteredCount} video {filteredCount !== totalCount ? `(trên tổng ${totalCount})` : ''}

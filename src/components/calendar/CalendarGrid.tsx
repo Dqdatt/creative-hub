@@ -74,6 +74,7 @@ export function CalendarGrid({
             <div className="cal-event-list">
               {visibleEvents.map((ev) => {
                 const t = SHOOT_TYPES_META[ev.type];
+                const crew = ev.displayCrew || ev.crew || 'Chưa có crew';
                 return (
                   <button
                     type="button"
@@ -83,9 +84,14 @@ export function CalendarGrid({
                     onClick={(e) => onShootClick(ev, e)}
                     style={{ background: `color-mix(in srgb, ${t.dot} 15%, transparent)`, borderColor: `color-mix(in srgb, ${t.dot} 40%, transparent)` }}
                   >
-                    {ev.displayCrew && <span className="cal-ev-title" style={{ color: 'var(--text)' }}>{ev.displayCrew}</span>}
-                    <span className="cal-ev-place" style={{ color: 'var(--text)' }}>{ev.place}</span>
-                    {ev.time && <span className="cal-ev-time text-sub">{ev.time}</span>}
+                    <span className="cal-ev-row cal-ev-row-main">
+                      <span className="cal-ev-title" style={{ color: 'var(--text)' }}>{crew}</span>
+                      <span className="cal-ev-sep">|</span>
+                      <span className="cal-ev-place" style={{ color: 'var(--text)' }}>{ev.place}</span>
+                    </span>
+                    <span className="cal-ev-content">{ev.content}</span>
+                    {ev.time ? <span className="cal-ev-time">{ev.time}</span> : null}
+                    {ev.note ? <span className="cal-ev-note">{ev.note}</span> : null}
                   </button>
                 );
               })}

@@ -7,15 +7,17 @@ export const SHOOT_TYPES_META: Record<ShootSchedule['type'], { label: string; do
   other:      { label: 'Khác', dot: '#6B7280' },
 };
 
-const legacyShoot = (shoot: Omit<ShootSchedule, 'editorIds' | 'editorProfileIds' | 'editorLabels' | 'displayCrew'>): ShootSchedule => ({
+const legacyShoot = (shoot: Omit<ShootSchedule, 'content' | 'editorIds' | 'editorProfileIds' | 'editorLabels' | 'displayCrew'>): ShootSchedule => ({
   ...shoot,
+  content: shoot.note,
+  note: '',
   editorIds: [],
   editorProfileIds: [],
   editorLabels: [],
   displayCrew: shoot.crew,
 });
 
-const MOCK_SHOOTS_BASE: Array<Omit<ShootSchedule, 'editorIds' | 'editorProfileIds' | 'editorLabels' | 'displayCrew'>> = [
+const MOCK_SHOOTS_BASE: Array<Omit<ShootSchedule, 'content' | 'editorIds' | 'editorProfileIds' | 'editorLabels' | 'displayCrew'>> = [
   { id: 's1', date: '2026-07-07', type: 'livestream', crew: 'KHANG + ĐẠT',        place: 'LIVESTREAM SHOPEE',   time: 'BUỔI TỐI',    note: '' },
   { id: 's2', date: '2026-07-08', type: 'lichquay',   crew: 'HẰNG - ĐẠT - BUMI',  place: 'SHOWROOM HÒA BÌNH',   time: 'ALL MORNING', note: 'HIỂU ĐÚNG NỆM - SỐNG VUI KHỎE' },
   { id: 's3', date: '2026-07-09', type: 'lichquay',   crew: 'LINH - MINH - BUMI', place: 'SHOWROOM AN SƯƠNG',   time: 'ALL MORNING', note: 'THEO DẤU GIẤC NGỦ TẬP 2 - SHOWROOM TRƯỜNG CHINH' },

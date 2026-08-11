@@ -1,0 +1,17 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D3E54E10-0CBD-4474-A09E-2AF06FE7642D",
+        "deviceName" : "iPhone 16 Pro",
+        "exportedFileName" : "EC3B0EB0-F208-4735-9A39-29965C0D7DE1.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "phase3d-create-task-sheet_0_B06B14DB-2F62-4BF7-85A1-8EB61C56C228.png",
+        "timestamp" : 1786160858.071
+      }
+    ],
+    "testIdentifier" : "CreativeHubOpsUITests/testPhase3DCreateTaskSheetSnapshot()",
+    "testIdentifierURL" : "test://com.apple.xcode/CreativeHubOps/CreativeHubOpsUITests/CreativeHubOpsUITests/testPhase3DCreateTaskSheetSnapshot"
+  }
+]

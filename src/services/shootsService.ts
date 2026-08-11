@@ -11,6 +11,7 @@ interface ShootRow {
   time_slot: Nullable<string>;
   location: Nullable<string>;
   content_note: Nullable<string>;
+  shoot_note: Nullable<string>;
   shoot_editors: ShootEditorRow[] | null;
 }
 
@@ -35,6 +36,7 @@ type ShootPayload = {
   time_slot: string | null;
   location: string;
   content_note: string | null;
+  shoot_note: string | null;
 };
 
 function requireSupabase() {
@@ -150,14 +152,17 @@ function mapShootRow(row: ShootRow): ShootSchedule {
     editorLabels,
     displayCrew: combineDisplayCrew(editorLabels, crew),
     place: row.location ?? '',
+    content: row.content_note ?? '',
     time: row.time_slot ?? '',
-    note: row.content_note ?? '',
+    note: row.shoot_note ?? '',
   };
 }
 
 function toShootPayload(data: ShootFormData): ShootPayload {
   const place = data.place.trim();
   if (!place) throw new Error('Vui lòng nhập địa điểm lịch quay.');
+  const content = data.content.trim();
+  if (!content) throw new Error('Vui lòng nhập nội dung lịch quay.');
 
   return {
     shoot_date: validateIsoDate(data.date, 'Ngày quay'),
@@ -165,8 +170,19 @@ function toShootPayload(data: ShootFormData): ShootPayload {
     crew: data.crew.trim() || null,
     time_slot: data.time.trim() || null,
     location: place,
-    content_note: data.note.trim() || null,
+    content_note: content,
+    shoot_note: data.note.trim() || null,
   };
+}
+
+async function updateShootNote(shootId: string, note: string | null) {
+  const client = requireSupabase();
+  const { error } = await client
+    .from('shoots')
+    .update({ shoot_note: note })
+    .eq('id', shootId);
+
+  if (error) throw new Error(mapDatabaseError(error));
 }
 
 export async function fetchShoots(startDate: string, endDate: string): Promise<ShootSchedule[]> {
@@ -181,6 +197,7 @@ export async function fetchShoots(startDate: string, endDate: string): Promise<S
       time_slot,
       location,
       content_note,
+      shoot_note,
       shoot_editors (
         profile_id,
         profiles!shoot_editors_profile_id_fkey (
@@ -215,6 +232,7 @@ export async function fetchShootById(shootId: string): Promise<ShootSchedule | n
       time_slot,
       location,
       content_note,
+      shoot_note,
       shoot_editors (
         profile_id,
         profiles!shoot_editors_profile_id_fkey (
@@ -251,6 +269,7 @@ export async function createShoot(data: ShootFormData) {
 
   if (error) throw new Error(mapDatabaseError(error));
   if (!Array.isArray(result) || !result[0]?.shoot_id) throw new Error('Không nhận được mã lịch quay. Vui lòng thử lại.');
+  await updateShootNote(result[0].shoot_id, payload.shoot_note);
 }
 
 export async function updateShoot(shootId: string, data: ShootFormData) {
@@ -268,6 +287,7 @@ export async function updateShoot(shootId: string, data: ShootFormData) {
   });
 
   if (error) throw new Error(mapDatabaseError(error));
+  await updateShootNote(shootId, payload.shoot_note);
 }
 
 export async function deleteShoot(shootId: string) {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { VideoTask, TaskFormData, LinkedVideoTaskExecutionData } from '../types/task';
+import type { VideoTask, TaskFormData, TaskCategory, LinkedVideoTaskExecutionData } from '../types/task';
 import { EmptyState } from '../components/common/EmptyState';
 import { ErrorState } from '../components/common/ErrorState';
 import { LoadingState } from '../components/common/LoadingState';
@@ -17,7 +17,7 @@ import { useMonth } from '../context/monthContext';
 import { isUuid } from '../utils/id';
 
 export default function Tasks() {
-  const { can, profile } = useAuth();
+  const { can, profile, role } = useAuth();
   const { requestConfirm } = useConfirmDialog();
   const { showToast } = useToast();
   const { selectedMonth, setSelectedMonth } = useMonth();
@@ -42,11 +42,14 @@ export default function Tasks() {
   const [search, setSearch] = useState('');
   const [editorFilter, setEditorFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [orderFilter, setOrderFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState<TaskCategory | 'all'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<VideoTask | null>(null);
   const canCreateTask = can('video_tasks:create');
   const canUpdateTask = can('video_tasks:update');
   const canDeleteTask = can('video_tasks:delete');
+  const isAdmin = role === 'admin';
   const highlightParam = searchParams.get('highlight');
   const legacyTaskParam = searchParams.get('task');
   const targetTaskId = highlightParam ?? legacyTaskParam;
@@ -75,6 +78,8 @@ export default function Tasks() {
       .filter((t) => {
         if (editorFilter !== 'all' && t.editorId !== editorFilter) return false;
         if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+        if (orderFilter !== 'all' && t.orderTeam !== orderFilter) return false;
+        if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
         if (search) {
           const searchValue = search.toLowerCase();
           if (![t.name, t.airDate, t.note ?? ''].some((value) => value.toLowerCase().includes(searchValue))) return false;
@@ -82,7 +87,7 @@ export default function Tasks() {
         return true;
       })
       .sort((a, b) => a.id - b.id),
-    [tasks, search, editorFilter, statusFilter]
+    [tasks, search, editorFilter, statusFilter, orderFilter, categoryFilter]
   );
 
   const openAddModal = () => {
@@ -108,12 +113,12 @@ export default function Tasks() {
     }, { replace: true });
   }, [setSearchParams]);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     if (isSaving) return;
     setIsModalOpen(false);
     setSelectedTask(null);
     clearSaveError();
-  };
+  }, [clearSaveError, isSaving]);
 
   useEffect(() => {
     if (!targetTaskId) return;
@@ -126,10 +131,12 @@ export default function Tasks() {
 
     const visibleTask = tasks.find((task) => task.dbId === targetTaskId);
     if (visibleTask) {
-      if (search || editorFilter !== 'all' || statusFilter !== 'all') {
+      if (search || editorFilter !== 'all' || statusFilter !== 'all' || orderFilter !== 'all' || categoryFilter !== 'all') {
         setSearch('');
         setEditorFilter('all');
         setStatusFilter('all');
+        setOrderFilter('all');
+        setCategoryFilter('all');
       }
       return;
     }
@@ -160,7 +167,7 @@ export default function Tasks() {
     return () => {
       cancelled = true;
     };
-  }, [clearHighlightParams, editorFilter, isLoading, search, selectedMonth, setSelectedMonth, showToast, statusFilter, targetTaskId, tasks]);
+  }, [categoryFilter, clearHighlightParams, editorFilter, isLoading, orderFilter, search, selectedMonth, setSelectedMonth, showToast, statusFilter, targetTaskId, tasks]);
 
   const handleHighlightMissing = useCallback(() => {
     showToast({ type: 'warning', message: 'Không tìm thấy Task liên quan.' });
@@ -179,7 +186,7 @@ export default function Tasks() {
     if (!selectedTask && !canCreateTask) return;
 
     const saved = selectedTask
-      ? await updateTask(selectedTask, data)
+      ? await updateTask(selectedTask, data, { allowLinkedOverride: isAdmin })
       : await createTask(data);
 
     if (saved) {
@@ -296,11 +303,15 @@ export default function Tasks() {
         search={search}
         editorFilter={editorFilter}
         statusFilter={statusFilter}
+        orderFilter={orderFilter}
+        categoryFilter={categoryFilter}
         totalCount={tasks.length}
         filteredCount={filteredTasks.length}
         onSearchChange={setSearch}
         onEditorChange={setEditorFilter}
         onStatusChange={setStatusFilter}
+        onOrderChange={setOrderFilter}
+        onCategoryChange={setCategoryFilter}
         onAddTask={openAddModal}
         canAddTask={canCreateTask}
       />
@@ -334,6 +345,7 @@ export default function Tasks() {
         onComplete={handleComplete}
         onDelete={selectedTask ? () => void handleDeleteTask(selectedTask) : undefined}
         canDelete={Boolean(selectedTask) && canDeleteTask && !isDeleting}
+        adminOverrideLinkedTask={isAdmin}
         canAcceptLinkedTask={canAcceptSelectedTask}
         canCompleteLinkedTask={canCompleteSelectedTask}
         isSaving={isSaving || isDeleting}

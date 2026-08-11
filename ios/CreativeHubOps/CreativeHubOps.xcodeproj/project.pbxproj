@@ -1,0 +1,720 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CHOP00000000000000000101 /* CreativeHubOpsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001001 /* CreativeHubOpsApp.swift */; };
+		CHOP00000000000000000102 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001002 /* AppState.swift */; };
+		CHOP00000000000000000103 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001003 /* RootView.swift */; };
+		CHOP00000000000000000104 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001004 /* DesignSystem.swift */; };
+		CHOP00000000000000000105 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001005 /* LoginView.swift */; };
+		CHOP00000000000000000106 /* MainShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001006 /* MainShellView.swift */; };
+		CHOP00000000000000000107 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001007 /* DashboardView.swift */; };
+		CHOP00000000000000000108 /* TasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001008 /* TasksView.swift */; };
+		CHOP00000000000000000109 /* CalendarScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001009 /* CalendarScreenView.swift */; };
+		CHOP00000000000000000110 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001010 /* ProfileView.swift */; };
+		CHOP00000000000000000111 /* SecondaryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001011 /* SecondaryViews.swift */; };
+		CHOP00000000000000000114 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001014 /* AppConfig.swift */; };
+		CHOP00000000000000000115 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001015 /* SupabaseService.swift */; };
+		CHOP00000000000000000116 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001016 /* AuthViewModel.swift */; };
+		CHOP00000000000000000117 /* OperationsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001017 /* OperationsModels.swift */; };
+		CHOP00000000000000000118 /* OperationsRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001018 /* OperationsRepository.swift */; };
+		CHOP00000000000000000119 /* OperationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001019 /* OperationsViewModel.swift */; };
+		CHOP00000000000000000112 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001012 /* Assets.xcassets */; };
+		CHOP00000000000000000120 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001020 /* LaunchScreen.storyboard */; };
+		CHOP00000000000000000122 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001022 /* AppError.swift */; };
+		CHOP00000000000000000123 /* CurrentUserModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001023 /* CurrentUserModels.swift */; };
+		CHOP00000000000000000124 /* PermissionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001024 /* PermissionService.swift */; };
+		CHOP00000000000000000125 /* CurrentUserRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001025 /* CurrentUserRepository.swift */; };
+		CHOP00000000000000000126 /* NotificationsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001026 /* NotificationsModels.swift */; };
+		CHOP00000000000000000127 /* NotificationsRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001027 /* NotificationsRepository.swift */; };
+		CHOP00000000000000000128 /* NotificationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001028 /* NotificationsViewModel.swift */; };
+		CHOP00000000000000000129 /* AvatarImageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001029 /* AvatarImageProcessor.swift */; };
+		CHOP00000000000000000130 /* NotificationRealtimeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001030 /* NotificationRealtimeManager.swift */; };
+		CHOP00000000000000000132 /* AdminUserManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000001031 /* AdminUserManagement.swift */; };
+		CHOP00000000000000000113 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = CHOP00000000000000006002 /* Supabase */; };
+		CHOP00000000000000000121 /* CreativeHubOpsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000002001 /* CreativeHubOpsTests.swift */; };
+		CHOP00000000000000000131 /* CreativeHubOpsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHOP00000000000000003001 /* CreativeHubOpsUITests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CHOP00000000000000000501 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CHOP00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CHOP00000000000000000002;
+			remoteInfo = CreativeHubOps;
+		};
+		CHOP00000000000000000502 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CHOP00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CHOP00000000000000000002;
+			remoteInfo = CreativeHubOps;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		CHOP00000000000000001001 /* CreativeHubOpsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreativeHubOpsApp.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001002 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001003 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001004 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001005 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001006 /* MainShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainShellView.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001007 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001008 /* TasksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksView.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001009 /* CalendarScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarScreenView.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001010 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001011 /* SecondaryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecondaryViews.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CHOP00000000000000001013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CHOP00000000000000001014 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001015 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001016 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001017 /* OperationsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationsModels.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001018 /* OperationsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationsRepository.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001019 /* OperationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationsViewModel.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001020 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		CHOP00000000000000001022 /* AppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppError.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001023 /* CurrentUserModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentUserModels.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001024 /* PermissionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionService.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001025 /* CurrentUserRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentUserRepository.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001026 /* NotificationsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsModels.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001027 /* NotificationsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsRepository.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001028 /* NotificationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsViewModel.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001029 /* AvatarImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarImageProcessor.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001030 /* NotificationRealtimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationRealtimeManager.swift; sourceTree = "<group>"; };
+		CHOP00000000000000001031 /* AdminUserManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminUserManagement.swift; sourceTree = "<group>"; };
+		CHOP00000000000000002001 /* CreativeHubOpsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreativeHubOpsTests.swift; sourceTree = "<group>"; };
+		CHOP00000000000000003001 /* CreativeHubOpsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreativeHubOpsUITests.swift; sourceTree = "<group>"; };
+		CHOP00000000000000004001 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		CHOP00000000000000004002 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		CHOP00000000000000004003 /* Debug.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.example.xcconfig; sourceTree = "<group>"; };
+		CHOP00000000000000004004 /* Release.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.example.xcconfig; sourceTree = "<group>"; };
+		CHOP00000000000000005001 /* CreativeHubOps.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CreativeHubOps.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CHOP00000000000000005002 /* CreativeHubOpsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CreativeHubOpsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CHOP00000000000000005003 /* CreativeHubOpsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CreativeHubOpsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CHOP00000000000000000203 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CHOP00000000000000000113 /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHOP00000000000000000213 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHOP00000000000000000223 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CHOP00000000000000000601 = {
+			isa = PBXGroup;
+			children = (
+				CHOP00000000000000000611 /* CreativeHubOps */,
+				CHOP00000000000000000612 /* CreativeHubOpsTests */,
+				CHOP00000000000000000613 /* CreativeHubOpsUITests */,
+				CHOP00000000000000000614 /* Config */,
+				CHOP00000000000000000615 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CHOP00000000000000000611 /* CreativeHubOps */ = {
+			isa = PBXGroup;
+			children = (
+				CHOP00000000000000001001 /* CreativeHubOpsApp.swift */,
+				CHOP00000000000000001022 /* AppError.swift */,
+				CHOP00000000000000001014 /* AppConfig.swift */,
+				CHOP00000000000000001002 /* AppState.swift */,
+				CHOP00000000000000001016 /* AuthViewModel.swift */,
+				CHOP00000000000000001029 /* AvatarImageProcessor.swift */,
+				CHOP00000000000000001031 /* AdminUserManagement.swift */,
+				CHOP00000000000000001023 /* CurrentUserModels.swift */,
+				CHOP00000000000000001025 /* CurrentUserRepository.swift */,
+				CHOP00000000000000001003 /* RootView.swift */,
+				CHOP00000000000000001015 /* SupabaseService.swift */,
+				CHOP00000000000000001024 /* PermissionService.swift */,
+				CHOP00000000000000001004 /* DesignSystem.swift */,
+				CHOP00000000000000001005 /* LoginView.swift */,
+				CHOP00000000000000001006 /* MainShellView.swift */,
+				CHOP00000000000000001017 /* OperationsModels.swift */,
+				CHOP00000000000000001018 /* OperationsRepository.swift */,
+				CHOP00000000000000001019 /* OperationsViewModel.swift */,
+				CHOP00000000000000001026 /* NotificationsModels.swift */,
+				CHOP00000000000000001027 /* NotificationsRepository.swift */,
+				CHOP00000000000000001028 /* NotificationsViewModel.swift */,
+				CHOP00000000000000001030 /* NotificationRealtimeManager.swift */,
+				CHOP00000000000000001007 /* DashboardView.swift */,
+				CHOP00000000000000001008 /* TasksView.swift */,
+				CHOP00000000000000001009 /* CalendarScreenView.swift */,
+				CHOP00000000000000001010 /* ProfileView.swift */,
+				CHOP00000000000000001011 /* SecondaryViews.swift */,
+				CHOP00000000000000001012 /* Assets.xcassets */,
+				CHOP00000000000000001013 /* Info.plist */,
+				CHOP00000000000000001020 /* LaunchScreen.storyboard */,
+			);
+			path = CreativeHubOps;
+			sourceTree = "<group>";
+		};
+		CHOP00000000000000000612 /* CreativeHubOpsTests */ = {
+			isa = PBXGroup;
+			children = (
+				CHOP00000000000000002001 /* CreativeHubOpsTests.swift */,
+			);
+			path = CreativeHubOpsTests;
+			sourceTree = "<group>";
+		};
+		CHOP00000000000000000613 /* CreativeHubOpsUITests */ = {
+			isa = PBXGroup;
+			children = (
+				CHOP00000000000000003001 /* CreativeHubOpsUITests.swift */,
+			);
+			path = CreativeHubOpsUITests;
+			sourceTree = "<group>";
+		};
+		CHOP00000000000000000614 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				CHOP00000000000000004001 /* Debug.xcconfig */,
+				CHOP00000000000000004002 /* Release.xcconfig */,
+				CHOP00000000000000004003 /* Debug.example.xcconfig */,
+				CHOP00000000000000004004 /* Release.example.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		CHOP00000000000000000615 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CHOP00000000000000005001 /* CreativeHubOps.app */,
+				CHOP00000000000000005002 /* CreativeHubOpsTests.xctest */,
+				CHOP00000000000000005003 /* CreativeHubOpsUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CHOP00000000000000000002 /* CreativeHubOps */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CHOP00000000000000007002 /* Build configuration list for PBXNativeTarget "CreativeHubOps" */;
+			buildPhases = (
+				CHOP00000000000000000201 /* Sources */,
+				CHOP00000000000000000203 /* Frameworks */,
+				CHOP00000000000000000202 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CreativeHubOps;
+			packageProductDependencies = (
+				CHOP00000000000000006002 /* Supabase */,
+			);
+			productName = CreativeHubOps;
+			productReference = CHOP00000000000000005001 /* CreativeHubOps.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CHOP00000000000000000003 /* CreativeHubOpsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CHOP00000000000000007003 /* Build configuration list for PBXNativeTarget "CreativeHubOpsTests" */;
+			buildPhases = (
+				CHOP00000000000000000211 /* Sources */,
+				CHOP00000000000000000213 /* Frameworks */,
+				CHOP00000000000000000212 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CHOP00000000000000000511 /* PBXTargetDependency */,
+			);
+			name = CreativeHubOpsTests;
+			productName = CreativeHubOpsTests;
+			productReference = CHOP00000000000000005002 /* CreativeHubOpsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CHOP00000000000000000004 /* CreativeHubOpsUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CHOP00000000000000007004 /* Build configuration list for PBXNativeTarget "CreativeHubOpsUITests" */;
+			buildPhases = (
+				CHOP00000000000000000221 /* Sources */,
+				CHOP00000000000000000223 /* Frameworks */,
+				CHOP00000000000000000222 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CHOP00000000000000000512 /* PBXTargetDependency */,
+			);
+			name = CreativeHubOpsUITests;
+			productName = CreativeHubOpsUITests;
+			productReference = CHOP00000000000000005003 /* CreativeHubOpsUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CHOP00000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					CHOP00000000000000000002 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					CHOP00000000000000000003 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = CHOP00000000000000000002;
+					};
+					CHOP00000000000000000004 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = CHOP00000000000000000002;
+					};
+				};
+			};
+			buildConfigurationList = CHOP00000000000000007001 /* Build configuration list for PBXProject "CreativeHubOps" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				vi,
+			);
+			mainGroup = CHOP00000000000000000601;
+			packageReferences = (
+				CHOP00000000000000006001 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
+			productRefGroup = CHOP00000000000000000615 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CHOP00000000000000000002 /* CreativeHubOps */,
+				CHOP00000000000000000003 /* CreativeHubOpsTests */,
+				CHOP00000000000000000004 /* CreativeHubOpsUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CHOP00000000000000000202 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CHOP00000000000000000112 /* Assets.xcassets in Resources */,
+				CHOP00000000000000000120 /* LaunchScreen.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHOP00000000000000000212 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHOP00000000000000000222 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CHOP00000000000000000201 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CHOP00000000000000000102 /* AppState.swift in Sources */,
+				CHOP00000000000000000122 /* AppError.swift in Sources */,
+				CHOP00000000000000000114 /* AppConfig.swift in Sources */,
+				CHOP00000000000000000116 /* AuthViewModel.swift in Sources */,
+				CHOP00000000000000000129 /* AvatarImageProcessor.swift in Sources */,
+				CHOP00000000000000000132 /* AdminUserManagement.swift in Sources */,
+				CHOP00000000000000000109 /* CalendarScreenView.swift in Sources */,
+				CHOP00000000000000000101 /* CreativeHubOpsApp.swift in Sources */,
+				CHOP00000000000000000123 /* CurrentUserModels.swift in Sources */,
+				CHOP00000000000000000125 /* CurrentUserRepository.swift in Sources */,
+				CHOP00000000000000000107 /* DashboardView.swift in Sources */,
+				CHOP00000000000000000104 /* DesignSystem.swift in Sources */,
+				CHOP00000000000000000105 /* LoginView.swift in Sources */,
+				CHOP00000000000000000106 /* MainShellView.swift in Sources */,
+				CHOP00000000000000000126 /* NotificationsModels.swift in Sources */,
+				CHOP00000000000000000127 /* NotificationsRepository.swift in Sources */,
+				CHOP00000000000000000128 /* NotificationsViewModel.swift in Sources */,
+				CHOP00000000000000000130 /* NotificationRealtimeManager.swift in Sources */,
+				CHOP00000000000000000117 /* OperationsModels.swift in Sources */,
+				CHOP00000000000000000118 /* OperationsRepository.swift in Sources */,
+				CHOP00000000000000000119 /* OperationsViewModel.swift in Sources */,
+				CHOP00000000000000000124 /* PermissionService.swift in Sources */,
+				CHOP00000000000000000110 /* ProfileView.swift in Sources */,
+				CHOP00000000000000000103 /* RootView.swift in Sources */,
+				CHOP00000000000000000111 /* SecondaryViews.swift in Sources */,
+				CHOP00000000000000000115 /* SupabaseService.swift in Sources */,
+				CHOP00000000000000000108 /* TasksView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHOP00000000000000000211 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CHOP00000000000000000121 /* CreativeHubOpsTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHOP00000000000000000221 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CHOP00000000000000000131 /* CreativeHubOpsUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CHOP00000000000000000511 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CHOP00000000000000000002 /* CreativeHubOps */;
+			targetProxy = CHOP00000000000000000501 /* PBXContainerItemProxy */;
+		};
+		CHOP00000000000000000512 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CHOP00000000000000000002 /* CreativeHubOps */;
+			targetProxy = CHOP00000000000000000502 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		CHOP00000000000000008001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHOP00000000000000004001 /* Debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		CHOP00000000000000008002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHOP00000000000000004002 /* Release.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		CHOP00000000000000008101 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHOP00000000000000004001 /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CreativeHubOps/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		CHOP00000000000000008102 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHOP00000000000000004002 /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CreativeHubOps/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		CHOP00000000000000008201 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHOP00000000000000004001 /* Debug.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER).tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CreativeHubOps.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CreativeHubOps";
+			};
+			name = Debug;
+		};
+		CHOP00000000000000008202 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHOP00000000000000004002 /* Release.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER).tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CreativeHubOps.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CreativeHubOps";
+			};
+			name = Release;
+		};
+		CHOP00000000000000008301 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHOP00000000000000004001 /* Debug.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = CreativeHubOps;
+			};
+			name = Debug;
+		};
+		CHOP00000000000000008302 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHOP00000000000000004002 /* Release.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = CreativeHubOps;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CHOP00000000000000007001 /* Build configuration list for PBXProject "CreativeHubOps" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CHOP00000000000000008001 /* Debug */,
+				CHOP00000000000000008002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CHOP00000000000000007002 /* Build configuration list for PBXNativeTarget "CreativeHubOps" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CHOP00000000000000008101 /* Debug */,
+				CHOP00000000000000008102 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CHOP00000000000000007003 /* Build configuration list for PBXNativeTarget "CreativeHubOpsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CHOP00000000000000008201 /* Debug */,
+				CHOP00000000000000008202 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CHOP00000000000000007004 /* Build configuration list for PBXNativeTarget "CreativeHubOpsUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CHOP00000000000000008301 /* Debug */,
+				CHOP00000000000000008302 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		CHOP00000000000000006001 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CHOP00000000000000006002 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CHOP00000000000000006001 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = CHOP00000000000000000001 /* Project object */;
+}

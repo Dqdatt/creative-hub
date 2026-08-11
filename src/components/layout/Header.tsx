@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Menu, Calendar, Mail, Moon, Sun, Sparkles, UserRound } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Menu, Calendar, Mail, Moon, Sun, Sparkles, UserRound, LogOut } from 'lucide-react';
 import { useTheme } from '../../context/themeContext';
 import { useAuth } from '../../context/authContext';
 import { useMonth } from '../../context/monthContext';
@@ -34,8 +34,9 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew, notifications }:
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const monthControlRef = useRef<HTMLDivElement>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const { theme, toggle } = useTheme();
-  const { user, profile, role, roleLabel, permissions } = useAuth();
+  const { user, profile, role, roleLabel, permissions, signOut } = useAuth();
   const { selectedMonth, setSelectedMonth, goToPreviousMonth, goToNextMonth, goToCurrentMonth } = useMonth();
   const { pathname, search } = useLocation();
   const meta = PAGE_META[pathname] ?? { title: 'Không tìm thấy', sub: 'Đường dẫn không tồn tại' };
@@ -114,6 +115,12 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew, notifications }:
   const openWhatsNew = () => {
     setAccountOpen(false);
     onOpenWhatsNew?.();
+  };
+
+  const handleLogout = async () => {
+    setAccountOpen(false);
+    await signOut();
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -223,6 +230,10 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew, notifications }:
                 <button type="button" className="header-account-item" role="menuitem" onClick={openWhatsNew}>
                   <Sparkles />
                   <span>Có gì mới?</span>
+                </button>
+                <button type="button" className="header-account-item header-account-item-danger" role="menuitem" onClick={() => void handleLogout()}>
+                  <LogOut />
+                  <span>Đăng xuất</span>
                 </button>
               </div>
             ) : null}

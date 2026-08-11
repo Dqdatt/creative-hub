@@ -593,15 +593,19 @@ export async function updateVideoTask(
   taskId: string,
   data: TaskFormData,
   userId?: string | null,
-  previousTask?: VideoTask
+  previousTask?: VideoTask,
+  options?: { allowLinkedOverride?: boolean },
 ) {
-  if (previousTask?.contentPlanId && previousTask.editorId !== data.editorId) {
+  const allowLinkedOverride = Boolean(options?.allowLinkedOverride);
+
+  if (!allowLinkedOverride && previousTask?.contentPlanId && previousTask.editorId !== data.editorId) {
     throw new Error('Hãy đổi Editor của Task liên kết từ Content Plan.');
   }
-  if (previousTask?.contentPlanId && previousTask.airDate !== data.airDate) {
+  if (!allowLinkedOverride && previousTask?.contentPlanId && previousTask.airDate !== data.airDate) {
     throw new Error('Ngày Air của Task liên kết được quản lý từ Content Plan.');
   }
   if (
+    !allowLinkedOverride &&
     previousTask?.contentPlanId &&
     previousTask.status === 'Đang làm' &&
     (data.status === 'Đã xong' || previousTask.link !== data.link)
@@ -609,6 +613,7 @@ export async function updateVideoTask(
     throw new Error('Hãy hoàn thành Task liên kết qua thao tác Hoàn thành.');
   }
   if (
+    !allowLinkedOverride &&
     previousTask?.contentPlanId &&
     previousTask.status === 'Đã xong' &&
     (previousTask.status !== data.status || previousTask.link !== data.link)
