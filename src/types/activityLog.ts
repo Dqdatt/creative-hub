@@ -15,6 +15,7 @@ export type ActivityAction =
   | 'video_task_accepted'
   | 'video_task_execution_updated'
   | 'video_task_completed'
+  | 'video_task_content_plan_synced'
   | 'content_plan_completed';
 
 export interface ActivityLog {

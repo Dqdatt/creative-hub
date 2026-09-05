@@ -9,6 +9,9 @@ export interface ContentPlanItem {
   editor_id: string;
   link: string;
   hasLinkedTask: boolean;
+  linkedTaskId?: string | null;
+  linkedTaskStatus?: 'Pending' | 'Chờ' | 'Đang làm' | 'Đã xong' | null;
+  linkedTaskLink?: string;
 }
 
 export interface ContentPlanFormData {

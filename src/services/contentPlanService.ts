@@ -7,6 +7,7 @@ import type {
   ContentPlanFormData,
   ContentPlanItem,
 } from '../types/contentPlan';
+import type { TaskStatus } from '../types/task';
 import { getMonthRange } from '../utils/month';
 import { normalizeOptionalHttpUrl } from '../utils/url';
 
@@ -35,7 +36,11 @@ interface ContentPlanRow {
   editor_id: Nullable<string>;
   link: Nullable<string>;
   profiles: ProfileRow | ProfileRow[] | null;
-  video_tasks?: Array<{ id: string }> | null;
+  video_tasks?: Array<{
+    id: string;
+    status: TaskStatus;
+    result_link: Nullable<string>;
+  }> | null;
 }
 
 type ContentPlanPayload = {
@@ -146,6 +151,8 @@ function normalizeContentPlanLink(value: string) {
 
 function mapContentPlanRow(row: ContentPlanRow): ContentPlanItem {
   const profile = firstProfile(row.profiles);
+  const linkedTask = row.video_tasks?.[0] ?? null;
+  const linkedTaskLink = linkedTask?.result_link ?? '';
 
   return {
     id: row.id,
@@ -154,8 +161,11 @@ function mapContentPlanRow(row: ContentPlanRow): ContentPlanItem {
     note: row.note ?? '',
     category: row.category ?? 'Video dài',
     editor_id: profile?.editor_code ?? '',
-    link: row.link ?? '',
-    hasLinkedTask: Boolean(row.video_tasks?.length),
+    link: linkedTaskLink || (row.link ?? ''),
+    hasLinkedTask: Boolean(linkedTask),
+    linkedTaskId: linkedTask?.id ?? null,
+    linkedTaskStatus: linkedTask?.status ?? null,
+    linkedTaskLink,
   };
 }
 
@@ -272,7 +282,9 @@ export async function fetchContentPlan(monthValue?: string): Promise<ContentPlan
       editor_id,
       link,
       video_tasks!video_tasks_content_plan_id_fkey (
-        id
+        id,
+        status,
+        result_link
       ),
       profiles!content_plan_editor_id_fkey (
         id,
@@ -312,7 +324,9 @@ export async function fetchContentPlanItemById(rowId: string): Promise<ContentPl
       editor_id,
       link,
       video_tasks!video_tasks_content_plan_id_fkey (
-        id
+        id,
+        status,
+        result_link
       ),
       profiles!content_plan_editor_id_fkey (
         id,

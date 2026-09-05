@@ -66,6 +66,7 @@ export function TaskFilters({
         onChange={(e) => onStatusChange(e.target.value)}
       >
         <option value="all">Tất cả trạng thái</option>
+        <option value="Pending">Pending</option>
         <option value="Đã xong">Đã xong</option>
         <option value="Đang làm">Đang làm</option>
         <option value="Chờ">Chờ</option>

@@ -319,8 +319,8 @@ export default function ContentPlan() {
         <LoadingState
           variant="table"
           message="Đang tải Content Plan..."
-          colSpan={6}
-          minWidthClass="min-w-[1000px]"
+          colSpan={7}
+          minWidthClass="min-w-[1120px]"
           rows={8}
         />
       );

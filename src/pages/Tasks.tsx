@@ -17,7 +17,7 @@ import { useMonth } from '../context/monthContext';
 import { isUuid } from '../utils/id';
 
 export default function Tasks() {
-  const { can, profile, role } = useAuth();
+  const { can, profile } = useAuth();
   const { requestConfirm } = useConfirmDialog();
   const { showToast } = useToast();
   const { selectedMonth, setSelectedMonth } = useMonth();
@@ -49,18 +49,24 @@ export default function Tasks() {
   const canCreateTask = can('video_tasks:create');
   const canUpdateTask = can('video_tasks:update');
   const canDeleteTask = can('video_tasks:delete');
-  const isAdmin = role === 'admin';
   const highlightParam = searchParams.get('highlight');
   const legacyTaskParam = searchParams.get('task');
+  const attentionParam = searchParams.get('attention');
   const targetTaskId = highlightParam ?? legacyTaskParam;
   const selectedTaskEditorProfileId = selectedTask
     ? editors.find((editor) => editor.id === selectedTask.editorId)?.profileId
     : null;
+  const canManageSelectedLinkedTask = Boolean(
+    selectedTask?.contentPlanId &&
+    canUpdateTask &&
+    (profile?.role === 'admin' || profile?.role === 'creative_manager')
+  );
   const canAcceptSelectedTask = Boolean(
     selectedTask?.dbId &&
     selectedTask.contentPlanId &&
-    selectedTask.status === 'Chờ' &&
+    (selectedTask.status === 'Pending' || selectedTask.status === 'Chờ') &&
     canUpdateTask &&
+    !canManageSelectedLinkedTask &&
     profile?.id &&
     selectedTaskEditorProfileId === profile.id
   );
@@ -69,8 +75,13 @@ export default function Tasks() {
     selectedTask.contentPlanId &&
     selectedTask.status === 'Đang làm' &&
     canUpdateTask &&
+    !canManageSelectedLinkedTask &&
     profile?.id &&
     selectedTaskEditorProfileId === profile.id
+  );
+  const canEditSelectedLinkedTask = Boolean(
+    selectedTask?.contentPlanId &&
+    canManageSelectedLinkedTask
   );
 
   const filteredTasks = useMemo(() =>
@@ -80,6 +91,18 @@ export default function Tasks() {
         if (statusFilter !== 'all' && t.status !== statusFilter) return false;
         if (orderFilter !== 'all' && t.orderTeam !== orderFilter) return false;
         if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
+        if (attentionParam === 'missing-link' && t.link) return false;
+        if (attentionParam === 'overdue') {
+          if (t.status === 'Đã xong') return false;
+          const returnDate = t.returnDate || t.airDate;
+          if (!returnDate) return false;
+          const [day, month, year] = returnDate.split('/');
+          const normalizedYear = Number(year ?? selectedMonth.slice(0, 4));
+          const dueDate = new Date(normalizedYear < 100 ? 2000 + normalizedYear : normalizedYear, Number(month) - 1, Number(day));
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (!Number.isFinite(dueDate.getTime()) || dueDate >= today) return false;
+        }
         if (search) {
           const searchValue = search.toLowerCase();
           if (![t.name, t.airDate, t.note ?? ''].some((value) => value.toLowerCase().includes(searchValue))) return false;
@@ -87,7 +110,7 @@ export default function Tasks() {
         return true;
       })
       .sort((a, b) => a.id - b.id),
-    [tasks, search, editorFilter, statusFilter, orderFilter, categoryFilter]
+    [attentionParam, categoryFilter, editorFilter, orderFilter, search, selectedMonth, statusFilter, tasks]
   );
 
   const openAddModal = () => {
@@ -96,6 +119,13 @@ export default function Tasks() {
     setSelectedTask(null);
     setIsModalOpen(true);
   };
+
+  useEffect(() => {
+    const requestedStatus = searchParams.get('status');
+    if (!requestedStatus) return;
+    if (!['Pending', 'Chờ', 'Đang làm', 'Đã xong', 'all'].includes(requestedStatus)) return;
+    if (requestedStatus !== statusFilter) setStatusFilter(requestedStatus);
+  }, [searchParams, statusFilter]);
 
   const openEditModal = (task: VideoTask) => {
     if (!canUpdateTask) return;
@@ -186,7 +216,7 @@ export default function Tasks() {
     if (!selectedTask && !canCreateTask) return;
 
     const saved = selectedTask
-      ? await updateTask(selectedTask, data, { allowLinkedOverride: isAdmin })
+      ? await updateTask(selectedTask, data)
       : await createTask(data);
 
     if (saved) {
@@ -345,7 +375,7 @@ export default function Tasks() {
         onComplete={handleComplete}
         onDelete={selectedTask ? () => void handleDeleteTask(selectedTask) : undefined}
         canDelete={Boolean(selectedTask) && canDeleteTask && !isDeleting}
-        adminOverrideLinkedTask={isAdmin}
+        canEditLinkedTask={canEditSelectedLinkedTask}
         canAcceptLinkedTask={canAcceptSelectedTask}
         canCompleteLinkedTask={canCompleteSelectedTask}
         isSaving={isSaving || isDeleting}

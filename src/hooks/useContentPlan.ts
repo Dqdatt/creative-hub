@@ -64,7 +64,7 @@ export function useContentPlan(monthValue: string) {
   }, [loadContentPlan]);
 
   useRealtimeSubscription({
-    tables: ['content_plan'],
+    tables: ['content_plan', 'video_tasks'],
     onChange: () => loadContentPlan({ silent: true }),
   });
 

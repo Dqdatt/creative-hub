@@ -2,6 +2,7 @@ export type AppRole = 'admin' | 'creative_manager' | 'content_creator' | 'editor
 
 export type Permission =
   | 'dashboard:view'
+  | 'dashboard:report'
   | 'video_tasks:view'
   | 'video_tasks:create'
   | 'video_tasks:update'
@@ -58,6 +59,7 @@ const FALLBACK_AUTHENTICATED_ROUTE: AppRoute = '/profile';
 
 const ALL_PERMISSIONS: Permission[] = [
   'dashboard:view',
+  'dashboard:report',
   'video_tasks:view',
   'video_tasks:create',
   'video_tasks:update',

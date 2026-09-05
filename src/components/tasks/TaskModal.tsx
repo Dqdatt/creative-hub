@@ -19,7 +19,7 @@ interface TaskModalProps {
   onComplete?: (data: LinkedVideoTaskExecutionData) => void | Promise<void>;
   onDelete?: () => void | Promise<void>;
   canDelete?: boolean;
-  adminOverrideLinkedTask?: boolean;
+  canEditLinkedTask?: boolean;
   canAcceptLinkedTask?: boolean;
   canCompleteLinkedTask?: boolean;
   readOnly?: boolean;
@@ -51,7 +51,7 @@ function resolveTaskModalFieldState(
   canAcceptLinkedTask: boolean,
   canCompleteLinkedTask: boolean,
   readOnly: boolean,
-  adminOverrideLinkedTask: boolean,
+  canEditLinkedTask: boolean,
 ): TaskModalFieldState {
   const isLinkedTask = Boolean(task?.contentPlanId);
 
@@ -97,7 +97,7 @@ function resolveTaskModalFieldState(
     };
   }
 
-  if (adminOverrideLinkedTask) {
+  if (canEditLinkedTask) {
     return {
       isLinkedTask: true,
       canEditTitle: false,
@@ -118,7 +118,7 @@ function resolveTaskModalFieldState(
     };
   }
 
-  const canAccept = task?.status === 'Chờ' && canAcceptLinkedTask;
+  const canAccept = (task?.status === 'Pending' || task?.status === 'Chờ') && canAcceptLinkedTask;
   const canComplete = task?.status === 'Đang làm' && canCompleteLinkedTask;
   const canSaveExecution = canComplete;
 
@@ -178,7 +178,7 @@ export function TaskModal({
   onComplete,
   onDelete,
   canDelete = false,
-  adminOverrideLinkedTask = false,
+  canEditLinkedTask = false,
   canAcceptLinkedTask = false,
   canCompleteLinkedTask = false,
   readOnly = false,
@@ -188,7 +188,7 @@ export function TaskModal({
   const formRef = useRef<HTMLFormElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const isEditMode = task !== null;
-  const fieldState = resolveTaskModalFieldState(task, canAcceptLinkedTask, canCompleteLinkedTask, readOnly, adminOverrideLinkedTask);
+  const fieldState = resolveTaskModalFieldState(task, canAcceptLinkedTask, canCompleteLinkedTask, readOnly, canEditLinkedTask);
   const isAcceptMode = fieldState.canAccept;
   const isCompleteMode = fieldState.canComplete;
   const [acceptReceiveDate, setAcceptReceiveDate] = useState('');
@@ -297,7 +297,7 @@ export function TaskModal({
   const dv: TaskFormData = task
     ? { ...task, note: task.note ?? '' }
     : {
-        name: '', status: 'Chờ', editorId: editors[0]?.id ?? '',
+        name: '', status: 'Pending', editorId: editors[0]?.id ?? '',
         orderTeam: ORDER_TEAMS[0], category: 'Video dài',
         priority: '', resize: '', receiveDate: '', returnDate: '', airDate: '', link: '', note: '',
       };
@@ -370,6 +370,7 @@ export function TaskModal({
               <div>
                 <label className="flabel">Trạng thái</label>
                 <StyledSelect name="status" defaultValue={dv.status} disabled={isSaving || !fieldState.canEditStatus}>
+                  <option value="Pending">Pending</option>
                   <option value="Chờ">Chờ</option>
                   <option value="Đang làm">Đang làm</option>
                   <option value="Đã xong">Đã xong</option>
@@ -470,9 +471,9 @@ export function TaskModal({
                 name="note"
                 defaultValue={dv.note}
                 className="field content-note-input"
-                readOnly={fieldState.isLinkedTask || readOnly}
-                disabled={isSaving && !fieldState.isLinkedTask && !readOnly}
-                aria-readonly={fieldState.isLinkedTask || readOnly}
+                readOnly={readOnly || (fieldState.isLinkedTask && !fieldState.canUseGenericSave)}
+                disabled={isSaving && !readOnly && (!fieldState.isLinkedTask || fieldState.canUseGenericSave)}
+                aria-readonly={readOnly || (fieldState.isLinkedTask && !fieldState.canUseGenericSave)}
                 placeholder="Ghi chú thêm cho task..."
               />
             </div>

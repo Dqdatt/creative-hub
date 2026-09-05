@@ -1,0 +1,4 @@
+// Development-only simulator configuration. Not a production signing identity.
+BUNDLE_IDENTIFIER = com.local.CreativeHub.dev
+SUPABASE_URL = https:/$()/qyybwwyoicsnvfbqqkaq.supabase.co
+SUPABASE_ANON_KEY = sb_publishable_fZ-v8jSuZBIzr3x2BYvdbQ_Yo_6Pd-K

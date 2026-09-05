@@ -2,6 +2,7 @@ import { Link2 } from 'lucide-react';
 import type { ContentPlanCategory, ContentPlanEditorOption, ContentPlanItem } from '../../types/contentPlan';
 import { Avatar } from '../common/Avatar';
 import { isSafeHttpUrl } from '../../utils/url';
+import { StatusBadge } from '../tasks/TaskBadges';
 
 interface ContentPlanTableProps {
   items: ContentPlanItem[];
@@ -44,10 +45,10 @@ export function ContentPlanTable({
 }: ContentPlanTableProps) {
   if (items.length === 0) {
     return (
-      <table className="ctable min-w-[1000px]" data-tour="content-plan-table">
+      <table className="ctable min-w-[1120px]" data-tour="content-plan-table">
         <tbody>
           <tr>
-            <td colSpan={6} className="px-3 py-12 text-center text-sub">
+            <td colSpan={7} className="px-3 py-12 text-center text-sub">
               <div className="table-empty-state">
                 <strong>Không có lịch air phù hợp</strong>
                 <span>Thử đổi tháng, editor hoặc thể loại.</span>
@@ -60,13 +61,14 @@ export function ContentPlanTable({
   }
 
   return (
-    <table className="ctable min-w-[1000px]" data-tour="content-plan-table">
+    <table className="ctable min-w-[1120px]" data-tour="content-plan-table">
       <colgroup>
         <col style={{ width: '108px' }} />
         <col style={{ width: '132px' }} />
         <col />
         <col style={{ width: '220px' }} />
         <col style={{ width: '172px' }} />
+        <col style={{ width: '128px' }} />
         <col style={{ width: '64px' }} />
       </colgroup>
       <thead>
@@ -76,6 +78,7 @@ export function ContentPlanTable({
           <th>Tên video</th>
           <th>Ghi chú</th>
           <th data-tour="content-plan-editor">Editor</th>
+          <th>Task</th>
           <th className="text-center">Link</th>
         </tr>
       </thead>
@@ -129,6 +132,14 @@ export function ContentPlanTable({
                   />
                   <span className="font-semibold truncate">{editor?.short ?? 'Chưa phân công'}</span>
                 </div>
+              </td>
+
+              <td>
+                {item.linkedTaskStatus ? (
+                  <StatusBadge status={item.linkedTaskStatus} />
+                ) : (
+                  <span className="text-sub/40">Chưa giao</span>
+                )}
               </td>
 
               <td className="text-center" onClick={(event) => event.stopPropagation()}>

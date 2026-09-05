@@ -1,4 +1,0 @@
-#include "Release.example.xcconfig"
-
-SUPABASE_URL = https:/$()/qyybwwyoicsnvfbqqkaq.supabase.co
-SUPABASE_ANON_KEY = sb_publishable_fZ-v8jSuZBIzr3x2BYvdbQ_Yo_6Pd-K

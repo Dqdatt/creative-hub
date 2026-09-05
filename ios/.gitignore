@@ -1,4 +1,5 @@
 DerivedData/
-CreativeHubOps/Config/*.local.xcconfig
+CreativeHub/DerivedData/
+CreativeHub/Config/*.local.xcconfig
 *.xcuserstate
 xcuserdata/

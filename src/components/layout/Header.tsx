@@ -131,7 +131,7 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew, notifications }:
         </button>
         <div className="min-w-0">
           <h1 id="pageTitle" className="page-title">{meta.title}</h1>
-          <p id="pageSub" className="page-sub">{meta.sub}</p>
+          {meta.sub ? <p id="pageSub" className="page-sub">{meta.sub}</p> : null}
         </div>
         <div className="header-actions ml-auto flex items-center gap-2.5">
           {showMonthControl ? (

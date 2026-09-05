@@ -1,15 +1,25 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FileText } from 'lucide-react';
 import { EmptyState } from '../components/common/EmptyState';
 import { ErrorState } from '../components/common/ErrorState';
 import { LoadingState } from '../components/common/LoadingState';
+import { AttentionCard } from '../components/dashboard/AttentionCard';
 import { KPICards } from '../components/dashboard/KPICards';
 import { EditorWorkload } from '../components/dashboard/EditorWorkload';
 import { TeamOrderTable } from '../components/dashboard/TeamOrderTable';
 import { UpcomingList } from '../components/dashboard/UpcomingList';
+import { ReportModal } from '../components/dashboard/ReportModal';
 import { useDashboard } from '../hooks/useDashboard';
 import { useMonth } from '../context/monthContext';
+import { useAuth } from '../context/authContext';
 
 export default function Dashboard() {
-  const { selectedMonth } = useMonth();
+  const navigate = useNavigate();
+  const { can } = useAuth();
+  const { selectedMonth, setSelectedMonth } = useMonth();
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportEditorFilter, setReportEditorFilter] = useState('all');
   const {
     tasks,
     shoots,
@@ -20,6 +30,7 @@ export default function Dashboard() {
     isEmpty,
     refetch,
   } = useDashboard(selectedMonth);
+  const canCreateReport = can('dashboard:report');
 
   if (isLoading) {
     return (
@@ -45,9 +56,27 @@ export default function Dashboard() {
   if (isEmpty) {
     return (
       <div className="space-y-10 pt-2" data-view="dashboard">
+        <div className="dashboard-actions">
+          {canCreateReport ? (
+            <button type="button" className="btn" onClick={() => setReportOpen(true)}>
+              <FileText /> Tạo báo cáo
+            </button>
+          ) : null}
+        </div>
         <EmptyState
           title="Chưa có dữ liệu tổng quan"
           message="Thêm video task hoặc lịch quay để bắt đầu theo dõi."
+        />
+        <ReportModal
+          isOpen={reportOpen}
+          monthValue={selectedMonth}
+          editorFilter={reportEditorFilter}
+          editors={editors}
+          tasks={tasks}
+          shoots={shoots}
+          onMonthChange={setSelectedMonth}
+          onEditorChange={setReportEditorFilter}
+          onClose={() => setReportOpen(false)}
         />
       </div>
     );
@@ -55,11 +84,28 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-10 pt-2" data-view="dashboard">
+      <div className="dashboard-actions">
+        {canCreateReport ? (
+          <button type="button" className="btn" onClick={() => setReportOpen(true)}>
+            <FileText /> Tạo báo cáo
+          </button>
+        ) : null}
+      </div>
+
       <KPICards
         monthValue={selectedMonth}
         totalVideos={metrics.totalVideos}
         doneVideos={metrics.doneVideos}
         totalShoots={metrics.totalShoots}
+      />
+
+      <AttentionCard
+        pendingVideos={metrics.pendingVideos}
+        overdueVideos={metrics.overdueVideos}
+        doneWithoutResultLinks={metrics.doneWithoutResultLinks}
+        onOpenPending={() => navigate('/tasks?status=Pending')}
+        onOpenOverdue={() => navigate('/tasks?attention=overdue')}
+        onOpenMissingLinks={() => navigate('/tasks?status=Đã xong&attention=missing-link')}
       />
       
       <EditorWorkload
@@ -76,6 +122,18 @@ export default function Dashboard() {
       <UpcomingList
         tasks={tasks}
         shoots={shoots}
+      />
+
+      <ReportModal
+        isOpen={reportOpen}
+        monthValue={selectedMonth}
+        editorFilter={reportEditorFilter}
+        editors={editors}
+        tasks={tasks}
+        shoots={shoots}
+        onMonthChange={setSelectedMonth}
+        onEditorChange={setReportEditorFilter}
+        onClose={() => setReportOpen(false)}
       />
     </div>
   );

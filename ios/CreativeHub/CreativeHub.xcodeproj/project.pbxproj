@@ -1,0 +1,864 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CHB001 /* App/CreativeHubApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF001 /* App/CreativeHubApp.swift */; };
+		CHB002 /* App/AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF002 /* App/AppState.swift */; };
+		CHB003 /* App/AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF003 /* App/AppRouter.swift */; };
+		CHB004 /* App/RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF004 /* App/RootView.swift */; };
+		CHB005 /* Core/DesignSystem/CHColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF005 /* Core/DesignSystem/CHColors.swift */; };
+		CHB006 /* Core/DesignSystem/CHTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF006 /* Core/DesignSystem/CHTypography.swift */; };
+		CHB007 /* Core/DesignSystem/CHSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF007 /* Core/DesignSystem/CHSpacing.swift */; };
+		CHB008 /* Core/DesignSystem/CHRadius.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF008 /* Core/DesignSystem/CHRadius.swift */; };
+		CHB009 /* Core/DesignSystem/CHShadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF009 /* Core/DesignSystem/CHShadow.swift */; };
+		CHB010 /* Core/Components/CHCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF010 /* Core/Components/CHCard.swift */; };
+		CHB011 /* Core/Components/CHAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF011 /* Core/Components/CHAvatar.swift */; };
+		CHB012 /* Core/Components/CHButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF012 /* Core/Components/CHButton.swift */; };
+		CHB013 /* Core/Components/CHGlassTopBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF013 /* Core/Components/CHGlassTopBar.swift */; };
+		CHB014 /* Core/Components/CHBottomNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF014 /* Core/Components/CHBottomNavigation.swift */; };
+		CHB015 /* Core/Components/CHCalendarCTA.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF015 /* Core/Components/CHCalendarCTA.swift */; };
+		CHB016 /* Core/Components/CHToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF016 /* Core/Components/CHToast.swift */; };
+		CHB017 /* Core/Components/CHStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF017 /* Core/Components/CHStateView.swift */; };
+		CHB018 /* Core/Networking/AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF018 /* Core/Networking/AppConfig.swift */; };
+		CHB019 /* Core/Networking/SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF019 /* Core/Networking/SupabaseService.swift */; };
+		CHB020 /* Core/Navigation/AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF020 /* Core/Navigation/AppShellView.swift */; };
+		CHB021 /* Features/Overview/OverviewPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF021 /* Features/Overview/OverviewPlaceholderView.swift */; };
+		CHB022 /* Features/VideoTasks/VideoPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF022 /* Features/VideoTasks/VideoPlaceholderView.swift */; };
+		CHB023 /* Features/Calendar/CalendarPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF023 /* Features/Calendar/CalendarPlaceholderView.swift */; };
+		CHB024 /* Features/ContentPlan/ContentPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF024 /* Features/ContentPlan/ContentPlaceholderView.swift */; };
+		CHB025 /* Features/Members/MembersPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF025 /* Features/Members/MembersPlaceholderView.swift */; };
+		CHB026 /* Features/SystemStates/PlaceholderFeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF026 /* Features/SystemStates/PlaceholderFeatureView.swift */; };
+		CHB027 /* Resources/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CHF027 /* Resources/Assets.xcassets */; };
+		CHB028 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = CHP002 /* Supabase */; };
+		CHB029 /* Features/Overview/OverviewModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF029 /* Features/Overview/OverviewModels.swift */; };
+		CHB030 /* Features/Overview/OverviewAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF030 /* Features/Overview/OverviewAggregator.swift */; };
+		CHB031 /* Features/Overview/OverviewRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF031 /* Features/Overview/OverviewRepository.swift */; };
+		CHB032 /* Features/Overview/OverviewFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF032 /* Features/Overview/OverviewFixtures.swift */; };
+		CHB033 /* Features/Overview/OverviewViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF033 /* Features/Overview/OverviewViewModel.swift */; };
+		CHB034 /* Features/Overview/OverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF034 /* Features/Overview/OverviewView.swift */; };
+		CHB035 /* Features/Calendar/CalendarModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF035 /* Features/Calendar/CalendarModels.swift */; };
+		CHB036 /* Features/Calendar/CalendarRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF036 /* Features/Calendar/CalendarRepository.swift */; };
+		CHB037 /* Features/Calendar/CalendarFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF037 /* Features/Calendar/CalendarFixtures.swift */; };
+		CHB038 /* Features/Calendar/CalendarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF038 /* Features/Calendar/CalendarViewModel.swift */; };
+		CHB039 /* Features/Calendar/CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF039 /* Features/Calendar/CalendarView.swift */; };
+		CHB040 /* Features/Calendar/CalendarModuleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF040 /* Features/Calendar/CalendarModuleView.swift */; };
+		CHB045 /* Features/VideoTasks/VideoTaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF045 /* Features/VideoTasks/VideoTaskModels.swift */; };
+		CHB046 /* Features/VideoTasks/VideoTaskRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF046 /* Features/VideoTasks/VideoTaskRepository.swift */; };
+		CHB047 /* Features/VideoTasks/VideoTaskFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF047 /* Features/VideoTasks/VideoTaskFixtures.swift */; };
+		CHB048 /* Features/VideoTasks/VideoTaskViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF048 /* Features/VideoTasks/VideoTaskViewModel.swift */; };
+		CHB049 /* Features/VideoTasks/VideoTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF049 /* Features/VideoTasks/VideoTaskView.swift */; };
+		CHB050 /* Features/VideoTasks/VideoTaskModuleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF050 /* Features/VideoTasks/VideoTaskModuleView.swift */; };
+		CHB060 /* Features/ContentPlan/ContentPlanModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF060 /* Features/ContentPlan/ContentPlanModels.swift */; };
+		CHB061 /* Features/ContentPlan/ContentPlanRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF061 /* Features/ContentPlan/ContentPlanRepository.swift */; };
+		CHB062 /* Features/ContentPlan/ContentPlanFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF062 /* Features/ContentPlan/ContentPlanFixtures.swift */; };
+		CHB063 /* Features/ContentPlan/ContentPlanViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF063 /* Features/ContentPlan/ContentPlanViewModel.swift */; };
+		CHB064 /* Features/ContentPlan/ContentPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF064 /* Features/ContentPlan/ContentPlanView.swift */; };
+		CHB065 /* Features/ContentPlan/ContentPlanModuleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF065 /* Features/ContentPlan/ContentPlanModuleView.swift */; };
+		CHB070 /* Features/Notifications/NotificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF070 /* Features/Notifications/NotificationModels.swift */; };
+		CHB071 /* Features/Notifications/NotificationRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF071 /* Features/Notifications/NotificationRepository.swift */; };
+		CHB072 /* Features/Notifications/NotificationFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF072 /* Features/Notifications/NotificationFixtures.swift */; };
+		CHB073 /* Features/Notifications/NotificationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF073 /* Features/Notifications/NotificationViewModel.swift */; };
+		CHB074 /* Features/Notifications/NotificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF074 /* Features/Notifications/NotificationView.swift */; };
+		CHB080 /* Features/Profile/ProfileModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF080 /* Features/Profile/ProfileModels.swift */; };
+		CHB081 /* Features/Profile/ProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF081 /* Features/Profile/ProfileRepository.swift */; };
+		CHB082 /* Features/Profile/ProfileFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF082 /* Features/Profile/ProfileFixtures.swift */; };
+		CHB083 /* Features/Profile/ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF083 /* Features/Profile/ProfileViewModel.swift */; };
+		CHB084 /* Features/Profile/ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF084 /* Features/Profile/ProfileView.swift */; };
+		CHB090 /* Core/Components/CHTimeScopeNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF090 /* Core/Components/CHTimeScopeNavigator.swift */; };
+		CHB091 /* Core/Components/TimeScopePreferenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF091 /* Core/Components/TimeScopePreferenceStore.swift */; };
+		CHB092 /* Core/Networking/RemotePushNotificationStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF092 /* Core/Networking/RemotePushNotificationStatus.swift */; };
+		CHB093 /* Core/Utilities/AsyncCancellation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF093 /* Core/Utilities/AsyncCancellation.swift */; };
+		CHB094 /* Core/Utilities/InAppNotificationRefreshLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF094 /* Core/Utilities/InAppNotificationRefreshLoop.swift */; };
+		CHB101 /* CreativeHubTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF101 /* CreativeHubTests.swift */; };
+		CHB201 /* CreativeHubUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHF201 /* CreativeHubUITests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CHPRX01 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CH00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CH00000000000000000002;
+			remoteInfo = CreativeHub;
+		};
+		CHPRX02 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CH00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CH00000000000000000002;
+			remoteInfo = CreativeHub;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		CHF001 /* App/CreativeHubApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/CreativeHubApp.swift; sourceTree = "<group>"; };
+		CHF002 /* App/AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppState.swift; sourceTree = "<group>"; };
+		CHF003 /* App/AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppRouter.swift; sourceTree = "<group>"; };
+		CHF004 /* App/RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/RootView.swift; sourceTree = "<group>"; };
+		CHF005 /* Core/DesignSystem/CHColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/CHColors.swift; sourceTree = "<group>"; };
+		CHF006 /* Core/DesignSystem/CHTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/CHTypography.swift; sourceTree = "<group>"; };
+		CHF007 /* Core/DesignSystem/CHSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/CHSpacing.swift; sourceTree = "<group>"; };
+		CHF008 /* Core/DesignSystem/CHRadius.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/CHRadius.swift; sourceTree = "<group>"; };
+		CHF009 /* Core/DesignSystem/CHShadow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/CHShadow.swift; sourceTree = "<group>"; };
+		CHF010 /* Core/Components/CHCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Components/CHCard.swift; sourceTree = "<group>"; };
+		CHF011 /* Core/Components/CHAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Components/CHAvatar.swift; sourceTree = "<group>"; };
+		CHF012 /* Core/Components/CHButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Components/CHButton.swift; sourceTree = "<group>"; };
+		CHF013 /* Core/Components/CHGlassTopBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Components/CHGlassTopBar.swift; sourceTree = "<group>"; };
+		CHF014 /* Core/Components/CHBottomNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Components/CHBottomNavigation.swift; sourceTree = "<group>"; };
+		CHF015 /* Core/Components/CHCalendarCTA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Components/CHCalendarCTA.swift; sourceTree = "<group>"; };
+		CHF016 /* Core/Components/CHToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Components/CHToast.swift; sourceTree = "<group>"; };
+		CHF017 /* Core/Components/CHStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Components/CHStateView.swift; sourceTree = "<group>"; };
+		CHF018 /* Core/Networking/AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Networking/AppConfig.swift; sourceTree = "<group>"; };
+		CHF019 /* Core/Networking/SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Networking/SupabaseService.swift; sourceTree = "<group>"; };
+		CHF020 /* Core/Navigation/AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Navigation/AppShellView.swift; sourceTree = "<group>"; };
+		CHF021 /* Features/Overview/OverviewPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Overview/OverviewPlaceholderView.swift; sourceTree = "<group>"; };
+		CHF022 /* Features/VideoTasks/VideoPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/VideoTasks/VideoPlaceholderView.swift; sourceTree = "<group>"; };
+		CHF023 /* Features/Calendar/CalendarPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Calendar/CalendarPlaceholderView.swift; sourceTree = "<group>"; };
+		CHF024 /* Features/ContentPlan/ContentPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ContentPlan/ContentPlaceholderView.swift; sourceTree = "<group>"; };
+		CHF025 /* Features/Members/MembersPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Members/MembersPlaceholderView.swift; sourceTree = "<group>"; };
+		CHF026 /* Features/SystemStates/PlaceholderFeatureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SystemStates/PlaceholderFeatureView.swift; sourceTree = "<group>"; };
+		CHF027 /* Resources/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Resources/Assets.xcassets; sourceTree = "<group>"; };
+		CHF028 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CHF029 /* Features/Overview/OverviewModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Overview/OverviewModels.swift; sourceTree = "<group>"; };
+		CHF030 /* Features/Overview/OverviewAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Overview/OverviewAggregator.swift; sourceTree = "<group>"; };
+		CHF031 /* Features/Overview/OverviewRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Overview/OverviewRepository.swift; sourceTree = "<group>"; };
+		CHF032 /* Features/Overview/OverviewFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Overview/OverviewFixtures.swift; sourceTree = "<group>"; };
+		CHF033 /* Features/Overview/OverviewViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Overview/OverviewViewModel.swift; sourceTree = "<group>"; };
+		CHF034 /* Features/Overview/OverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Overview/OverviewView.swift; sourceTree = "<group>"; };
+		CHF035 /* Features/Calendar/CalendarModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Calendar/CalendarModels.swift; sourceTree = "<group>"; };
+		CHF036 /* Features/Calendar/CalendarRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Calendar/CalendarRepository.swift; sourceTree = "<group>"; };
+		CHF037 /* Features/Calendar/CalendarFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Calendar/CalendarFixtures.swift; sourceTree = "<group>"; };
+		CHF038 /* Features/Calendar/CalendarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Calendar/CalendarViewModel.swift; sourceTree = "<group>"; };
+		CHF039 /* Features/Calendar/CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Calendar/CalendarView.swift; sourceTree = "<group>"; };
+		CHF040 /* Features/Calendar/CalendarModuleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Calendar/CalendarModuleView.swift; sourceTree = "<group>"; };
+		CHF041 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		CHF042 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		CHF043 /* Debug.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.example.xcconfig; sourceTree = "<group>"; };
+		CHF044 /* Release.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.example.xcconfig; sourceTree = "<group>"; };
+		CHF045 /* Features/VideoTasks/VideoTaskModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/VideoTasks/VideoTaskModels.swift; sourceTree = "<group>"; };
+		CHF046 /* Features/VideoTasks/VideoTaskRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/VideoTasks/VideoTaskRepository.swift; sourceTree = "<group>"; };
+		CHF047 /* Features/VideoTasks/VideoTaskFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/VideoTasks/VideoTaskFixtures.swift; sourceTree = "<group>"; };
+		CHF048 /* Features/VideoTasks/VideoTaskViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/VideoTasks/VideoTaskViewModel.swift; sourceTree = "<group>"; };
+		CHF049 /* Features/VideoTasks/VideoTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/VideoTasks/VideoTaskView.swift; sourceTree = "<group>"; };
+		CHF050 /* Features/VideoTasks/VideoTaskModuleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/VideoTasks/VideoTaskModuleView.swift; sourceTree = "<group>"; };
+		CHF060 /* Features/ContentPlan/ContentPlanModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ContentPlan/ContentPlanModels.swift; sourceTree = "<group>"; };
+		CHF061 /* Features/ContentPlan/ContentPlanRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ContentPlan/ContentPlanRepository.swift; sourceTree = "<group>"; };
+		CHF062 /* Features/ContentPlan/ContentPlanFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ContentPlan/ContentPlanFixtures.swift; sourceTree = "<group>"; };
+		CHF063 /* Features/ContentPlan/ContentPlanViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ContentPlan/ContentPlanViewModel.swift; sourceTree = "<group>"; };
+		CHF064 /* Features/ContentPlan/ContentPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ContentPlan/ContentPlanView.swift; sourceTree = "<group>"; };
+		CHF065 /* Features/ContentPlan/ContentPlanModuleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ContentPlan/ContentPlanModuleView.swift; sourceTree = "<group>"; };
+		CHF070 /* Features/Notifications/NotificationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Notifications/NotificationModels.swift; sourceTree = "<group>"; };
+		CHF071 /* Features/Notifications/NotificationRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Notifications/NotificationRepository.swift; sourceTree = "<group>"; };
+		CHF072 /* Features/Notifications/NotificationFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Notifications/NotificationFixtures.swift; sourceTree = "<group>"; };
+		CHF073 /* Features/Notifications/NotificationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Notifications/NotificationViewModel.swift; sourceTree = "<group>"; };
+		CHF074 /* Features/Notifications/NotificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Notifications/NotificationView.swift; sourceTree = "<group>"; };
+		CHF080 /* Features/Profile/ProfileModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Profile/ProfileModels.swift; sourceTree = "<group>"; };
+		CHF081 /* Features/Profile/ProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Profile/ProfileRepository.swift; sourceTree = "<group>"; };
+		CHF082 /* Features/Profile/ProfileFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Profile/ProfileFixtures.swift; sourceTree = "<group>"; };
+		CHF083 /* Features/Profile/ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Profile/ProfileViewModel.swift; sourceTree = "<group>"; };
+		CHF084 /* Features/Profile/ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Profile/ProfileView.swift; sourceTree = "<group>"; };
+		CHF090 /* Core/Components/CHTimeScopeNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Components/CHTimeScopeNavigator.swift; sourceTree = "<group>"; };
+		CHF091 /* Core/Components/TimeScopePreferenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Components/TimeScopePreferenceStore.swift; sourceTree = "<group>"; };
+		CHF092 /* Core/Networking/RemotePushNotificationStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Networking/RemotePushNotificationStatus.swift; sourceTree = "<group>"; };
+		CHF093 /* Core/Utilities/AsyncCancellation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Utilities/AsyncCancellation.swift; sourceTree = "<group>"; };
+		CHF094 /* Core/Utilities/InAppNotificationRefreshLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Utilities/InAppNotificationRefreshLoop.swift; sourceTree = "<group>"; };
+		CHF101 /* CreativeHubTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreativeHubTests.swift; sourceTree = "<group>"; };
+		CHF201 /* CreativeHubUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreativeHubUITests.swift; sourceTree = "<group>"; };
+		CHPAPP /* CreativeHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CreativeHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CHPTEST /* CreativeHubTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CreativeHubTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CHPUITEST /* CreativeHubUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CreativeHubUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CHPHASE03 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CHB028 /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHPHASE13 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHPHASE23 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CHGROUP0 = {
+			isa = PBXGroup;
+			children = (
+				CHGROUP1 /* CreativeHub */,
+				CHGROUP2 /* CreativeHubTests */,
+				CHGROUP3 /* CreativeHubUITests */,
+				CHGROUP4 /* Config */,
+				CHGROUP5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CHGROUP1 /* CreativeHub */ = {
+			isa = PBXGroup;
+			children = (
+				CHF001 /* App/CreativeHubApp.swift */,
+				CHF002 /* App/AppState.swift */,
+				CHF003 /* App/AppRouter.swift */,
+				CHF004 /* App/RootView.swift */,
+				CHF005 /* Core/DesignSystem/CHColors.swift */,
+				CHF006 /* Core/DesignSystem/CHTypography.swift */,
+				CHF007 /* Core/DesignSystem/CHSpacing.swift */,
+				CHF008 /* Core/DesignSystem/CHRadius.swift */,
+				CHF009 /* Core/DesignSystem/CHShadow.swift */,
+				CHF010 /* Core/Components/CHCard.swift */,
+				CHF011 /* Core/Components/CHAvatar.swift */,
+				CHF012 /* Core/Components/CHButton.swift */,
+				CHF013 /* Core/Components/CHGlassTopBar.swift */,
+				CHF014 /* Core/Components/CHBottomNavigation.swift */,
+				CHF015 /* Core/Components/CHCalendarCTA.swift */,
+				CHF016 /* Core/Components/CHToast.swift */,
+				CHF017 /* Core/Components/CHStateView.swift */,
+				CHF090 /* Core/Components/CHTimeScopeNavigator.swift */,
+				CHF091 /* Core/Components/TimeScopePreferenceStore.swift */,
+				CHF018 /* Core/Networking/AppConfig.swift */,
+				CHF019 /* Core/Networking/SupabaseService.swift */,
+				CHF092 /* Core/Networking/RemotePushNotificationStatus.swift */,
+				CHF093 /* Core/Utilities/AsyncCancellation.swift */,
+				CHF094 /* Core/Utilities/InAppNotificationRefreshLoop.swift */,
+				CHF020 /* Core/Navigation/AppShellView.swift */,
+				CHF021 /* Features/Overview/OverviewPlaceholderView.swift */,
+				CHF029 /* Features/Overview/OverviewModels.swift */,
+				CHF030 /* Features/Overview/OverviewAggregator.swift */,
+				CHF031 /* Features/Overview/OverviewRepository.swift */,
+				CHF032 /* Features/Overview/OverviewFixtures.swift */,
+				CHF033 /* Features/Overview/OverviewViewModel.swift */,
+				CHF034 /* Features/Overview/OverviewView.swift */,
+				CHF022 /* Features/VideoTasks/VideoPlaceholderView.swift */,
+				CHF045 /* Features/VideoTasks/VideoTaskModels.swift */,
+				CHF046 /* Features/VideoTasks/VideoTaskRepository.swift */,
+				CHF047 /* Features/VideoTasks/VideoTaskFixtures.swift */,
+				CHF048 /* Features/VideoTasks/VideoTaskViewModel.swift */,
+				CHF049 /* Features/VideoTasks/VideoTaskView.swift */,
+				CHF050 /* Features/VideoTasks/VideoTaskModuleView.swift */,
+				CHF023 /* Features/Calendar/CalendarPlaceholderView.swift */,
+				CHF035 /* Features/Calendar/CalendarModels.swift */,
+				CHF036 /* Features/Calendar/CalendarRepository.swift */,
+				CHF037 /* Features/Calendar/CalendarFixtures.swift */,
+				CHF038 /* Features/Calendar/CalendarViewModel.swift */,
+				CHF039 /* Features/Calendar/CalendarView.swift */,
+				CHF040 /* Features/Calendar/CalendarModuleView.swift */,
+				CHF024 /* Features/ContentPlan/ContentPlaceholderView.swift */,
+				CHF060 /* Features/ContentPlan/ContentPlanModels.swift */,
+				CHF061 /* Features/ContentPlan/ContentPlanRepository.swift */,
+				CHF062 /* Features/ContentPlan/ContentPlanFixtures.swift */,
+				CHF063 /* Features/ContentPlan/ContentPlanViewModel.swift */,
+				CHF064 /* Features/ContentPlan/ContentPlanView.swift */,
+				CHF065 /* Features/ContentPlan/ContentPlanModuleView.swift */,
+				CHF070 /* Features/Notifications/NotificationModels.swift */,
+				CHF071 /* Features/Notifications/NotificationRepository.swift */,
+				CHF072 /* Features/Notifications/NotificationFixtures.swift */,
+				CHF073 /* Features/Notifications/NotificationViewModel.swift */,
+				CHF074 /* Features/Notifications/NotificationView.swift */,
+				CHF080 /* Features/Profile/ProfileModels.swift */,
+				CHF081 /* Features/Profile/ProfileRepository.swift */,
+				CHF082 /* Features/Profile/ProfileFixtures.swift */,
+				CHF083 /* Features/Profile/ProfileViewModel.swift */,
+				CHF084 /* Features/Profile/ProfileView.swift */,
+				CHF025 /* Features/Members/MembersPlaceholderView.swift */,
+				CHF026 /* Features/SystemStates/PlaceholderFeatureView.swift */,
+				CHF027 /* Resources/Assets.xcassets */,
+				CHF028 /* Info.plist */,
+			);
+			path = CreativeHub;
+			sourceTree = "<group>";
+		};
+		CHGROUP2 /* CreativeHubTests */ = {
+			isa = PBXGroup;
+			children = (
+				CHF101 /* CreativeHubTests.swift */,
+			);
+			path = CreativeHubTests;
+			sourceTree = "<group>";
+		};
+		CHGROUP3 /* CreativeHubUITests */ = {
+			isa = PBXGroup;
+			children = (
+				CHF201 /* CreativeHubUITests.swift */,
+			);
+			path = CreativeHubUITests;
+			sourceTree = "<group>";
+		};
+		CHGROUP4 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				CHF041 /* Debug.xcconfig */,
+				CHF042 /* Release.xcconfig */,
+				CHF043 /* Debug.example.xcconfig */,
+				CHF044 /* Release.example.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		CHGROUP5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CHPAPP /* CreativeHub.app */,
+				CHPTEST /* CreativeHubTests.xctest */,
+				CHPUITEST /* CreativeHubUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CH00000000000000000002 /* CreativeHub */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CHCL02 /* Build configuration list for PBXNativeTarget "CreativeHub" */;
+			buildPhases = (
+				CHPHASE01 /* Sources */,
+				CHPHASE03 /* Frameworks */,
+				CHPHASE02 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CreativeHub;
+			packageProductDependencies = (
+				CHP002 /* Supabase */,
+			);
+			productName = CreativeHub;
+			productReference = CHPAPP /* CreativeHub.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CH00000000000000000003 /* CreativeHubTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CHCL03 /* Build configuration list for PBXNativeTarget "CreativeHubTests" */;
+			buildPhases = (
+				CHPHASE11 /* Sources */,
+				CHPHASE13 /* Frameworks */,
+				CHPHASE12 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CHDEP01 /* PBXTargetDependency */,
+			);
+			name = CreativeHubTests;
+			productName = CreativeHubTests;
+			productReference = CHPTEST /* CreativeHubTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CH00000000000000000004 /* CreativeHubUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CHCL04 /* Build configuration list for PBXNativeTarget "CreativeHubUITests" */;
+			buildPhases = (
+				CHPHASE21 /* Sources */,
+				CHPHASE23 /* Frameworks */,
+				CHPHASE22 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CHDEP02 /* PBXTargetDependency */,
+			);
+			name = CreativeHubUITests;
+			productName = CreativeHubUITests;
+			productReference = CHPUITEST /* CreativeHubUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CH00000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					CH00000000000000000002 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					CH00000000000000000003 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = CH00000000000000000002;
+					};
+					CH00000000000000000004 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = CH00000000000000000002;
+					};
+				};
+			};
+			buildConfigurationList = CHCL01 /* Build configuration list for PBXProject "CreativeHub" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				vi,
+			);
+			mainGroup = CHGROUP0;
+			packageReferences = (
+				CHP001 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
+			productRefGroup = CHGROUP5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CH00000000000000000002 /* CreativeHub */,
+				CH00000000000000000003 /* CreativeHubTests */,
+				CH00000000000000000004 /* CreativeHubUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CHPHASE02 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CHB027 /* Resources/Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHPHASE12 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHPHASE22 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CHPHASE01 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CHB001 /* App/CreativeHubApp.swift in Sources */,
+				CHB002 /* App/AppState.swift in Sources */,
+				CHB003 /* App/AppRouter.swift in Sources */,
+				CHB004 /* App/RootView.swift in Sources */,
+				CHB005 /* Core/DesignSystem/CHColors.swift in Sources */,
+				CHB006 /* Core/DesignSystem/CHTypography.swift in Sources */,
+				CHB007 /* Core/DesignSystem/CHSpacing.swift in Sources */,
+				CHB008 /* Core/DesignSystem/CHRadius.swift in Sources */,
+				CHB009 /* Core/DesignSystem/CHShadow.swift in Sources */,
+				CHB010 /* Core/Components/CHCard.swift in Sources */,
+				CHB011 /* Core/Components/CHAvatar.swift in Sources */,
+				CHB012 /* Core/Components/CHButton.swift in Sources */,
+				CHB013 /* Core/Components/CHGlassTopBar.swift in Sources */,
+				CHB014 /* Core/Components/CHBottomNavigation.swift in Sources */,
+				CHB015 /* Core/Components/CHCalendarCTA.swift in Sources */,
+				CHB016 /* Core/Components/CHToast.swift in Sources */,
+				CHB017 /* Core/Components/CHStateView.swift in Sources */,
+				CHB090 /* Core/Components/CHTimeScopeNavigator.swift in Sources */,
+				CHB091 /* Core/Components/TimeScopePreferenceStore.swift in Sources */,
+				CHB018 /* Core/Networking/AppConfig.swift in Sources */,
+				CHB019 /* Core/Networking/SupabaseService.swift in Sources */,
+				CHB092 /* Core/Networking/RemotePushNotificationStatus.swift in Sources */,
+				CHB093 /* Core/Utilities/AsyncCancellation.swift in Sources */,
+				CHB094 /* Core/Utilities/InAppNotificationRefreshLoop.swift in Sources */,
+				CHB020 /* Core/Navigation/AppShellView.swift in Sources */,
+				CHB021 /* Features/Overview/OverviewPlaceholderView.swift in Sources */,
+				CHB029 /* Features/Overview/OverviewModels.swift in Sources */,
+				CHB030 /* Features/Overview/OverviewAggregator.swift in Sources */,
+				CHB031 /* Features/Overview/OverviewRepository.swift in Sources */,
+				CHB032 /* Features/Overview/OverviewFixtures.swift in Sources */,
+				CHB033 /* Features/Overview/OverviewViewModel.swift in Sources */,
+				CHB034 /* Features/Overview/OverviewView.swift in Sources */,
+				CHB022 /* Features/VideoTasks/VideoPlaceholderView.swift in Sources */,
+				CHB045 /* Features/VideoTasks/VideoTaskModels.swift in Sources */,
+				CHB046 /* Features/VideoTasks/VideoTaskRepository.swift in Sources */,
+				CHB047 /* Features/VideoTasks/VideoTaskFixtures.swift in Sources */,
+				CHB048 /* Features/VideoTasks/VideoTaskViewModel.swift in Sources */,
+				CHB049 /* Features/VideoTasks/VideoTaskView.swift in Sources */,
+				CHB050 /* Features/VideoTasks/VideoTaskModuleView.swift in Sources */,
+				CHB023 /* Features/Calendar/CalendarPlaceholderView.swift in Sources */,
+				CHB035 /* Features/Calendar/CalendarModels.swift in Sources */,
+				CHB036 /* Features/Calendar/CalendarRepository.swift in Sources */,
+				CHB037 /* Features/Calendar/CalendarFixtures.swift in Sources */,
+				CHB038 /* Features/Calendar/CalendarViewModel.swift in Sources */,
+				CHB039 /* Features/Calendar/CalendarView.swift in Sources */,
+				CHB040 /* Features/Calendar/CalendarModuleView.swift in Sources */,
+				CHB024 /* Features/ContentPlan/ContentPlaceholderView.swift in Sources */,
+				CHB060 /* Features/ContentPlan/ContentPlanModels.swift in Sources */,
+				CHB061 /* Features/ContentPlan/ContentPlanRepository.swift in Sources */,
+				CHB062 /* Features/ContentPlan/ContentPlanFixtures.swift in Sources */,
+				CHB063 /* Features/ContentPlan/ContentPlanViewModel.swift in Sources */,
+				CHB064 /* Features/ContentPlan/ContentPlanView.swift in Sources */,
+				CHB065 /* Features/ContentPlan/ContentPlanModuleView.swift in Sources */,
+				CHB070 /* Features/Notifications/NotificationModels.swift in Sources */,
+				CHB071 /* Features/Notifications/NotificationRepository.swift in Sources */,
+				CHB072 /* Features/Notifications/NotificationFixtures.swift in Sources */,
+				CHB073 /* Features/Notifications/NotificationViewModel.swift in Sources */,
+				CHB074 /* Features/Notifications/NotificationView.swift in Sources */,
+				CHB080 /* Features/Profile/ProfileModels.swift in Sources */,
+				CHB081 /* Features/Profile/ProfileRepository.swift in Sources */,
+				CHB082 /* Features/Profile/ProfileFixtures.swift in Sources */,
+				CHB083 /* Features/Profile/ProfileViewModel.swift in Sources */,
+				CHB084 /* Features/Profile/ProfileView.swift in Sources */,
+				CHB025 /* Features/Members/MembersPlaceholderView.swift in Sources */,
+				CHB026 /* Features/SystemStates/PlaceholderFeatureView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHPHASE11 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CHB101 /* CreativeHubTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CHPHASE21 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CHB201 /* CreativeHubUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CHDEP01 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CH00000000000000000002 /* CreativeHub */;
+			targetProxy = CHPRX01 /* PBXContainerItemProxy */;
+		};
+		CHDEP02 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CH00000000000000000002 /* CreativeHub */;
+			targetProxy = CHPRX02 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		CHCFG0101 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHF041 /* Debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		CHCFG0102 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHF042 /* Release.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		CHCFG0201 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHF041 /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4YSY5TD55R;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CreativeHub/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		CHCFG0202 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHF042 /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4YSY5TD55R;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CreativeHub/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		CHCFG0301 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHF041 /* Debug.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER).tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CreativeHub.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CreativeHub";
+			};
+			name = Debug;
+		};
+		CHCFG0302 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHF042 /* Release.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER).tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CreativeHub.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CreativeHub";
+			};
+			name = Release;
+		};
+		CHCFG0401 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHF041 /* Debug.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = CreativeHub;
+			};
+			name = Debug;
+		};
+		CHCFG0402 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CHF042 /* Release.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = CreativeHub;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CHCL01 /* Build configuration list for PBXProject "CreativeHub" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CHCFG0101 /* Debug */,
+				CHCFG0102 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CHCL02 /* Build configuration list for PBXNativeTarget "CreativeHub" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CHCFG0201 /* Debug */,
+				CHCFG0202 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CHCL03 /* Build configuration list for PBXNativeTarget "CreativeHubTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CHCFG0301 /* Debug */,
+				CHCFG0302 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CHCL04 /* Build configuration list for PBXNativeTarget "CreativeHubUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CHCFG0401 /* Debug */,
+				CHCFG0402 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		CHP001 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CHP002 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CHP001 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = CH00000000000000000001 /* Project object */;
+}

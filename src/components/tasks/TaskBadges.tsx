@@ -3,6 +3,7 @@ import { Avatar } from '../common/Avatar';
 
 export function StatusBadge({ status }: { status: TaskStatus }) {
   const map: Record<TaskStatus, string> = {
+    'Pending': 'badge--pending',
     'Đã xong':  'badge--done',
     'Đang làm': 'badge--doing',
     'Chờ':      'badge--wait',

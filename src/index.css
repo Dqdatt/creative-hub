@@ -257,6 +257,8 @@ input[type="checkbox"]:disabled{ cursor:not-allowed; }
 .badge--done .dot{ background:var(--success); }
 .badge--doing{ background:color-mix(in srgb,var(--accent-2) 16%,transparent); color:var(--accent-2); }
 .badge--doing .dot{ background:var(--accent-2); }
+.badge--pending{ background:color-mix(in srgb,var(--warning) 18%,transparent); color:var(--warning); }
+.badge--pending .dot{ background:var(--warning); }
 .badge--wait{ background:color-mix(in srgb,var(--warning) 16%,transparent); color:var(--warning); }
 .badge--wait .dot{ background:var(--warning); }
 .tag{ display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:8px;font-size:12px;font-weight:600; }
@@ -353,6 +355,178 @@ html.dark .sticky-filter-bar{
   padding-top:11px;
   padding-bottom:11px;
   line-height:1.45;
+}
+
+.dashboard-actions{
+  display:flex;
+  justify-content:flex-end;
+}
+.dashboard-attention{
+  border-color:color-mix(in srgb,var(--warning) 28%,var(--border));
+}
+.attention-action{
+  min-height:78px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:color-mix(in srgb,var(--card) 86%,var(--bg2));
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  text-align:left;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease;
+}
+.attention-action:hover{
+  transform:translateY(-1px);
+  border-color:var(--border-strong);
+  background:var(--bg2);
+}
+.attention-action strong{
+  display:block;
+  font-size:28px;
+  line-height:1;
+  font-weight:850;
+  color:var(--text);
+}
+.attention-action em{
+  display:block;
+  margin-top:6px;
+  font-size:12.5px;
+  font-style:normal;
+  font-weight:750;
+  color:var(--text-2);
+}
+.attention-action svg{
+  width:16px;
+  height:16px;
+  color:var(--text-2);
+}
+.report-modal-card{
+  max-height:min(94dvh,calc(100dvh - 20px));
+}
+.report-toolbar{
+  display:grid;
+  grid-template-columns:minmax(160px,220px) minmax(180px,260px) auto;
+  gap:12px;
+  align-items:center;
+}
+.report-print-root{
+  background:#fff;
+  color:#111827;
+  border:1px solid #e5e7eb;
+  border-radius:18px;
+  padding:28px;
+}
+.report-header{
+  display:flex;
+  justify-content:space-between;
+  gap:24px;
+  padding-bottom:18px;
+  border-bottom:2px solid #111827;
+}
+.report-header p{
+  margin:0 0 8px;
+  font-size:12px;
+  font-weight:850;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:#4f46e5;
+}
+.report-header h1{
+  margin:0;
+  font-size:28px;
+  line-height:1.15;
+  font-weight:900;
+}
+.report-header span{
+  display:block;
+  margin-top:8px;
+  font-size:13px;
+  font-weight:700;
+  color:#4b5563;
+}
+.report-month{
+  align-self:flex-start;
+  border:1px solid #d1d5db;
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:13px;
+  font-weight:850;
+  color:#111827;
+}
+.report-metrics{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:10px;
+  margin:22px 0;
+}
+.report-metrics div{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px;
+  background:#f9fafb;
+}
+.report-metrics strong{
+  display:block;
+  font-size:24px;
+  line-height:1;
+  font-weight:900;
+}
+.report-metrics span{
+  display:block;
+  margin-top:7px;
+  font-size:11px;
+  font-weight:750;
+  color:#4b5563;
+}
+.report-section{
+  margin-top:22px;
+}
+.report-section h2{
+  margin:0 0 10px;
+  font-size:15px;
+  font-weight:900;
+}
+.report-section p{
+  margin:0;
+  font-size:13px;
+  font-weight:650;
+  color:#374151;
+}
+.report-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:11.5px;
+}
+.report-table th,
+.report-table td{
+  border-bottom:1px solid #e5e7eb;
+  padding:8px 7px;
+  text-align:left;
+  vertical-align:top;
+}
+.report-table th{
+  background:#f3f4f6;
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+@media print{
+  @page{ size:A4 portrait; margin:12mm; }
+  body *{ visibility:hidden!important; }
+  .report-print-root,
+  .report-print-root *{ visibility:visible!important; }
+  .report-print-root{
+    position:absolute;
+    inset:0 auto auto 0;
+    width:100%;
+    border:0;
+    border-radius:0;
+    padding:0;
+    color:#111827!important;
+  }
+  .no-print{ display:none!important; }
 }
 
 /* ---------- calendar ---------- */
@@ -2100,3 +2274,4 @@ footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
   .profile-card-grid{ grid-template-columns:240px minmax(0,1fr); }
 }
 @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+

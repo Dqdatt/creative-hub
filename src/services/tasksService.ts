@@ -8,6 +8,7 @@ import type {
   CreateLinkedVideoTaskInput,
   UpdateLinkedVideoTaskExecutionInput,
   UpdateLinkedVideoTaskExecutionResult,
+  SyncLinkedVideoTaskInput,
   TaskCategory,
   TaskFormData,
   TaskPriority,
@@ -117,6 +118,16 @@ interface UpdateLinkedVideoTaskExecutionRpcRow {
   changed_fields: string[] | null;
 }
 
+interface SyncLinkedVideoTaskRpcRow {
+  video_task_id: string;
+  content_plan_id: string;
+  status: TaskStatus;
+  result_link: string | null;
+  content_plan_link: string | null;
+  note: string | null;
+  changed_fields: string[] | null;
+}
+
 export interface VideoTaskDeepLinkTarget {
   task: VideoTask;
   monthValue: string | null;
@@ -209,6 +220,15 @@ function mapDatabaseError(error: { message?: string; code?: string } | null) {
   }
   if (message.includes('link content plan liên kết được đồng bộ từ video tháng')) {
     return 'Link Content Plan liên kết được đồng bộ từ Video tháng.';
+  }
+  if (message.includes('sync_linked_video_task_from_video_month') || message.includes('could not find the function')) {
+    return 'Chưa cập nhật RPC đồng bộ linked task trên Supabase.';
+  }
+  if (message.includes('bạn không có quyền đồng bộ task liên kết')) {
+    return 'Bạn không có quyền đồng bộ Task liên kết.';
+  }
+  if (message.includes('task thủ công không có content plan liên kết')) {
+    return 'Task thủ công không có Content Plan liên kết để đồng bộ.';
   }
   if (message.includes('ngày air của task liên kết')) {
     return 'Ngày Air của Task liên kết được quản lý từ Content Plan.';
@@ -403,6 +423,55 @@ function mapUpdateLinkedVideoTaskExecutionRpcRow(row: UpdateLinkedVideoTaskExecu
   };
 }
 
+function mapSyncLinkedVideoTaskRpcRow(row: SyncLinkedVideoTaskRpcRow): UpdateLinkedVideoTaskExecutionResult {
+  return {
+    videoTaskId: row.video_task_id,
+    contentPlanId: row.content_plan_id,
+    status: row.status,
+    orderTeam: '',
+    priority: '',
+    resize: '',
+    receiveDate: '',
+    returnDate: '',
+    resultLink: row.result_link ?? '',
+    editorId: '',
+    changedFields: row.changed_fields ?? [],
+  };
+}
+
+async function syncLinkedVideoTask(input: SyncLinkedVideoTaskInput): Promise<UpdateLinkedVideoTaskExecutionResult> {
+  const client = requireSupabase();
+  const taskId = validateVideoTaskId(input.taskId);
+  const receiveDate = toDatabaseDate(input.receiveDate, 'Ngày nhận');
+  const returnDate = toDatabaseDate(input.returnDate, 'Ngày trả');
+
+  if (receiveDate && returnDate && returnDate < receiveDate) {
+    throw new Error('Ngày nhận và Ngày trả chưa hợp lệ.');
+  }
+
+  const resultLink = normalizeOptionalHttpUrl(input.link);
+  const { data, error } = await client.rpc('sync_linked_video_task_from_video_month', {
+    p_video_task_id: taskId,
+    p_status: input.status,
+    p_order_team: input.orderTeam.trim() || null,
+    p_priority: input.priority,
+    p_resize_reqs: input.resize.trim() || null,
+    p_receive_date: receiveDate,
+    p_return_date: returnDate,
+    p_result_link: resultLink,
+    p_note: input.note.trim() || null,
+  });
+
+  if (error) throw new Error(mapDatabaseError(error));
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    throw new Error('Không nhận được kết quả đồng bộ Content Plan.');
+  }
+
+  return mapSyncLinkedVideoTaskRpcRow(row as SyncLinkedVideoTaskRpcRow);
+}
+
 export async function fetchVideoTasks(monthValue?: string): Promise<VideoTask[]> {
   const client = requireSupabase();
   let query = client
@@ -594,35 +663,41 @@ export async function updateVideoTask(
   data: TaskFormData,
   userId?: string | null,
   previousTask?: VideoTask,
-  options?: { allowLinkedOverride?: boolean },
 ) {
-  const allowLinkedOverride = Boolean(options?.allowLinkedOverride);
+  if (previousTask?.contentPlanId) {
+    await syncLinkedVideoTask({
+      taskId,
+      status: data.status,
+      orderTeam: data.orderTeam,
+      priority: data.priority,
+      resize: data.resize,
+      receiveDate: data.receiveDate,
+      returnDate: data.returnDate,
+      link: data.link,
+      note: data.note,
+    });
 
-  if (!allowLinkedOverride && previousTask?.contentPlanId && previousTask.editorId !== data.editorId) {
-    throw new Error('Hãy đổi Editor của Task liên kết từ Content Plan.');
-  }
-  if (!allowLinkedOverride && previousTask?.contentPlanId && previousTask.airDate !== data.airDate) {
-    throw new Error('Ngày Air của Task liên kết được quản lý từ Content Plan.');
-  }
-  if (
-    !allowLinkedOverride &&
-    previousTask?.contentPlanId &&
-    previousTask.status === 'Đang làm' &&
-    (data.status === 'Đã xong' || previousTask.link !== data.link)
-  ) {
-    throw new Error('Hãy hoàn thành Task liên kết qua thao tác Hoàn thành.');
-  }
-  if (
-    !allowLinkedOverride &&
-    previousTask?.contentPlanId &&
-    previousTask.status === 'Đã xong' &&
-    (previousTask.status !== data.status || previousTask.link !== data.link)
-  ) {
-    throw new Error('Hãy hoàn thành Task liên kết qua thao tác Hoàn thành.');
+    void logActivity({
+      actorId: userId,
+      entityType: 'video_task',
+      entityId: taskId,
+      action: previousTask.status !== data.status ? 'status_changed' : 'updated',
+      title: data.name.trim(),
+      description: `Đã đồng bộ Video Task liên kết "${data.name.trim()}".`,
+      metadata: {
+        content_plan_id: previousTask.contentPlanId,
+        previous_status: previousTask.status,
+        status: data.status,
+        link_synced: previousTask.link !== data.link,
+        note_synced: (previousTask.note ?? '') !== data.note,
+      },
+    });
+    return;
   }
 
   const client = requireSupabase();
   const payload = await toTaskPayload(data, userId);
+
   const { error } = await client
     .from('video_tasks')
     .update(payload)
