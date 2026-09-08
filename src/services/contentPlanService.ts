@@ -32,13 +32,13 @@ interface ContentPlanRow {
   air_date: string;
   title: string;
   note: Nullable<string>;
-  category: Nullable<ContentPlanCategory>;
+  category: Nullable<string>;
   editor_id: Nullable<string>;
   link: Nullable<string>;
   profiles: ProfileRow | ProfileRow[] | null;
   video_tasks?: Array<{
     id: string;
-    status: TaskStatus;
+    status: string;
     result_link: Nullable<string>;
   }> | null;
 }
@@ -149,6 +149,25 @@ function normalizeContentPlanLink(value: string) {
   return normalizeOptionalHttpUrl(value);
 }
 
+function normalizeContentPlanCategory(value: string | null | undefined): ContentPlanCategory {
+  if (
+    value === 'Video dài' ||
+    value === 'Short/Reels' ||
+    value === 'Livestream' ||
+    value === 'Ảnh' ||
+    value === 'Motion'
+  ) {
+    return value;
+  }
+  if (value === 'Ads') return 'Motion';
+  return 'Video dài';
+}
+
+function normalizeTaskStatus(value: string | null | undefined): TaskStatus {
+  if (value === 'Đang làm' || value === 'Đã xong' || value === 'Hoãn') return value;
+  return 'Chờ';
+}
+
 function mapContentPlanRow(row: ContentPlanRow): ContentPlanItem {
   const profile = firstProfile(row.profiles);
   const linkedTask = row.video_tasks?.[0] ?? null;
@@ -159,18 +178,41 @@ function mapContentPlanRow(row: ContentPlanRow): ContentPlanItem {
     air_date: row.air_date,
     video_name: row.title,
     note: row.note ?? '',
-    category: row.category ?? 'Video dài',
+    category: normalizeContentPlanCategory(row.category),
     editor_id: profile?.editor_code ?? '',
     link: linkedTaskLink || (row.link ?? ''),
     hasLinkedTask: Boolean(linkedTask),
     linkedTaskId: linkedTask?.id ?? null,
-    linkedTaskStatus: linkedTask?.status ?? null,
+    linkedTaskStatus: linkedTask ? normalizeTaskStatus(linkedTask.status) : null,
     linkedTaskLink,
   };
 }
 
-function getInitial(value: string) {
-  return value.trim().charAt(0).toUpperCase() || '?';
+function stripDiacritics(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase();
+}
+
+function getInitial(value: string, editorCode?: string) {
+  const words = value.trim().split(/\s+/).filter(Boolean);
+  const code = editorCode?.trim().toLowerCase() ?? '';
+
+  if (code) {
+    const normalizedCode = stripDiacritics(code);
+    const exactWord = words.find((word) => stripDiacritics(word) === normalizedCode);
+    if (exactWord) return exactWord.charAt(0).toUpperCase();
+
+    const sameLetterWord = words.find((word) => stripDiacritics(word).charAt(0) === normalizedCode.charAt(0));
+    if (sameLetterWord) return sameLetterWord.charAt(0).toUpperCase();
+
+    return code.charAt(0).toUpperCase();
+  }
+
+  return words[0]?.charAt(0).toUpperCase() || '?';
 }
 
 function getSoftColor(hexColor: string | null | undefined) {
@@ -178,11 +220,31 @@ function getSoftColor(hexColor: string | null | undefined) {
   return `color-mix(in srgb, ${color} 14%, var(--card))`;
 }
 
+const EDITOR_PALETTE = ['#0ea5e9', '#22c55e', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6', '#ec4899', '#6366f1'];
+
 function getFallbackColor(seed: string) {
-  const palette = ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#14b8a6', '#8b5cf6', '#ec4899'];
   const cleanSeed = seed || 'editor';
-  const index = Array.from(cleanSeed).reduce((sum, char) => sum + char.charCodeAt(0), 0) % palette.length;
-  return palette[index];
+  const index = Array.from(cleanSeed).reduce((sum, char) => sum + char.charCodeAt(0), 0) % EDITOR_PALETTE.length;
+  return EDITOR_PALETTE[index];
+}
+
+// Hai editor trùng màu thì không phân biệt được avatar, nên người sau lấy màu trống kế tiếp.
+function withDistinctColors(editors: ContentPlanEditorOption[]): ContentPlanEditorOption[] {
+  const used = new Set<string>();
+
+  return editors.map((editor) => {
+    const currentColor = editor.color.toLowerCase();
+    if (!used.has(currentColor)) {
+      used.add(currentColor);
+      return editor;
+    }
+
+    const nextColor = EDITOR_PALETTE.find((color) => !used.has(color.toLowerCase()));
+    if (!nextColor) return editor;
+
+    used.add(nextColor.toLowerCase());
+    return { ...editor, color: nextColor, bgColor: getSoftColor(nextColor) };
+  });
 }
 
 function mapEditorOption(row: ProfileRow): ContentPlanEditorOption | null {
@@ -200,7 +262,7 @@ function mapEditorOption(row: ProfileRow): ContentPlanEditorOption | null {
     profile_id: row.id,
     name,
     short,
-    initial: getInitial(short),
+    initial: getInitial(short, editorCode),
     color,
     bgColor: getSoftColor(color),
     avatarUrl: row.avatar_url ?? '',
@@ -369,7 +431,7 @@ export async function fetchContentPlanEditorOptions(): Promise<ContentPlanEditor
 
   if (error) throw new Error(mapDatabaseError(error));
 
-  return ((data ?? []) as ProfileRow[])
+  const options = ((data ?? []) as ProfileRow[])
     .map(mapEditorOption)
     .filter((editor): editor is ContentPlanEditorOption => Boolean(editor))
     .sort((a, b) => {
@@ -377,6 +439,8 @@ export async function fetchContentPlanEditorOptions(): Promise<ContentPlanEditor
       if (a.role !== 'editor' && b.role === 'editor') return 1;
       return a.short.localeCompare(b.short, 'vi');
     });
+
+  return withDistinctColors(options);
 }
 
 export async function createContentPlanRow(data: ContentPlanFormData, userId?: string | null) {

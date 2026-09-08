@@ -112,6 +112,35 @@ export function ShootModal({
           </button>
         </div>
 
+        <div className="modal-actions-top" style={{ justifyContent: 'space-between' }}>
+          {canEdit && isEditMode && onDelete && shoot ? (
+            <button
+              type="button"
+              onClick={() => onDelete(shoot.id)}
+              className="btn-ghost"
+              style={{ color: 'var(--danger)' }}
+              disabled={isBusy}
+            >
+              <Trash2 style={{ width: '16px', height: '16px' }} />
+              {isDeleting ? 'Đang xóa...' : 'Xóa'}
+            </button>
+          ) : <div />}
+
+          <div className="shoot-modal-action-group">
+            <button type="button" onClick={onClose} className="btn-ghost" disabled={isBusy}>Đóng</button>
+            {canEdit ? (
+              <button type="submit" className="btn" disabled={isBusy}>
+                <CircleCheck style={{ width: '17px', height: '17px' }} />
+                {isSaving ? 'Đang lưu...' : isEditMode ? 'Lưu thay đổi' : 'Lưu lịch quay'}
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {errorMessage ? (
+          <div className="modal-actions-alert">{errorMessage}</div>
+        ) : null}
+
         <div className="shoot-modal-body modal-scroll-body">
           <div className="shoot-modal-stack">
             <div>
@@ -227,36 +256,6 @@ export function ShootModal({
         </div>
 
         <div className="shoot-modal-footer">
-          {errorMessage ? (
-            <div className="profile-inline-error shoot-modal-error">
-              {errorMessage}
-            </div>
-          ) : null}
-
-          <div className="shoot-modal-actions">
-            {canEdit && isEditMode && onDelete && shoot ? (
-              <button
-                type="button"
-                onClick={() => onDelete(shoot.id)}
-                className="btn-ghost"
-                style={{ color: 'var(--danger)' }}
-                disabled={isBusy}
-              >
-                <Trash2 style={{ width: '16px', height: '16px' }} />
-                {isDeleting ? 'Đang xóa...' : 'Xóa'}
-              </button>
-            ) : <div />}
-            
-            <div className="shoot-modal-action-group">
-              <button type="button" onClick={onClose} className="btn-ghost" disabled={isBusy}>Đóng</button>
-              {canEdit ? (
-                <button type="submit" className="btn" disabled={isBusy}>
-                  <CircleCheck style={{ width: '17px', height: '17px' }} />
-                  {isSaving ? 'Đang lưu...' : isEditMode ? 'Lưu thay đổi' : 'Lưu lịch quay'}
-                </button>
-              ) : null}
-            </div>
-          </div>
         </div>
       </form>
     </div>,

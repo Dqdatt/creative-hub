@@ -1,6 +1,6 @@
 import { Search, Plus } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
-import { ORDER_TEAMS } from '../../data/tasks';
+import { ORDER_TEAMS, TASK_CATEGORIES, TASK_STATUSES } from '../../data/tasks';
 import type { Editor, TaskCategory } from '../../types/task';
 
 interface TaskFiltersProps {
@@ -66,10 +66,9 @@ export function TaskFilters({
         onChange={(e) => onStatusChange(e.target.value)}
       >
         <option value="all">Tất cả trạng thái</option>
-        <option value="Pending">Pending</option>
-        <option value="Đã xong">Đã xong</option>
-        <option value="Đang làm">Đang làm</option>
-        <option value="Chờ">Chờ</option>
+        {TASK_STATUSES.map((status) => (
+          <option key={status} value={status}>{status}</option>
+        ))}
       </StyledSelect>
       <StyledSelect
         style={{ width: 'auto', minWidth: '140px' }}
@@ -87,9 +86,9 @@ export function TaskFilters({
         onChange={(e) => onCategoryChange(e.target.value as TaskCategory | 'all')}
       >
         <option value="all">Tất cả thể loại</option>
-        <option value="Video dài">Video dài</option>
-        <option value="Motion">Motion</option>
-        <option value="Ads">Ads</option>
+        {TASK_CATEGORIES.map((category) => (
+          <option key={category} value={category}>{category}</option>
+        ))}
       </StyledSelect>
       <div className="ml-auto text-[13px] text-sub font-semibold flex items-center mr-1">
         {filteredCount} video {filteredCount !== totalCount ? `(trên tổng ${totalCount})` : ''}

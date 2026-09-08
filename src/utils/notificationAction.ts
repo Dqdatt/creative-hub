@@ -10,6 +10,7 @@ const ROUTE_ALIASES: Record<string, AppRoute> = {
 const ROUTE_ALLOWED_PARAMS: Record<AppRoute, ReadonlySet<string>> = {
   '/dashboard': new Set(),
   '/calendar': new Set(['highlight', 'date']),
+  '/workload': new Set(['date']),
   '/tasks': new Set(['highlight']),
   '/content-plan': new Set(['highlight']),
   '/users': new Set(),

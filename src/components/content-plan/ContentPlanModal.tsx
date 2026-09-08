@@ -89,6 +89,30 @@ export function ContentPlanModal({
           </button>
         </div>
 
+        <div className="modal-actions-top" style={{ justifyContent: 'space-between' }}>
+          {mode === 'edit' && canDelete && onDelete ? (
+            <button type="button" className="btn-ghost" onClick={onDelete} disabled={isSaving} style={{ color: 'var(--danger)' }}>
+              <Trash2 /> Xóa
+            </button>
+          ) : <div />}
+
+          <div className="flex flex-wrap items-center justify-end gap-2">
+          <button type="button" className="btn-ghost" onClick={onClose} disabled={isSaving}>
+            Hủy
+          </button>
+          {canSave ? (
+            <button type="button" className="btn" onClick={onSave} disabled={isSaving}>
+              {mode === 'assign' ? <UserRound /> : <PencilLine />}
+              {isSaving ? 'Đang lưu...' : copy.action}
+            </button>
+          ) : null}
+          </div>
+        </div>
+
+        {errorMessage ? (
+          <div className="modal-actions-alert">{errorMessage}</div>
+        ) : null}
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="flabel" htmlFor="contentPlanAirDate">Ngày Air</label>
@@ -178,29 +202,6 @@ export function ContentPlanModal({
           </div>
         </div>
 
-        {errorMessage ? (
-          <div className="profile-inline-error mt-4">{errorMessage}</div>
-        ) : null}
-
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
-          {mode === 'edit' && canDelete && onDelete ? (
-            <button type="button" className="btn-ghost" onClick={onDelete} disabled={isSaving} style={{ color: 'var(--danger)' }}>
-              <Trash2 /> Xóa
-            </button>
-          ) : <div />}
-
-          <div className="flex flex-wrap items-center justify-end gap-2">
-          <button type="button" className="btn-ghost" onClick={onClose} disabled={isSaving}>
-            Hủy
-          </button>
-          {canSave ? (
-            <button type="button" className="btn" onClick={onSave} disabled={isSaving}>
-              {mode === 'assign' ? <UserRound /> : <PencilLine />}
-              {isSaving ? 'Đang lưu...' : copy.action}
-            </button>
-          ) : null}
-          </div>
-        </div>
       </section>
     </div>,
     document.body

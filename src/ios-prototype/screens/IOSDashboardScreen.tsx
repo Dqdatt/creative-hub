@@ -98,7 +98,7 @@ export function IOSDashboardScreen({ state }: Props) {
           <div className="ios-kpi-label">Đang thực hiện</div>
         </div>
 
-        {/* Pending */}
+        {/* Chờ */}
         <div className="ios-kpi-card" style={{ cursor: 'default' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(124,92,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

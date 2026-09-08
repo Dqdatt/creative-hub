@@ -3,10 +3,10 @@ import { Avatar } from '../common/Avatar';
 
 export function StatusBadge({ status }: { status: TaskStatus }) {
   const map: Record<TaskStatus, string> = {
-    'Pending': 'badge--pending',
     'Đã xong':  'badge--done',
     'Đang làm': 'badge--doing',
     'Chờ':      'badge--wait',
+    'Hoãn':     'badge--paused',
   };
   return (
     <span className={`badge ${map[status] ?? 'badge--wait'}`}>
@@ -20,7 +20,6 @@ export function CategoryBadge({ category }: { category: TaskCategory }) {
   const map: Record<TaskCategory, string> = {
     'Video dài': 'tag--long',
     'Motion': 'tag--motion',
-    'Ads': 'tag--ads',
   };
   return (
     <span className={`tag ${map[category] ?? 'mini-chip'}`}>

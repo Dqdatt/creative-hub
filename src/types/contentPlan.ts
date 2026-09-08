@@ -1,4 +1,4 @@
-export type ContentPlanCategory = 'Video dài' | 'Short/Reels' | 'Livestream' | 'Ảnh' | 'Motion' | 'Ads';
+export type ContentPlanCategory = 'Video dài' | 'Short/Reels' | 'Livestream' | 'Ảnh' | 'Motion';
 
 export interface ContentPlanItem {
   id: string;
@@ -10,7 +10,7 @@ export interface ContentPlanItem {
   link: string;
   hasLinkedTask: boolean;
   linkedTaskId?: string | null;
-  linkedTaskStatus?: 'Pending' | 'Chờ' | 'Đang làm' | 'Đã xong' | null;
+  linkedTaskStatus?: 'Chờ' | 'Đang làm' | 'Đã xong' | 'Hoãn' | null;
   linkedTaskLink?: string;
 }
 

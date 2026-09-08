@@ -43,10 +43,10 @@ export interface UserPermissionOverride {
 }
 
 export type EffectivePermissions = Record<Permission, boolean>;
-export type AppRoute = '/dashboard' | '/calendar' | '/tasks' | '/content-plan' | '/users' | '/profile';
+export type AppRoute = '/dashboard' | '/calendar' | '/workload' | '/tasks' | '/content-plan' | '/users' | '/profile';
 
 export interface NavigationItem {
-  id: 'dashboard' | 'calendar' | 'tasks' | 'content_plan' | 'users';
+  id: 'dashboard' | 'calendar' | 'workload' | 'tasks' | 'content_plan' | 'users';
   label: string;
   to: AppRoute;
   permission?: Permission;
@@ -128,14 +128,29 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 const NAVIGATION: NavigationItem[] = [
   { id: 'dashboard', label: 'Tổng quan', to: '/dashboard', permission: 'dashboard:view' },
   { id: 'calendar', label: 'Lịch quay', to: '/calendar', permission: 'shoots:view' },
+  { id: 'workload', label: 'Workload', to: '/workload', permission: 'video_tasks:view' },
   { id: 'tasks', label: 'Video tháng', to: '/tasks', permission: 'video_tasks:view' },
   { id: 'content_plan', label: 'Content Plan', to: '/content-plan', permission: 'content_plan:view' },
   { id: 'users', label: 'Thành viên', to: '/users', permission: 'user_management:view' },
 ];
 
+// Admin làm việc trên trang Tải editor, nên Lịch quay, Video tháng và Content Plan
+// rời sidebar và chuyển vào menu tài khoản. Nội dung ba trang giữ nguyên như bản đã commit.
+const ADMIN_INTEGRATED_NAV_IDS = new Set<NavigationItem['id']>(['calendar', 'tasks', 'content_plan']);
+
+// Workload là màn hình mới chỉ dành cho admin. Vai trò khác giữ nguyên luồng như bản đã commit.
+const ADMIN_ONLY_NAV_IDS = new Set<NavigationItem['id']>(['workload']);
+const ADMIN_ONLY_ROUTES = new Set<AppRoute>(['/workload']);
+
+export function getAdminAccountNavigation(role: AppRole | string | null | undefined) {
+  if (normalizeRole(role) !== 'admin') return [];
+  return NAVIGATION.filter((item) => ADMIN_INTEGRATED_NAV_IDS.has(item.id));
+}
+
 const ROUTE_PERMISSIONS: Record<AppRoute, Permission | null> = {
   '/dashboard': 'dashboard:view',
   '/calendar': 'shoots:view',
+  '/workload': 'video_tasks:view',
   '/tasks': 'video_tasks:view',
   '/content-plan': 'content_plan:view',
   '/users': 'user_management:view',
@@ -307,6 +322,10 @@ export function canAccessRoute(
   const cleanRoute = route.split('?')[0] || getDefaultAuthenticatedRoute(role, permissions);
   if (cleanRoute === '/') return true;
 
+  if (ADMIN_ONLY_ROUTES.has(cleanRoute as AppRoute) && normalizeRole(role) !== 'admin') {
+    return false;
+  }
+
   const permission = ROUTE_PERMISSIONS[cleanRoute as AppRoute];
 
   if (permission === undefined) return true;
@@ -325,14 +344,24 @@ export function getDefaultRoute(
 export const getDefaultRouteForRole = getDefaultAuthenticatedRoute;
 
 export function getVisibleNavigation(role: AppRole | string | null | undefined) {
-  return NAVIGATION.filter((item) => !item.permission || hasPermission(role, item.permission));
+  const normalizedRole = normalizeRole(role);
+  return NAVIGATION.filter((item) =>
+    !(normalizedRole === 'admin' && ADMIN_INTEGRATED_NAV_IDS.has(item.id)) &&
+    !(normalizedRole !== 'admin' && ADMIN_ONLY_NAV_IDS.has(item.id)) &&
+    (!item.permission || hasPermission(normalizedRole, item.permission))
+  );
 }
 
 export function getVisibleNavigationForPermissions(
   role: AppRole | string | null | undefined,
   permissions?: EffectivePermissions | null
 ) {
-  return NAVIGATION.filter((item) => !item.permission || hasEffectivePermission(permissions, item.permission, role));
+  const normalizedRole = normalizeRole(role);
+  return NAVIGATION.filter((item) =>
+    !(normalizedRole === 'admin' && ADMIN_INTEGRATED_NAV_IDS.has(item.id)) &&
+    !(normalizedRole !== 'admin' && ADMIN_ONLY_NAV_IDS.has(item.id)) &&
+    (!item.permission || hasEffectivePermission(permissions, item.permission, normalizedRole))
+  );
 }
 
 export function canEditShoot(role: AppRole | string | null | undefined) {

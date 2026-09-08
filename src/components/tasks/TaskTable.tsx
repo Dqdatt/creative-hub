@@ -73,7 +73,7 @@ export function TaskTable({
               className={rowBg}
               data-video-task-id={v.dbId}
               aria-current={v.dbId && highlightedId === v.dbId ? 'true' : undefined}
-              data-tour={v.contentPlanId && (v.status === 'Pending' || v.status === 'Chờ') ? 'video-task-waiting-row' : undefined}
+              data-tour={v.contentPlanId && v.status === 'Chờ' ? 'video-task-waiting-row' : undefined}
               onClick={() => { if (canEditTask) onRowClick(v); }}
             >
               <td className="text-center text-sub font-bold">{v.id}</td>
@@ -103,7 +103,7 @@ export function TaskTable({
               <td className="font-bold tabular-nums" style={{ color: 'var(--accent)' }}>
                 {v.airDate}
               </td>
-              <td data-tour={v.contentPlanId && (v.status === 'Pending' || v.status === 'Chờ') ? 'video-task-accept' : v.contentPlanId && v.status === 'Đang làm' ? 'video-task-complete' : undefined}>
+              <td data-tour={v.contentPlanId && v.status === 'Chờ' ? 'video-task-accept' : v.contentPlanId && v.status === 'Đang làm' ? 'video-task-complete' : undefined}>
                 <StatusBadge status={v.status} />
               </td>
               <td>

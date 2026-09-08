@@ -1,25 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Menu, Calendar, Mail, Moon, Sun, Sparkles, UserRound, LogOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Calendar, Clapperboard, ClipboardList, Mail, Moon, Sun, Sparkles, UserRound, LogOut } from 'lucide-react';
 import { useTheme } from '../../context/themeContext';
 import { useAuth } from '../../context/authContext';
 import { useMonth } from '../../context/monthContext';
 import { Avatar } from '../common/Avatar';
 import { ProfileModal } from '../profile/ProfileModal';
 import { formatVietnameseMonth } from '../../utils/month';
+import { getAdminAccountNavigation } from '../../config/permissions';
 import { NotificationCenter } from './NotificationCenter';
 import type { useNotifications } from '../../hooks/useNotifications';
 
-const PAGE_META: Record<string, { title: string; sub: string }> = {
-  '/dashboard': { title: 'Tổng quan', sub: 'Báo cáo công việc theo tháng' },
-  '/calendar': { title: 'Lịch quay', sub: 'Lịch buổi quay theo tháng' },
-  '/tasks': { title: 'Video tháng', sub: 'Tổng hợp video theo tháng' },
-  '/content-plan': { title: 'Content Plan', sub: 'Lịch air nội dung theo tháng' },
-  '/users': { title: 'Thành viên', sub: 'Quản lý tài khoản và vai trò nội bộ' },
-  '/profile': { title: 'Hồ sơ', sub: 'Thông tin cá nhân và cài đặt' },
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'Tổng quan',
+  '/calendar': 'Lịch quay',
+  '/workload': 'Workload',
+  '/tasks': 'Video tháng',
+  '/content-plan': 'Content Plan',
+  '/users': 'Thành viên',
+  '/profile': 'Hồ sơ',
 };
 
-const MONTH_ROUTES = new Set(['/dashboard', '/calendar', '/tasks', '/content-plan']);
+const ACCOUNT_NAV_ICONS = {
+  calendar: Calendar,
+  tasks: Clapperboard,
+  content_plan: ClipboardList,
+} as const;
+
+const MONTH_ROUTES = new Set(['/dashboard', '/calendar', '/workload', '/tasks', '/content-plan']);
 
 interface HeaderProps {
   onOpenSidebar?: () => void;
@@ -37,9 +45,10 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew, notifications }:
   const navigate = useNavigate();
   const { theme, toggle } = useTheme();
   const { user, profile, role, roleLabel, permissions, signOut } = useAuth();
+  const adminShortcuts = getAdminAccountNavigation(role);
   const { selectedMonth, setSelectedMonth, goToPreviousMonth, goToNextMonth, goToCurrentMonth } = useMonth();
   const { pathname, search } = useLocation();
-  const meta = PAGE_META[pathname] ?? { title: 'Không tìm thấy', sub: 'Đường dẫn không tồn tại' };
+  const pageTitle = PAGE_TITLES[pathname] ?? 'Không tìm thấy';
   const showMonthControl = MONTH_ROUTES.has(pathname);
   const metaName = profile?.displayName || (typeof user?.user_metadata?.full_name === 'string'
     ? user.user_metadata.full_name
@@ -130,8 +139,7 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew, notifications }:
           <Menu />
         </button>
         <div className="min-w-0">
-          <h1 id="pageTitle" className="page-title">{meta.title}</h1>
-          {meta.sub ? <p id="pageSub" className="page-sub">{meta.sub}</p> : null}
+          <h1 id="pageTitle" className="page-title">{pageTitle}</h1>
         </div>
         <div className="header-actions ml-auto flex items-center gap-2.5">
           {showMonthControl ? (
@@ -223,6 +231,22 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew, notifications }:
 
             {accountOpen ? (
               <div className="header-account-menu card" role="menu">
+                {adminShortcuts.map((item) => {
+                  const Icon = ACCOUNT_NAV_ICONS[item.id as keyof typeof ACCOUNT_NAV_ICONS] ?? Calendar;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="header-account-item"
+                      role="menuitem"
+                      onClick={() => { setAccountOpen(false); navigate(item.to); }}
+                    >
+                      <Icon />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+                {adminShortcuts.length ? <div className="header-account-sep" /> : null}
                 <button type="button" className="header-account-item" role="menuitem" onClick={openProfile}>
                   <UserRound />
                   <span>Hồ sơ cá nhân</span>

@@ -185,6 +185,19 @@ export function UserModal({
           </button>
         </div>
 
+        <div className="modal-actions-top" style={{ justifyContent: 'flex-end' }}>
+          <button type="button" className="btn-ghost" onClick={onClose} disabled={isBusy}>
+            Hủy
+          </button>
+          <button type="button" className="btn" onClick={onSave} disabled={isBusy}>
+            <CircleCheck /> {isSaving ? 'Đang lưu...' : 'Lưu'}
+          </button>
+        </div>
+
+        {errorMessage ? (
+          <div className="modal-actions-alert">{errorMessage}</div>
+        ) : null}
+
         <div className="member-modal-body">
           <div className="member-modal-stack">
           <UserModalSection title="Tài khoản">
@@ -602,20 +615,6 @@ export function UserModal({
           </div>
         </div>
 
-        <div className="member-modal-footer">
-          {errorMessage ? (
-            <div className="profile-inline-error member-modal-error">{errorMessage}</div>
-          ) : null}
-
-          <div className="member-modal-actions">
-            <button type="button" className="btn-ghost" onClick={onClose} disabled={isBusy}>
-              Hủy
-            </button>
-            <button type="button" className="btn" onClick={onSave} disabled={isBusy}>
-              <CircleCheck /> {isSaving ? 'Đang lưu...' : 'Lưu'}
-            </button>
-          </div>
-        </div>
       </section>
     </div>,
     document.body

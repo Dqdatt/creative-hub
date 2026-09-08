@@ -24,7 +24,7 @@
   --sb-w:248px; --sb-rail:60px;
   --page-x:24px; --page-bottom:24px;
   --topbar-pt:10px; --topbar-px:24px; --topbar-pb:9px;
-  --page-title-size:26px; --page-sub-size:12.5px;
+  --page-title-size:19px;
   --card-radius:20px; --control-radius:13px;
   --btn-h:40px; --btn-sm-h:36px; --icon-btn-size:36px; --avatar-size:36px;
   --field-h:41px; --modal-pad:24px;
@@ -257,15 +257,13 @@ input[type="checkbox"]:disabled{ cursor:not-allowed; }
 .badge--done .dot{ background:var(--success); }
 .badge--doing{ background:color-mix(in srgb,var(--accent-2) 16%,transparent); color:var(--accent-2); }
 .badge--doing .dot{ background:var(--accent-2); }
-.badge--pending{ background:color-mix(in srgb,var(--warning) 18%,transparent); color:var(--warning); }
-.badge--pending .dot{ background:var(--warning); }
 .badge--wait{ background:color-mix(in srgb,var(--warning) 16%,transparent); color:var(--warning); }
 .badge--wait .dot{ background:var(--warning); }
+.badge--paused{ background:color-mix(in srgb,var(--muted) 18%,transparent); color:var(--text-2); }
+.badge--paused .dot{ background:var(--muted); }
 .tag{ display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:8px;font-size:12px;font-weight:600; }
 .tag--long{ background:color-mix(in srgb,var(--accent) 15%,transparent); color:var(--accent); }
 .tag--motion{ background:color-mix(in srgb,var(--accent-2) 15%,transparent); color:var(--accent-2); }
-.tag--ads{ background:color-mix(in srgb,#F43F5E 15%,transparent); color:#fb7185; }
-html:not(.dark) .tag--ads{ color:#e11d48; }
 .mini-chip{ display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:8px;font-size:12px;font-weight:700;background:var(--chip);color:var(--text-2); }
 .urgent{ display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:8px;font-size:12px;font-weight:800;
   background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger); }
@@ -567,19 +565,108 @@ html.dark .sticky-filter-bar{
 .cal-cell.out.wknd{ background:color-mix(in srgb,var(--danger) 5%, var(--bg2)); }
 .cal-cell{ min-height:0;height:100%;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:var(--cal-cell-pad);overflow:hidden;display:flex;flex-direction:column; }
 .cal-cell.out{ background:var(--bg2); }
-.cal-daynum{ flex:0 0 auto;font-size:clamp(10px,.7vw,11px);font-weight:800;color:var(--text);padding:0 3px;margin-bottom:3px;line-height:1.05; }
+.cal-day-head{
+  flex:0 0 auto;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+  margin-bottom:3px;
+}
+.cal-daynum{
+  flex:0 0 auto;
+  align-self:flex-start;
+  border:0;
+  background:transparent;
+  font-size:clamp(10px,.7vw,11px);
+  font-weight:800;
+  color:var(--text);
+  padding:0 3px;
+  margin:0;
+  line-height:1.05;
+  cursor:pointer;
+}
+.cal-cell > .cal-daynum{
+  margin-bottom:3px;
+}
+.cal-day-count{
+  flex:0 1 auto;
+  min-width:0;
+  max-width:72px;
+  height:17px;
+  padding:0 6px;
+  border-radius:999px;
+  background:var(--chip);
+  color:var(--text-2);
+  font-size:9.5px;
+  font-weight:850;
+  line-height:17px;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 .cal-cell.out .cal-daynum{ color:var(--muted); }
-.cal-event-list{ min-height:0;display:flex;flex-direction:column;gap:var(--cal-event-gap,4px);overflow:hidden; }
+.cal-event-list{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:var(--cal-event-gap,4px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding-right:2px;
+  scrollbar-width:thin;
+  scrollbar-color:color-mix(in srgb,var(--text-2) 35%,transparent) transparent;
+}
+.cal-event-list::-webkit-scrollbar{ width:5px; }
+.cal-event-list::-webkit-scrollbar-track{ background:transparent; }
+.cal-event-list::-webkit-scrollbar-thumb{ background:color-mix(in srgb,var(--text-2) 32%,transparent);border-radius:999px; }
 .cal-ev{
-  width:100%;border-radius:10px;padding:var(--cal-event-pad-y) var(--cal-event-pad-x);
+  width:100%;border-radius:9px;padding:var(--cal-event-pad-y) var(--cal-event-pad-x);
   font-size:var(--cal-event-font);line-height:1.12;border:1px solid transparent;
-  overflow:hidden;min-height:0;flex:0 1 auto;text-align:left;cursor:pointer;
-  background:transparent;color:var(--text);display:grid;gap:1px;
+  overflow:hidden;min-height:0;flex:0 0 auto;text-align:left;cursor:pointer;
+  background:transparent;color:var(--text);display:grid;gap:2px;
   transition:filter .16s ease,transform .16s ease,border-color .16s ease;
 }
+.cal-ev--task,
+.cal-ev--content{ padding:5px 7px; }
 .cal-ev:hover{ filter:brightness(1.05);transform:translateY(-1px); }
 .cal-ev span{
   display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.cal-ev-top{
+  display:flex!important;
+  min-width:0;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+}
+.cal-ev-source{
+  display:flex!important;
+  align-items:center;
+  gap:4px;
+  font-size:calc(var(--cal-event-font) - 1px);
+  font-weight:850;
+  line-height:1;
+}
+.cal-ev-source svg{
+  width:11px;
+  height:11px;
+  flex:0 0 auto;
+}
+.cal-ev-status{
+  flex:0 0 auto;
+  max-width:48%;
+  height:15px;
+  padding:0 5px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--text-2) 12%,transparent);
+  color:var(--text-2);
+  font-size:9px;
+  font-weight:850;
+  line-height:15px;
 }
 .cal-ev-row{
   display:grid!important;
@@ -590,18 +677,48 @@ html.dark .sticky-filter-bar{
   overflow:hidden;
 }
 .cal-ev-row-main{ font-weight:850; }
-.cal-ev-title{ font-size:var(--cal-event-title-font,var(--cal-event-font));font-weight:850;line-height:1.1; }
+.cal-ev-title{
+  font-size:var(--cal-event-title-font,var(--cal-event-font));
+  font-weight:850;
+  line-height:1.12;
+}
 .cal-ev-place{ font-size:var(--cal-event-place-font,var(--cal-event-font));font-weight:750;line-height:1.12; }
 .cal-ev-sep{ color:color-mix(in srgb,var(--text-2) 60%,transparent);font-weight:800; }
 .cal-ev-content{ color:var(--text);font-size:var(--cal-event-content-font,calc(var(--cal-event-font) - .35px));font-weight:700;line-height:1.1; }
 .cal-ev-time{ color:var(--text-2);font-size:var(--cal-event-time-font,calc(var(--cal-event-font) - .75px));font-weight:650;line-height:1.08; }
 .cal-ev-note{ color:var(--text);font-size:var(--cal-event-note-font,calc(var(--cal-event-font) - 1px));font-weight:500;line-height:1.08; }
+.cal-ev-detail{
+  color:var(--text-2);
+  font-size:calc(var(--cal-event-font) - .75px);
+  font-weight:700;
+  line-height:1.1;
+}
 .cal-more{
   flex:0 0 auto;align-self:flex-start;border:0;background:var(--chip);color:var(--text-2);
   min-height:18px;padding:0 7px;border-radius:999px;font-size:9.5px;font-weight:800;line-height:18px;
   cursor:pointer;max-width:100%;white-space:nowrap;
 }
 .cal-more:hover{ color:var(--text);background:var(--chip-2); }
+.admin-calendar-actions,
+.admin-calendar-task-filters{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+}
+.admin-calendar-actions .btn-ghost{
+  height:34px;
+  padding:0 11px;
+  font-size:12px;
+}
+.admin-calendar-task-filters{
+  flex:0 0 auto;
+}
+.admin-calendar-task-filters .styled-select{
+  width:auto;
+  min-width:150px;
+  height:34px;
+}
 .day-agenda-card{ width:min(100%,520px);padding:18px; }
 .day-agenda-head{ display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px; }
 .day-agenda-head h2{ font-size:18px;font-weight:850;line-height:1.15;color:var(--text); }
@@ -799,7 +916,6 @@ html.dark .sb-shell{ background:#18181B; }
 .topbar::after{ content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
   background:linear-gradient(90deg,transparent,var(--border),transparent);opacity:.7; }
 .page-title{ font-size:var(--page-title-size);font-weight:800;line-height:1.05;letter-spacing:-.03em; }
-.page-sub{ font-size:var(--page-sub-size);color:var(--text-2);margin-top:3px; }
 .header-avatar{ width:var(--avatar-size);height:var(--avatar-size); }
 .header-user-button{
   display:flex;align-items:center;gap:10px;
@@ -811,6 +927,7 @@ html.dark .sb-shell{ background:#18181B; }
   background:var(--chip);border-color:var(--border);transform:translateY(-1px);
 }
 .header-account{ position:relative; }
+.header-account-sep{ height:1px;margin:5px 6px;background:var(--border); }
 .header-account-menu{
   position:absolute;
   right:0;
@@ -2022,7 +2139,7 @@ footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
     --sb-w:240px; --sb-rail:56px;
     --page-x:18px; --page-bottom:16px;
     --topbar-pt:8px; --topbar-px:20px; --topbar-pb:8px;
-    --page-title-size:24px; --page-sub-size:12px;
+    --page-title-size:18px;
     --card-radius:18px; --control-radius:12px;
     --btn-h:38px; --btn-sm-h:34px; --icon-btn-size:36px; --avatar-size:36px;
     --field-h:41px; --modal-pad:24px;
@@ -2055,7 +2172,7 @@ footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
   :root{
     --page-x:18px; --page-bottom:18px;
     --topbar-pt:9px; --topbar-px:18px; --topbar-pb:9px;
-    --page-title-size:22px; --page-sub-size:12px;
+    --page-title-size:17px;
     --card-radius:20px; --control-radius:13px;
     --btn-h:38px; --btn-sm-h:34px; --icon-btn-size:36px; --avatar-size:34px;
     --field-h:40px; --modal-pad:20px;
@@ -2067,7 +2184,6 @@ footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
   .app-content{ padding:6px var(--page-x) var(--page-bottom); }
   #sidebar{ padding:12px; background:transparent; height:100dvh; }
   .sb-shell{ height:calc(100dvh - 24px);width:min(292px,calc(100vw - 24px)); }
-  .page-sub{ display:none; }
   .topbar{ align-items:center; }
   .topbar > .header-actions{ gap:7px; }
   .date-chip{ height:34px;padding:0 11px;font-size:12px; }
@@ -2118,6 +2234,14 @@ footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
   .month-popover{ position:fixed;top:58px;right:14px;width:min(226px,calc(100vw - 28px)); }
   .calendar-card{ overflow:auto; }
   .calendar-grid-shell{ min-width:660px; min-height:560px; }
+  .admin-calendar-actions,
+  .admin-calendar-task-filters{
+    width:100%;
+  }
+  .admin-calendar-actions .btn-ghost,
+  .admin-calendar-task-filters .styled-select{
+    width:100%;
+  }
   .cal-toolbar{ gap:8px; }
   .cal-month-nav{ width:100%; justify-content:space-between; }
   .cal-month-label{ min-width:auto; flex:1; }
@@ -2275,3 +2399,135 @@ footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
 }
 @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
 
+/* ---------- workload: Tải editor ---------- */
+.calendar-page[data-view="workload"]{ gap:6px; --cal-wd-h:22px; }
+/* Màn hình thấp quá thì cho cuộn cả lưới thay vì cắt mất hàng cuối. */
+.calendar-page[data-view="workload"] .calendar-grid-shell{ overflow-y:auto; }
+
+.wl-toolbar{
+  flex:0 0 auto;
+  display:flex;align-items:center;gap:6px;
+  padding:7px 9px;
+}
+/* Một hàng duy nhất: không xuống dòng, chật quá thì cuộn ngang. */
+.wl-row{
+  display:flex;align-items:center;flex-wrap:nowrap;gap:6px;
+  min-width:0;width:100%;overflow-x:auto;scrollbar-width:thin;
+}
+.wl-row::-webkit-scrollbar{ height:4px; }
+.wl-row::-webkit-scrollbar-thumb{ background:color-mix(in srgb,var(--text-2) 26%,transparent);border-radius:999px; }
+.wl-select{ width:auto!important;min-width:112px;flex:0 0 auto; }
+.wl-search{ position:relative;display:flex;align-items:center;flex:0 1 168px;min-width:118px; }
+.wl-search svg{ position:absolute;left:10px;width:14px;height:14px;color:var(--muted);pointer-events:none; }
+.wl-search .field{ height:30px;padding:0 10px 0 30px;font-size:12px;border-radius:9px; }
+.wl-select .styled-select-trigger{ height:30px;padding:0 28px 0 10px;font-size:12px;border-radius:9px; }
+.wl-select .styled-select-arrow{ width:14px;height:14px; }
+.wl-actions{ margin-left:auto;display:flex;align-items:center;gap:6px;flex:0 0 auto;padding-left:2px; }
+.wl-total{ font-size:12px;font-weight:750;color:var(--text-2);white-space:nowrap; }
+.wl-btn{ height:30px!important;padding:0 12px!important;font-size:12px!important;gap:5px!important;white-space:nowrap; }
+
+/* Cụm editor gộp thành một control, chỉ avatar và số việc. */
+.wl-people{
+  display:flex;align-items:center;gap:2px;flex:0 0 auto;
+  padding:2px;border:1px solid var(--border);border-radius:999px;background:var(--card-2);
+}
+.wl-person{
+  display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px 0 3px;
+  border:0;border-radius:999px;background:transparent;cursor:pointer;
+  font-family:inherit;font-size:11.5px;font-weight:750;color:var(--text-2);
+}
+.wl-person:hover{ background:var(--chip); }
+.wl-person.is-active{ background:var(--chip-2);color:var(--text); }
+.wl-person:focus-visible{ outline:2px solid var(--accent);outline-offset:-2px; }
+.wl-person b{ color:var(--text);font-weight:850;font-variant-numeric:tabular-nums; }
+.wl-person .wl-ava{ width:20px;height:20px;border-radius:999px;font-size:10px; }
+
+@media (max-width:1500px){
+  .wl-total{ display:none; }
+}
+@media (max-width:1320px){
+  .wl-btn-text{ display:none; }
+}
+
+.wl-ava{
+  width:14px;height:14px;border-radius:4px;display:grid;place-items:center;flex:0 0 auto;
+  color:#fff;font-size:8.5px;font-weight:850;line-height:1;
+}
+.wl-ava--none{ background:transparent;border:1px dashed var(--border-strong);color:var(--muted); }
+
+.wl-cell{ padding:3px 3px 2px; }
+.wl-cell--today .cal-daynum{ color:var(--accent); }
+.wl-day-head{ margin-bottom:2px; }
+.wl-day-head .cal-daynum{ padding:0 2px;font-size:10.5px; }
+.wl-list{ gap:2px;padding-right:1px; }
+
+.wl-chip{
+  --wl-kind:var(--border-strong);
+  display:flex;align-items:center;gap:4px;width:100%;min-width:0;
+  padding:1px 4px;border:1px solid transparent;border-radius:5px;
+  background:var(--chip);text-align:left;cursor:pointer;font-family:inherit;
+}
+.wl-chip:hover{ background:var(--chip-2); }
+.wl-chip:focus-visible{ outline:2px solid var(--accent);outline-offset:-1px; }
+.wl-chip-who{ display:flex;align-items:center;gap:2px;flex:0 0 auto; }
+.wl-chip-text{
+  min-width:0;flex:1 1 auto;
+  font-size:10px;font-weight:700;line-height:14px;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.wl-chip--shoot{
+  border-left:2px solid var(--wl-kind);border-radius:3px 5px 5px 3px;
+  background:color-mix(in srgb,var(--wl-kind) 15%,transparent);
+  border-top-color:color-mix(in srgb,var(--wl-kind) 26%,transparent);
+  border-right-color:color-mix(in srgb,var(--wl-kind) 26%,transparent);
+  border-bottom-color:color-mix(in srgb,var(--wl-kind) 26%,transparent);
+}
+.wl-chip--shoot:hover{ background:color-mix(in srgb,var(--wl-kind) 26%,transparent); }
+.wl-chip--plan{ background:transparent;border:1px dashed color-mix(in srgb,var(--accent) 45%,transparent); }
+.wl-chip--unassigned{ background:transparent;border:1px dashed var(--border-strong); }
+.wl-chip--unassigned .wl-chip-text{ color:var(--text-2); }
+.wl-chip--done{ background:transparent;border-left:2px solid color-mix(in srgb,var(--success) 70%,transparent);border-radius:3px 5px 5px 3px; }
+.wl-chip--done .wl-chip-text{ color:var(--muted);font-weight:600;text-decoration:line-through;text-decoration-thickness:1px;text-decoration-color:color-mix(in srgb,var(--muted) 70%,transparent); }
+.wl-chip--done .wl-ava{ opacity:.5; }
+.wl-chip--urgent{ border:1px solid var(--danger);background:color-mix(in srgb,var(--danger) 9%,transparent); }
+.wl-chip--urgent .wl-chip-text{ color:var(--text); }
+
+/* ---------- nút thao tác nằm trên đầu modal ---------- */
+.modal-actions-top{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  margin:0 0 18px;padding-bottom:14px;
+  border-bottom:1px solid var(--border);
+}
+.modal-actions-alert{
+  margin:-8px 0 16px;
+  font-size:13px;font-weight:650;color:var(--danger);
+}
+/* Hai modal này chia head và body riêng nên hàng nút cần padding khớp với head. */
+.shoot-modal-card > .modal-actions-top,
+.member-modal-card > .modal-actions-top{
+  flex:0 0 auto;
+  margin:0;
+  padding:9px 14px;
+  background:var(--surface);
+}
+.shoot-modal-card > .modal-actions-alert,
+.member-modal-card > .modal-actions-alert{
+  flex:0 0 auto;
+  margin:0;
+  padding:0 14px 10px;
+}
+.wl-chip-team{
+  flex:0 0 auto;
+  font-size:8.5px;font-weight:850;letter-spacing:.03em;line-height:13px;
+  color:var(--text-2);background:var(--chip);border-radius:3px;padding:0 4px;
+  max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.wl-chip--done .wl-chip-team{ opacity:.55; }
+/* Lịch quay: địa điểm là chữ nối sau nội dung, không phải nhãn dán, và không bao giờ bị cắt. */
+.wl-chip-at{
+  flex:0 0 auto;
+  margin-left:4px;padding-left:5px;
+  border-left:1px solid color-mix(in srgb,var(--wl-kind) 45%,transparent);
+  font-size:9.5px;font-weight:850;letter-spacing:.02em;line-height:13px;
+  color:var(--wl-kind);white-space:nowrap;
+}

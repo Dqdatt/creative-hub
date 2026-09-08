@@ -16,7 +16,7 @@ import { useAuth } from '../context/authContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { can } = useAuth();
+  const { can, role } = useAuth();
   const { selectedMonth, setSelectedMonth } = useMonth();
   const [reportOpen, setReportOpen] = useState(false);
   const [reportEditorFilter, setReportEditorFilter] = useState('all');
@@ -31,6 +31,10 @@ export default function Dashboard() {
     refetch,
   } = useDashboard(selectedMonth);
   const canCreateReport = can('dashboard:report');
+  const taskListPath = (params: Record<string, string>) => {
+    const query = new URLSearchParams(params).toString();
+    return role === 'admin' ? `/calendar?source=task&${query}` : `/tasks?${query}`;
+  };
 
   if (isLoading) {
     return (
@@ -103,9 +107,9 @@ export default function Dashboard() {
         pendingVideos={metrics.pendingVideos}
         overdueVideos={metrics.overdueVideos}
         doneWithoutResultLinks={metrics.doneWithoutResultLinks}
-        onOpenPending={() => navigate('/tasks?status=Pending')}
-        onOpenOverdue={() => navigate('/tasks?attention=overdue')}
-        onOpenMissingLinks={() => navigate('/tasks?status=Đã xong&attention=missing-link')}
+        onOpenWaiting={() => navigate(taskListPath({ status: 'Chờ' }))}
+        onOpenOverdue={() => navigate(taskListPath({ attention: 'overdue' }))}
+        onOpenMissingLinks={() => navigate(taskListPath({ status: 'Đã xong', attention: 'missing-link' }))}
       />
       
       <EditorWorkload

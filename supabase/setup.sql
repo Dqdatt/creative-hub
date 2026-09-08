@@ -222,26 +222,27 @@ set status = case status
   when 'Chờ' then 'Chờ'
   when 'Đang làm' then 'Đang làm'
   when 'Đã xong' then 'Đã xong'
+  when 'Hoãn' then 'Hoãn'
   else 'Chờ'
 end
-where status is null or status not in ('Chờ', 'Đang làm', 'Đã xong');
+where status is null or status not in ('Chờ', 'Đang làm', 'Đã xong', 'Hoãn');
 
 update public.video_tasks
 set priority = ''
 where priority is null;
 
 update public.video_tasks
-set category = null
-where category is not null and category not in ('Video dài', 'Motion', 'Ads');
+set category = case when category = 'Ads' then 'Motion' else null end
+where category is not null and category not in ('Video dài', 'Motion');
 
 update public.video_tasks
-set order_team = null
-where order_team is not null and order_team not in ('BRAND', 'DIGITAL', 'ECOM', 'HR', 'ISD', 'IT', 'CS', 'GT', 'PUR');
+set order_team = case when order_team = 'DIGITAL' then 'DIGITAL - ADS' else null end
+where order_team is not null and order_team not in ('BRAND', 'DIGITAL - ADS', 'ECOM', 'HR', 'ISD', 'IT', 'CS', 'GT', 'PUR');
 
 alter table public.video_tasks drop constraint if exists video_tasks_status_check;
 alter table public.video_tasks
   add constraint video_tasks_status_check
-  check (status in ('Chờ', 'Đang làm', 'Đã xong'));
+  check (status in ('Chờ', 'Đang làm', 'Đã xong', 'Hoãn'));
 
 alter table public.video_tasks drop constraint if exists video_tasks_priority_check;
 alter table public.video_tasks
@@ -251,12 +252,12 @@ alter table public.video_tasks
 alter table public.video_tasks drop constraint if exists video_tasks_category_check;
 alter table public.video_tasks
   add constraint video_tasks_category_check
-  check (category is null or category in ('Video dài', 'Motion', 'Ads'));
+  check (category is null or category in ('Video dài', 'Motion'));
 
 alter table public.video_tasks drop constraint if exists video_tasks_order_team_check;
 alter table public.video_tasks
   add constraint video_tasks_order_team_check
-  check (order_team is null or order_team in ('BRAND', 'DIGITAL', 'ECOM', 'HR', 'ISD', 'IT', 'CS', 'GT', 'PUR'));
+  check (order_team is null or order_team in ('BRAND', 'DIGITAL - ADS', 'ECOM', 'HR', 'ISD', 'IT', 'CS', 'GT', 'PUR'));
 
 alter table public.video_tasks drop constraint if exists video_tasks_date_order_check;
 alter table public.video_tasks
@@ -332,6 +333,12 @@ as $$
 begin
   if tg_op = 'UPDATE' and new.content_plan_id is distinct from old.content_plan_id then
     raise exception 'Không được đổi liên kết Content Plan của Video Task.';
+  end if;
+
+  -- Admin sửa trực tiếp được task liên kết, kể cả task đã xong.
+  -- Giữ đồng bộ với admin_video_task_linked_override_patch.sql, đừng bỏ khi chạy lại file này.
+  if coalesce(public.current_profile_role() = 'admin', false) then
+    return new;
   end if;
 
   if tg_op = 'UPDATE'
@@ -1030,7 +1037,7 @@ comment on column public.profiles.crew_key is 'Từ khóa ekip để match lịc
 
 comment on table public.video_tasks is 'Danh sách video task theo tháng.';
 comment on column public.video_tasks.stt is 'Số thứ tự hiển thị trong bảng task.';
-comment on column public.video_tasks.status is 'Trạng thái UI tiếng Việt: Chờ, Đang làm, Đã xong.';
+comment on column public.video_tasks.status is 'Trạng thái UI tiếng Việt: Chờ, Đang làm, Đã xong, Hoãn.';
 comment on column public.video_tasks.priority is 'Độ ưu tiên UI tiếng Việt: rỗng hoặc Gấp.';
 comment on column public.video_tasks.editor_id is 'Editor được giao task, tham chiếu profiles.id.';
 comment on column public.video_tasks.content_plan_id is 'Optional source Content Plan. Null means manual Video tháng task; non-null generated from Content Plan and cascades on Content Plan delete.';

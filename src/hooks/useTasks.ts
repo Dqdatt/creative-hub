@@ -31,7 +31,7 @@ function toTaskEditor(editor: ContentPlanEditorOption): Editor {
 }
 
 export function useTasks(monthValue: string) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const requestIdRef = useRef(0);
   const [tasks, setTasks] = useState<VideoTask[]>([]);
   const [editors, setEditors] = useState<Editor[]>([]);
@@ -106,7 +106,9 @@ export function useTasks(monthValue: string) {
       if (!task.dbId) {
         throw new Error('Không tìm thấy mã task cần cập nhật.');
       }
-      await updateVideoTask(task.dbId, data, user?.id, task);
+      await updateVideoTask(task.dbId, data, user?.id, task, {
+        allowLinkedOverride: profile?.role === 'admin',
+      });
       await loadTasks();
       return true;
     } catch (error) {
@@ -115,7 +117,7 @@ export function useTasks(monthValue: string) {
     } finally {
       setIsSaving(false);
     }
-  }, [loadTasks, user?.id]);
+  }, [loadTasks, profile?.role, user?.id]);
 
   const deleteTask = useCallback(async (task: VideoTask) => {
     setIsDeleting(true);

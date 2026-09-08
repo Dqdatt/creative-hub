@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import {
   Clapperboard,
   ClipboardList,
   LayoutDashboard,
   CalendarDays,
+  Gauge,
   UsersRound,
   ChevronRight,
   PanelLeftClose,
@@ -18,6 +19,7 @@ import logoWordmark from '../../assets/text.png';
 const NAV_ICONS = {
   dashboard: LayoutDashboard,
   calendar: CalendarDays,
+  workload: Gauge,
   tasks: Clapperboard,
   content_plan: ClipboardList,
   users: UsersRound,
@@ -29,8 +31,14 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
   const { role, permissions } = useAuth();
+  // Admin làm việc trên trang Tải editor nên sidebar mặc định thu gọn.
+  const [collapsed, setCollapsed] = useState(role === 'admin');
+
+  useEffect(() => {
+    setCollapsed(role === 'admin');
+  }, [role]);
+
   const navigation = getVisibleNavigationForPermissions(role, permissions);
   const defaultRoute = getDefaultAuthenticatedRoute(role, permissions);
   const isCollapsed = !mobileOpen && collapsed;

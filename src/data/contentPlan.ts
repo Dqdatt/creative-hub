@@ -6,7 +6,6 @@ export const CONTENT_PLAN_CATEGORIES: ContentPlanCategory[] = [
   'Livestream',
   'Ảnh',
   'Motion',
-  'Ads',
 ];
 
 export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
@@ -25,7 +24,7 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     air_date: '2026-07-01',
     video_name: 'Video Motion Combo kháng khuẩn',
     note: '',
-    category: 'Ads',
+    category: 'Motion',
     editor_id: 'minh',
     link: '',
     hasLinkedTask: false,
@@ -55,7 +54,7 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     air_date: '2026-07-03',
     video_name: 'Video Motion Nệm Cocoon Grey',
     note: '',
-    category: 'Ads',
+    category: 'Motion',
     editor_id: 'hai',
     link: '',
     hasLinkedTask: false,
@@ -65,7 +64,7 @@ export const MOCK_CONTENT_PLAN: ContentPlanItem[] = [
     air_date: '2026-07-03',
     video_name: "Video Motion Nệm L'ADOME Cool",
     note: '',
-    category: 'Ads',
+    category: 'Motion',
     editor_id: 'hai',
     link: '',
     hasLinkedTask: false,

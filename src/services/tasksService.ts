@@ -38,11 +38,11 @@ interface VideoTaskRow {
   resize_reqs: Nullable<string>;
   editor_id: Nullable<string>;
   order_team: Nullable<string>;
-  category: Nullable<TaskCategory>;
+  category: Nullable<string>;
   receive_date: Nullable<string>;
   return_date: Nullable<string>;
   air_date: Nullable<string>;
-  status: TaskStatus;
+  status: string;
   priority: Nullable<TaskPriority>;
   result_link: Nullable<string>;
   notes: Nullable<string>;
@@ -82,6 +82,10 @@ type VideoTaskPayload = {
   created_by?: string | null;
   updated_by?: string | null;
 };
+
+interface UpdateVideoTaskOptions {
+  allowLinkedOverride?: boolean;
+}
 
 interface AcceptLinkedVideoTaskRpcRow {
   video_task_id: string;
@@ -251,7 +255,27 @@ function firstContentPlan(contentPlan: VideoTaskRow['content_plan']) {
 }
 
 function isVideoTaskCategory(value: string | null | undefined): value is TaskCategory {
-  return value === 'Video dài' || value === 'Motion' || value === 'Ads';
+  return value === 'Video dài' || value === 'Motion';
+}
+
+function normalizeTaskCategory(value: string | null | undefined): TaskCategory {
+  if (isVideoTaskCategory(value)) return value;
+  if (value === 'Ads') return 'Motion';
+  return 'Video dài';
+}
+
+function normalizeTaskStatus(value: string | null | undefined): TaskStatus {
+  if (value === 'Đang làm' || value === 'Đã xong' || value === 'Hoãn') return value;
+  return 'Chờ';
+}
+
+function normalizeOrderTeam(value: string | null | undefined) {
+  if (value === 'DIGITAL') return 'DIGITAL - ADS';
+  return value ?? '';
+}
+
+function toLegacyRpcOrderTeam(value: string) {
+  return value === 'DIGITAL - ADS' ? 'DIGITAL' : value;
 }
 
 function getEffectiveAirDate(row: VideoTaskRow) {
@@ -300,9 +324,9 @@ function mapTaskRow(row: VideoTaskRow): VideoTask {
   const taskProfile = firstProfile(row.profiles);
   const contentPlanProfile = contentPlan ? firstProfile(contentPlan.profiles) : null;
   const profile = isLinkedTask ? contentPlanProfile ?? taskProfile : taskProfile;
-  const category = isLinkedTask && isVideoTaskCategory(contentPlan?.category)
-    ? contentPlan.category
-    : row.category ?? 'Video dài';
+  const category = isLinkedTask
+    ? normalizeTaskCategory(contentPlan?.category)
+    : normalizeTaskCategory(row.category);
 
   return {
     dbId: row.id,
@@ -311,12 +335,12 @@ function mapTaskRow(row: VideoTaskRow): VideoTask {
     name: isLinkedTask ? contentPlan?.title ?? row.title : row.title,
     resize: row.resize_reqs ?? '',
     editorId: profile?.editor_code ?? '',
-    orderTeam: row.order_team ?? '',
+    orderTeam: normalizeOrderTeam(row.order_team),
     category,
     receiveDate: toDisplayDate(row.receive_date),
     returnDate: toDisplayDate(row.return_date),
     airDate: toDisplayDate(isLinkedTask ? contentPlan?.air_date ?? row.air_date : row.air_date),
-    status: row.status ?? 'Chờ',
+    status: normalizeTaskStatus(row.status),
     priority: row.priority ?? '',
     link: row.result_link ?? '',
     note: isLinkedTask ? contentPlan?.note ?? '' : row.notes ?? '',
@@ -343,6 +367,11 @@ async function resolveEditorProfileId(editorCode: string) {
   return editorProfileId;
 }
 
+// Task đã có link thành phẩm thì coi như đã xong, áp cho mọi luồng lưu.
+function resolveStatusWithLink(status: TaskStatus, resultLink: string | null | undefined): TaskStatus {
+  return resultLink && resultLink.trim() ? 'Đã xong' : status;
+}
+
 async function toTaskPayload(data: TaskFormData, userId?: string | null, includeCreatedBy = false): Promise<VideoTaskPayload> {
   const editorProfileId = await resolveEditorProfileId(data.editorId);
 
@@ -355,7 +384,7 @@ async function toTaskPayload(data: TaskFormData, userId?: string | null, include
     receive_date: toDatabaseDate(data.receiveDate, 'Ngày nhận'),
     return_date: toDatabaseDate(data.returnDate, 'Ngày trả'),
     air_date: toDatabaseDate(data.airDate, 'Ngày Air'),
-    status: data.status,
+    status: resolveStatusWithLink(data.status, data.link),
     priority: data.priority,
     result_link: data.link.trim() || null,
     notes: (data.note ?? '').trim() || null,
@@ -453,7 +482,7 @@ async function syncLinkedVideoTask(input: SyncLinkedVideoTaskInput): Promise<Upd
   const { data, error } = await client.rpc('sync_linked_video_task_from_video_month', {
     p_video_task_id: taskId,
     p_status: input.status,
-    p_order_team: input.orderTeam.trim() || null,
+    p_order_team: toLegacyRpcOrderTeam(input.orderTeam.trim()) || null,
     p_priority: input.priority,
     p_resize_reqs: input.resize.trim() || null,
     p_receive_date: receiveDate,
@@ -470,6 +499,82 @@ async function syncLinkedVideoTask(input: SyncLinkedVideoTaskInput): Promise<Upd
   }
 
   return mapSyncLinkedVideoTaskRpcRow(row as SyncLinkedVideoTaskRpcRow);
+}
+
+async function updateLinkedVideoTaskAsAdmin(
+  taskId: string,
+  data: TaskFormData,
+  userId?: string | null,
+  previousTask?: VideoTask,
+) {
+  const client = requireSupabase();
+  const receiveDate = toDatabaseDate(data.receiveDate, 'Ngày nhận');
+  const returnDate = toDatabaseDate(data.returnDate, 'Ngày trả');
+
+  if (receiveDate && returnDate && returnDate < receiveDate) {
+    throw new Error('Ngày nhận và Ngày trả chưa hợp lệ.');
+  }
+
+  const resultLink = normalizeOptionalHttpUrl(data.link);
+  const note = data.note.trim() || null;
+  const linkChanged = (previousTask?.link ?? '') !== (resultLink ?? '');
+
+  // Trigger content_plan_field_permission_guard chỉ cho đổi link trong ngữ cảnh hoàn thành,
+  // nên link phải đi qua RPC admin thay vì update thẳng bảng content_plan.
+  if (previousTask?.contentPlanId && linkChanged && resultLink) {
+    const { error: syncError } = await client.rpc('admin_sync_linked_video_task_completion', {
+      p_video_task_id: taskId,
+      p_content_plan_id: previousTask.contentPlanId,
+      p_result_link: resultLink,
+    });
+
+    if (syncError) throw new Error(mapDatabaseError(syncError));
+  }
+
+  const { error: taskError } = await client
+    .from('video_tasks')
+    .update({
+      status: resolveStatusWithLink(data.status, resultLink),
+      order_team: data.orderTeam || null,
+      priority: data.priority,
+      resize_reqs: data.resize.trim() || null,
+      receive_date: receiveDate,
+      return_date: returnDate,
+      result_link: resultLink,
+      notes: note,
+      updated_by: userId ?? null,
+    })
+    .eq('id', taskId);
+
+  if (taskError) throw new Error(mapDatabaseError(taskError));
+
+  if (previousTask?.contentPlanId) {
+    const { error: planError } = await client
+      .from('content_plan')
+      .update({
+        note,
+        updated_by: userId ?? null,
+      })
+      .eq('id', previousTask.contentPlanId);
+
+    if (planError) throw new Error(mapDatabaseError(planError));
+  }
+
+  void logActivity({
+    actorId: userId,
+    entityType: 'video_task',
+    entityId: taskId,
+    action: previousTask?.status !== data.status ? 'status_changed' : 'updated',
+    title: data.name.trim(),
+    description: `Admin đã cập nhật video task liên kết "${data.name.trim()}".`,
+    metadata: {
+      content_plan_id: previousTask?.contentPlanId,
+      previous_status: previousTask?.status,
+      status: data.status,
+      link_synced: previousTask?.link !== data.link,
+      note_synced: (previousTask?.note ?? '') !== data.note,
+    },
+  });
 }
 
 export async function fetchVideoTasks(monthValue?: string): Promise<VideoTask[]> {
@@ -663,11 +768,17 @@ export async function updateVideoTask(
   data: TaskFormData,
   userId?: string | null,
   previousTask?: VideoTask,
+  options?: UpdateVideoTaskOptions,
 ) {
   if (previousTask?.contentPlanId) {
+    if (options?.allowLinkedOverride) {
+      await updateLinkedVideoTaskAsAdmin(taskId, data, userId, previousTask);
+      return;
+    }
+
     await syncLinkedVideoTask({
       taskId,
-      status: data.status,
+      status: resolveStatusWithLink(data.status, data.link),
       orderTeam: data.orderTeam,
       priority: data.priority,
       resize: data.resize,
@@ -823,7 +934,7 @@ export async function updateLinkedVideoTaskExecution(input: UpdateLinkedVideoTas
 
   const { data, error } = await client.rpc('update_linked_video_task_execution', {
     p_video_task_id: taskId,
-    p_order_team: input.orderTeam.trim() || null,
+    p_order_team: toLegacyRpcOrderTeam(input.orderTeam.trim()) || null,
     p_priority: input.priority,
     p_resize_reqs: input.resize.trim() || null,
     p_receive_date: receiveDate,

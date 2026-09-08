@@ -90,7 +90,7 @@ export function useDashboard(monthValue = getCurrentMonthValue()) {
     const totalVideos = monthTasks.length;
     const doneVideos = monthTasks.filter((task) => task.status === 'Đã xong').length;
     const missingResultLinks = monthTasks.filter((task) => !task.link || task.link === '#').length;
-    const pendingVideos = monthTasks.filter((task) => task.status === 'Pending' || task.status === 'Chờ').length;
+    const pendingVideos = monthTasks.filter((task) => task.status === 'Chờ').length;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const overdueVideos = monthTasks.filter((task) => {

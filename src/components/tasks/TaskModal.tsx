@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Clapperboard, CircleCheck, Trash2 } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
 import type { Editor, VideoTask, TaskFormData, TaskStatus, TaskCategory, TaskPriority, LinkedVideoTaskExecutionData } from '../../types/task';
-import { ORDER_TEAMS } from '../../data/tasks';
+import { ORDER_TEAMS, TASK_CATEGORIES, TASK_STATUSES } from '../../data/tasks';
 import { useDocumentScrollLock } from '../common/useDocumentScrollLock';
 import { isSafeHttpUrl } from '../../utils/url';
 
@@ -12,6 +12,7 @@ interface TaskModalProps {
   task: VideoTask | null;
   editors: Editor[];
   selectedMonth: string;
+  defaultAirDate?: string;
   onClose: () => void;
   onSave: (data: TaskFormData) => void | Promise<void>;
   onSaveExecution?: (data: LinkedVideoTaskExecutionData) => void | Promise<void>;
@@ -118,7 +119,7 @@ function resolveTaskModalFieldState(
     };
   }
 
-  const canAccept = (task?.status === 'Pending' || task?.status === 'Chờ') && canAcceptLinkedTask;
+  const canAccept = task?.status === 'Chờ' && canAcceptLinkedTask;
   const canComplete = task?.status === 'Đang làm' && canCompleteLinkedTask;
   const canSaveExecution = canComplete;
 
@@ -171,6 +172,7 @@ export function TaskModal({
   task,
   editors,
   selectedMonth,
+  defaultAirDate = '',
   onClose,
   onSave,
   onSaveExecution,
@@ -247,7 +249,15 @@ export function TaskModal({
 
   const handleSaveExecution = () => {
     if (isSaving || !fieldState.canSaveExecution) return;
-    onSaveExecution?.(getExecutionData());
+    const data = getExecutionData();
+
+    // Có link thành phẩm hợp lệ thì lưu là hoàn thành luôn, không cần bấm thêm nút Hoàn thành.
+    if (data.link && isSafeHttpUrl(data.link)) {
+      onComplete?.(data);
+      return;
+    }
+
+    onSaveExecution?.(data);
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -297,9 +307,9 @@ export function TaskModal({
   const dv: TaskFormData = task
     ? { ...task, note: task.note ?? '' }
     : {
-        name: '', status: 'Pending', editorId: editors[0]?.id ?? '',
+        name: '', status: 'Chờ', editorId: editors[0]?.id ?? '',
         orderTeam: ORDER_TEAMS[0], category: 'Video dài',
-        priority: '', resize: '', receiveDate: '', returnDate: '', airDate: '', link: '', note: '',
+        priority: '', resize: '', receiveDate: '', returnDate: '', airDate: defaultAirDate, link: '', note: '',
       };
   const acceptValidationError = !isAcceptMode
     ? null
@@ -341,6 +351,38 @@ export function TaskModal({
         </div>
 
         <form ref={formRef} onSubmit={handleSubmit}>
+          <div className="modal-actions-top">
+            {isEditMode && canDelete && onDelete ? (
+              <button type="button" className="btn-ghost mr-auto" onClick={onDelete} disabled={isSaving} style={{ color: 'var(--danger)' }}>
+                <Trash2 style={{ width: '16px', height: '16px' }} />
+                Xóa Task
+              </button>
+            ) : null}
+            <div className="ml-auto flex gap-3">
+            <button type="button" onClick={onClose} className="btn-ghost" disabled={isSaving}>Đóng</button>
+            {fieldState.canSaveExecution ? (
+              <button type="button" className="btn-ghost" onClick={handleSaveExecution} disabled={isSaving}>
+                <CircleCheck style={{ width: '17px', height: '17px' }} />
+                {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+              </button>
+            ) : null}
+            {showSubmitButton ? (
+              <button type="submit" className="btn" disabled={submitDisabled}>
+                <CircleCheck style={{ width: '17px', height: '17px' }} />
+                {isSaving ? 'Đang lưu...' : isAcceptMode ? 'Nhận Task' : isCompleteMode ? 'Hoàn thành' : 'Lưu thay đổi'}
+              </button>
+            ) : null}
+            </div>
+          </div>
+
+          {acceptValidationError || completeValidationError ? (
+            <div className="modal-actions-alert">{acceptValidationError ?? completeValidationError}</div>
+          ) : null}
+
+          {errorMessage ? (
+            <div className="modal-actions-alert">{errorMessage}</div>
+          ) : null}
+
           <div className="space-y-5">
             <div>
               <label className="flabel">Tên video <span style={{ color: 'var(--danger)' }}>*</span></label>
@@ -370,10 +412,9 @@ export function TaskModal({
               <div>
                 <label className="flabel">Trạng thái</label>
                 <StyledSelect name="status" defaultValue={dv.status} disabled={isSaving || !fieldState.canEditStatus}>
-                  <option value="Pending">Pending</option>
-                  <option value="Chờ">Chờ</option>
-                  <option value="Đang làm">Đang làm</option>
-                  <option value="Đã xong">Đã xong</option>
+                  {TASK_STATUSES.map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
                 </StyledSelect>
               </div>
               <div>
@@ -387,9 +428,9 @@ export function TaskModal({
               <div>
                 <label className="flabel">Thể loại</label>
                 <StyledSelect name="category" defaultValue={dv.category} disabled={isSaving || !fieldState.canEditCategory}>
-                  <option value="Video dài">Video dài</option>
-                  <option value="Motion">Motion</option>
-                  <option value="Ads">Ads</option>
+                  {TASK_CATEGORIES.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
                 </StyledSelect>
               </div>
               <div>
@@ -479,41 +520,6 @@ export function TaskModal({
             </div>
           </div>
 
-          {acceptValidationError || completeValidationError ? (
-            <div className="mt-5 text-[13px] font-semibold" style={{ color: 'var(--danger)' }}>
-              {acceptValidationError ?? completeValidationError}
-            </div>
-          ) : null}
-
-          {errorMessage ? (
-            <div className="mt-5 text-[13px] font-semibold" style={{ color: 'var(--danger)' }}>
-              {errorMessage}
-            </div>
-          ) : null}
-
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-            {isEditMode && canDelete && onDelete ? (
-              <button type="button" className="btn-ghost mr-auto" onClick={onDelete} disabled={isSaving} style={{ color: 'var(--danger)' }}>
-                <Trash2 style={{ width: '16px', height: '16px' }} />
-                Xóa Task
-              </button>
-            ) : null}
-            <div className="ml-auto flex gap-3">
-            <button type="button" onClick={onClose} className="btn-ghost" disabled={isSaving}>Đóng</button>
-            {fieldState.canSaveExecution ? (
-              <button type="button" className="btn-ghost" onClick={handleSaveExecution} disabled={isSaving}>
-                <CircleCheck style={{ width: '17px', height: '17px' }} />
-                {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
-              </button>
-            ) : null}
-            {showSubmitButton ? (
-              <button type="submit" className="btn" disabled={submitDisabled}>
-                <CircleCheck style={{ width: '17px', height: '17px' }} />
-                {isSaving ? 'Đang lưu...' : isAcceptMode ? 'Nhận Task' : isCompleteMode ? 'Hoàn thành' : 'Lưu thay đổi'}
-              </button>
-            ) : null}
-            </div>
-          </div>
         </form>
       </div>
     </div>,

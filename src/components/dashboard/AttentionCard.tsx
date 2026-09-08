@@ -4,7 +4,7 @@ interface AttentionCardProps {
   pendingVideos: number;
   overdueVideos: number;
   doneWithoutResultLinks: number;
-  onOpenPending: () => void;
+  onOpenWaiting: () => void;
   onOpenOverdue: () => void;
   onOpenMissingLinks: () => void;
 }
@@ -13,12 +13,12 @@ export function AttentionCard({
   pendingVideos,
   overdueVideos,
   doneWithoutResultLinks,
-  onOpenPending,
+  onOpenWaiting,
   onOpenOverdue,
   onOpenMissingLinks,
 }: AttentionCardProps) {
   const items = [
-    { label: 'Pending', value: pendingVideos, action: onOpenPending },
+    { label: 'Chờ', value: pendingVideos, action: onOpenWaiting },
     { label: 'Quá hạn', value: overdueVideos, action: onOpenOverdue },
     { label: 'Xong thiếu link', value: doneWithoutResultLinks, action: onOpenMissingLinks },
   ];

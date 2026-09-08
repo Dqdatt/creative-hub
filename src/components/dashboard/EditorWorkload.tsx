@@ -32,7 +32,6 @@ export function EditorWorkload({ editors, tasks, shoots }: EditorWorkloadProps) 
           const editorTasks = tasks.filter((t) => t.editorId === editor.id);
           const dai = editorTasks.filter((t) => t.category === 'Video dài').length;
           const motion = editorTasks.filter((t) => t.category === 'Motion').length;
-          const ads = editorTasks.filter((t) => t.category === 'Ads').length;
           const resize = editorTasks.reduce((acc, t) => acc + resizeCount(t.resize), 0);
           const editorShootKey = editor.profileId || editor.id;
           const editorShoots = shoots.filter((s) =>
@@ -71,9 +70,6 @@ export function EditorWorkload({ editors, tasks, shoots }: EditorWorkloadProps) 
                 </div>
                 <div className="stat-row">
                   <span className="text-sub font-medium">Motion</span><span className="font-bold tabular-nums">{motion}</span>
-                </div>
-                <div className="stat-row">
-                  <span className="text-sub font-medium">Ads</span><span className="font-bold tabular-nums">{ads}</span>
                 </div>
                 <div className="stat-row hl">
                   <span className="text-sub font-medium">Resize</span><span className="font-bold tabular-nums">{resize}</span>

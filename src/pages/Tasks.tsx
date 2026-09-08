@@ -64,7 +64,7 @@ export default function Tasks() {
   const canAcceptSelectedTask = Boolean(
     selectedTask?.dbId &&
     selectedTask.contentPlanId &&
-    (selectedTask.status === 'Pending' || selectedTask.status === 'Chờ') &&
+    selectedTask.status === 'Chờ' &&
     canUpdateTask &&
     !canManageSelectedLinkedTask &&
     profile?.id &&
@@ -123,8 +123,9 @@ export default function Tasks() {
   useEffect(() => {
     const requestedStatus = searchParams.get('status');
     if (!requestedStatus) return;
-    if (!['Pending', 'Chờ', 'Đang làm', 'Đã xong', 'all'].includes(requestedStatus)) return;
-    if (requestedStatus !== statusFilter) setStatusFilter(requestedStatus);
+    const normalizedStatus = requestedStatus === 'Pending' ? 'Chờ' : requestedStatus;
+    if (!['Chờ', 'Đang làm', 'Đã xong', 'Hoãn', 'all'].includes(normalizedStatus)) return;
+    if (normalizedStatus !== statusFilter) setStatusFilter(normalizedStatus);
   }, [searchParams, statusFilter]);
 
   const openEditModal = (task: VideoTask) => {

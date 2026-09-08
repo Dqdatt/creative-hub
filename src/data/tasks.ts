@@ -1,6 +1,8 @@
-import type { Editor, VideoTask } from '../types/task';
+import type { Editor, TaskCategory, TaskStatus, VideoTask } from '../types/task';
 
-export const ORDER_TEAMS = ['BRAND', 'DIGITAL', 'ECOM', 'HR', 'ISD', 'IT', 'CS', 'GT', 'PUR'];
+export const TASK_STATUSES: TaskStatus[] = ['Chờ', 'Đang làm', 'Đã xong', 'Hoãn'];
+export const TASK_CATEGORIES: TaskCategory[] = ['Video dài', 'Motion'];
+export const ORDER_TEAMS = ['BRAND', 'DIGITAL - ADS', 'ECOM', 'HR', 'ISD', 'IT', 'CS', 'GT', 'PUR'];
 
 export const EDITORS: Editor[] = [
   {
@@ -105,8 +107,8 @@ export const MOCK_TASKS: VideoTask[] = [
     name: 'Video Motion Combo kháng khuẩn',
     resize: '1x1',
     editorId: 'minh',
-    orderTeam: 'DIGITAL',
-    category: 'Ads',
+    orderTeam: 'DIGITAL - ADS',
+    category: 'Motion',
     receiveDate: '1/7',
     returnDate: '1/7',
     airDate: '1/7',
@@ -135,8 +137,8 @@ export const MOCK_TASKS: VideoTask[] = [
     name: 'Video Motion Nệm Cocoon Grey',
     resize: '1x1',
     editorId: 'hai',
-    orderTeam: 'DIGITAL',
-    category: 'Ads',
+    orderTeam: 'DIGITAL - ADS',
+    category: 'Motion',
     receiveDate: '2/7',
     returnDate: '3/7',
     airDate: '3/7',
@@ -165,8 +167,8 @@ export const MOCK_TASKS: VideoTask[] = [
     name: "Video Motion Nệm L'ADOME Cool",
     resize: '1x1',
     editorId: 'hai',
-    orderTeam: 'DIGITAL',
-    category: 'Ads',
+    orderTeam: 'DIGITAL - ADS',
+    category: 'Motion',
     receiveDate: '2/7',
     returnDate: '3/7',
     airDate: '3/7',

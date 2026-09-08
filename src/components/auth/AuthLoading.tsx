@@ -107,7 +107,6 @@ function AuthSkeletonHeader() {
       </button>
       <div className="min-w-0">
         <h1 id="pageTitle" className="page-title">Video tháng</h1>
-        <p id="pageSub" className="page-sub">Tổng hợp video theo tháng</p>
       </div>
       <div className="header-actions ml-auto flex items-center gap-2.5">
         <div className="topbar-month-control">

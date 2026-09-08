@@ -26,7 +26,6 @@ function getCategoryClass(category: ContentPlanCategory) {
   const map: Partial<Record<ContentPlanCategory, string>> = {
     'Video dài': 'tag--long',
     Motion: 'tag--motion',
-    Ads: 'tag--ads',
   };
 
   return map[category] ?? '';

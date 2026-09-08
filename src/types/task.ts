@@ -1,7 +1,7 @@
 // Core data types for the Video Task module
 
-export type TaskStatus = 'Pending' | 'Chờ' | 'Đang làm' | 'Đã xong';
-export type TaskCategory = 'Video dài' | 'Motion' | 'Ads';
+export type TaskStatus = 'Chờ' | 'Đang làm' | 'Đã xong' | 'Hoãn';
+export type TaskCategory = 'Video dài' | 'Motion';
 export type TaskPriority = '' | 'Gấp';
 
 export interface Editor {

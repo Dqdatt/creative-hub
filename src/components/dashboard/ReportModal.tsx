@@ -50,7 +50,7 @@ export function ReportModal({
   const scopedTasks = editorFilter === 'all' ? tasks : tasks.filter((task) => task.editorId === editorFilter);
   const totalResize = scopedTasks.reduce((sum, task) => sum + resizeCount(task.resize), 0);
   const done = scopedTasks.filter((task) => task.status === 'Đã xong').length;
-  const pending = scopedTasks.filter((task) => task.status === 'Pending' || task.status === 'Chờ').length;
+  const pending = scopedTasks.filter((task) => task.status === 'Chờ').length;
   const doing = scopedTasks.filter((task) => task.status === 'Đang làm').length;
   const missingLinks = scopedTasks.filter((task) => task.status === 'Đã xong' && !task.link).length;
   const title = `Báo cáo CreativeHub ${formatVietnameseMonth(monthValue)}`;
@@ -114,7 +114,7 @@ export function ReportModal({
             <div><strong>{scopedTasks.length}</strong><span>Tổng video</span></div>
             <div><strong>{done}</strong><span>Đã xong</span></div>
             <div><strong>{doing}</strong><span>Đang làm</span></div>
-            <div><strong>{pending}</strong><span>Pending</span></div>
+            <div><strong>{pending}</strong><span>Chờ</span></div>
             <div><strong>{totalResize}</strong><span>Resize</span></div>
             <div><strong>{shoots.length}</strong><span>Buổi quay</span></div>
           </section>

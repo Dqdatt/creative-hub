@@ -136,22 +136,23 @@ export function PasswordModal({ isOpen, onClose, onMessage, onChangePassword, is
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
-          {renderPasswordInput('currentPassword', 'Mật khẩu hiện tại', currentPassword, 'current', setCurrentPassword)}
-          {renderPasswordInput('newPassword', 'Mật khẩu mới', newPassword, 'next', setNewPassword)}
-          {renderPasswordInput('confirmPassword', 'Xác nhận mật khẩu mới', confirmPassword, 'confirm', setConfirmPassword)}
-
-          {localError && (
-            <div id="passwordError" className="profile-inline-error">
-              {localError}
-            </div>
-          )}
-
-          <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
+          <div className="modal-actions-top" style={{ justifyContent: 'flex-end' }}>
             <button type="button" className="btn-ghost" onClick={onClose} disabled={isSaving}>Hủy</button>
             <button id="savePasswordBtn" type="submit" className="btn" disabled={isSaving}>
               <ShieldCheck /> {isSaving ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}
             </button>
           </div>
+
+          {localError && (
+            <div id="passwordError" className="modal-actions-alert">
+              {localError}
+            </div>
+          )}
+
+          {renderPasswordInput('currentPassword', 'Mật khẩu hiện tại', currentPassword, 'current', setCurrentPassword)}
+          {renderPasswordInput('newPassword', 'Mật khẩu mới', newPassword, 'next', setNewPassword)}
+          {renderPasswordInput('confirmPassword', 'Xác nhận mật khẩu mới', confirmPassword, 'confirm', setConfirmPassword)}
+
         </form>
       </section>
     </div>

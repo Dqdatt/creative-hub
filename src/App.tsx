@@ -18,6 +18,7 @@ const Tasks = lazy(() => import('./pages/Tasks'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const Profile = lazy(() => import('./pages/Profile'));
 const ContentPlan = lazy(() => import('./pages/ContentPlan'));
+const Workload = lazy(() => import('./pages/Workload'));
 const Users = lazy(() => import('./pages/Users'));
 
 function DefaultRedirect() {
@@ -55,6 +56,7 @@ function App() {
                   <Route path="/" element={<DefaultRedirect />} />
                   <Route path="/dashboard" element={lazyPage(<Dashboard />)} />
                   <Route path="/tasks" element={lazyPage(<Tasks />)} />
+                  <Route path="/workload" element={lazyPage(<Workload />)} />
                   <Route path="/content-plan" element={lazyPage(<ContentPlan />)} />
                   <Route path="/users" element={lazyPage(<Users />)} />
                   <Route path="/calendar" element={lazyPage(<Calendar />)} />
