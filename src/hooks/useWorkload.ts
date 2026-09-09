@@ -9,6 +9,11 @@ export type WorkloadKind = 'shoot' | 'task' | 'plan';
 
 export const UNASSIGNED_EDITOR_ID = '__unassigned__';
 
+// Dòng Content Plan chưa sinh task thì chưa có phòng ban order trong database.
+// Lấy đúng mặc định mà trigger dưới database sẽ gán khi task được tạo, để bộ lọc order
+// không bỏ sót những dòng chưa phân công.
+const CONTENT_PLAN_DEFAULT_ORDER_TEAM = 'BRAND';
+
 export interface WorkloadItem {
   id: string;
   sourceId: string;
@@ -181,6 +186,7 @@ export function useWorkload({
         detail: item.note,
         accent: '',
         category: item.category,
+        orderTeam: CONTENT_PLAN_DEFAULT_ORDER_TEAM,
         needsAssign: editorIds.length === 0,
       });
     });

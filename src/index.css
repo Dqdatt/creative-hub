@@ -2531,3 +2531,4 @@ footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
   font-size:9.5px;font-weight:850;letter-spacing:.02em;line-height:13px;
   color:var(--wl-kind);white-space:nowrap;
 }
+.styled-select-sep{ height:1px;margin:5px 4px;background:var(--border); }

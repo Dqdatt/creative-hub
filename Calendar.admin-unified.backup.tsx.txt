@@ -1,0 +1,1039 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
+import { CalendarDays, X } from 'lucide-react';
+import type { ShootSchedule, ShootType, ShootFormData } from '../types/shoot';
+import { EmptyState } from '../components/common/EmptyState';
+import { ErrorState } from '../components/common/ErrorState';
+import { LoadingState } from '../components/common/LoadingState';
+import { CalendarHeader } from '../components/calendar/CalendarHeader';
+import { CalendarGrid } from '../components/calendar/CalendarGrid';
+import { ShootModal } from '../components/calendar/ShootModal';
+import { UnifiedCalendar } from '../components/calendar/UnifiedCalendar';
+import type { UnifiedCalendarEvent, UnifiedCalendarFilter } from '../components/calendar/UnifiedCalendar';
+import { ContentPlanModal } from '../components/content-plan/ContentPlanModal';
+import { TaskModal } from '../components/tasks/TaskModal';
+import { canEditContentPlanField } from '../config/permissions';
+import { useAuth } from '../context/authContext';
+import { useContentPlan } from '../hooks/useContentPlan';
+import { useShoots } from '../hooks/useShoots';
+import { useTasks } from '../hooks/useTasks';
+import { useRouteHighlight } from '../hooks/useRouteHighlight';
+import { fetchShootById } from '../services/shootsService';
+import type { ContentPlanCategory, ContentPlanFormData, ContentPlanItem } from '../types/contentPlan';
+import type { LinkedVideoTaskExecutionData, TaskCategory, TaskFormData, TaskStatus, VideoTask } from '../types/task';
+import { useConfirmDialog } from '../components/common/confirmDialogContext';
+import { useToast } from '../components/common/toastContext';
+import { useMonth } from '../context/monthContext';
+import { monthValueToDate } from '../utils/month';
+import { getDefaultContentDate, hasContentFieldChanges, toContentPlanFormData } from '../utils/contentPlanForm';
+import { isIsoDate, isUuid } from '../utils/id';
+import { SHOOT_TYPES_META } from '../data/shoots';
+import { useDocumentScrollLock } from '../components/common/useDocumentScrollLock';
+
+function toIsoDate(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function getCalendarRange(date: Date) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const first = new Date(year, month, 1);
+  const startDow = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cellCount = Math.ceil((startDow + daysInMonth) / 7) * 7;
+  const startDate = new Date(year, month, 1 - startDow);
+  const endDate = new Date(year, month, cellCount - startDow);
+
+  return {
+    startDate: toIsoDate(startDate),
+    endDate: toIsoDate(endDate),
+  };
+}
+
+function formatAgendaDate(value: string) {
+  const [year, month, day] = value.split('-');
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
+}
+
+function displayDateToIso(value: string, selectedMonth: string) {
+  const cleanValue = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanValue)) return cleanValue;
+
+  const match = cleanValue.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+  if (!match) return null;
+
+  const fallbackYear = Number(selectedMonth.slice(0, 4)) || new Date().getFullYear();
+  const parsedYear = match[3] ? Number(match[3]) : fallbackYear;
+  const year = parsedYear < 100 ? 2000 + parsedYear : parsedYear;
+  const month = Number(match[2]);
+  const day = Number(match[1]);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return toIsoDate(date);
+}
+
+function getInitialCalendarFilter(value: string | null): UnifiedCalendarFilter {
+  if (value === 'task' || value === 'content') return value;
+  if (value === 'livestream' || value === 'lichquay' || value === 'onset' || value === 'other') return value;
+  return 'all';
+}
+
+function getInitialTaskStatus(value: string | null): TaskStatus | 'all' {
+  if (value === 'Chờ' || value === 'Đang làm' || value === 'Đã xong' || value === 'Hoãn') return value;
+  return 'all';
+}
+
+function isOverdueTask(task: VideoTask, selectedMonth: string) {
+  if (task.status === 'Đã xong') return false;
+  const returnDate = task.returnDate || task.airDate;
+  if (!returnDate) return false;
+
+  const [day, month, year] = returnDate.split('/');
+  const normalizedYear = Number(year ?? selectedMonth.slice(0, 4));
+  const dueDate = new Date(
+    normalizedYear < 100 ? 2000 + normalizedYear : normalizedYear,
+    Number(month) - 1,
+    Number(day)
+  );
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Number.isFinite(dueDate.getTime()) && dueDate < today;
+}
+
+function DayAgendaModal({
+  date,
+  events,
+  onClose,
+  onShootClick,
+}: {
+  date: string;
+  events: ShootSchedule[];
+  onClose: () => void;
+  onShootClick: (shoot: ShootSchedule, e: React.MouseEvent) => void;
+}) {
+  useDocumentScrollLock(true);
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="modal-overlay fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto px-4 py-6"
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+    >
+      <section className="modal-card day-agenda-card">
+        <div className="day-agenda-head">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="icoc icoc-lg" style={{ background: 'var(--grad)', color: '#fff' }}>
+              <CalendarDays />
+            </span>
+            <div className="min-w-0">
+              <h2>Lịch ngày {formatAgendaDate(date)}</h2>
+              <p>{events.length} lịch quay</p>
+            </div>
+          </div>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Đóng">
+            <X />
+          </button>
+        </div>
+
+        <div className="day-agenda-list">
+          {events.map((event) => {
+            const meta = SHOOT_TYPES_META[event.type];
+            return (
+              <button
+                key={event.id}
+                type="button"
+                className="day-agenda-item"
+                onClick={(clickEvent) => {
+                  onShootClick(event, clickEvent);
+                  onClose();
+                }}
+              >
+                <span className="day-agenda-type" style={{ background: meta.dot }} />
+                <span className="min-w-0">
+                  <strong>{event.displayCrew || event.crew || 'Chưa có crew'} · {event.place}</strong>
+                  <span>{event.content}{event.time ? ` · ${event.time}` : ''}</span>
+                  <span>{meta.label}</span>
+                  {event.note ? <em>{event.note}</em> : null}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    </div>,
+    document.body
+  );
+}
+
+function AdminUnifiedCalendarPage() {
+  const { role, permissions, can } = useAuth();
+  const { requestConfirm } = useConfirmDialog();
+  const { showToast } = useToast();
+  const { selectedMonth, setSelectedMonth, goToCurrentMonth } = useMonth();
+  const [searchParams] = useSearchParams();
+  const sourceParam = searchParams.get('source');
+  const statusParam = searchParams.get('status');
+  const attentionParam = searchParams.get('attention');
+  const currentDate = useMemo(() => monthValueToDate(selectedMonth), [selectedMonth]);
+  const visibleRange = useMemo(() => getCalendarRange(currentDate), [currentDate]);
+  const [selectedDate, setSelectedDate] = useState(() => `${selectedMonth}-01`);
+  const [calendarFilter, setCalendarFilter] = useState<UnifiedCalendarFilter>(() =>
+    getInitialCalendarFilter(sourceParam)
+  );
+  const [taskCategoryFilter, setTaskCategoryFilter] = useState<TaskCategory | 'all'>('all');
+  const [contentCategoryFilter, setContentCategoryFilter] = useState<ContentPlanCategory | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>(() =>
+    getInitialTaskStatus(statusParam)
+  );
+  const [isShootModalOpen, setIsShootModalOpen] = useState(false);
+  const [selectedShoot, setSelectedShoot] = useState<ShootSchedule | null>(null);
+  const [defaultDateForShoot, setDefaultDateForShoot] = useState('');
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<VideoTask | null>(null);
+  const [defaultDateForTask, setDefaultDateForTask] = useState('');
+  const [contentModalMode, setContentModalMode] = useState<'create' | 'edit' | 'assign'>('create');
+  const [selectedContentItem, setSelectedContentItem] = useState<ContentPlanItem | null>(null);
+  const [contentDraft, setContentDraft] = useState<ContentPlanFormData | null>(null);
+  const [contentFormError, setContentFormError] = useState<string | null>(null);
+
+  const shootsData = useShoots(visibleRange);
+  const tasksData = useTasks(selectedMonth);
+  const contentData = useContentPlan(selectedMonth);
+
+  const canCreateShoot = can('shoots:create');
+  const canUpdateShoot = can('shoots:update');
+  const canDeleteShoot = can('shoots:delete');
+  const canCreateTask = can('video_tasks:create');
+  const canUpdateTask = can('video_tasks:update');
+  const canDeleteTask = can('video_tasks:delete');
+  const canCreateContent = can('content_plan:create');
+  const canUpdateContent = can('content_plan:update');
+  const canAssignContent = can('content_plan:assign');
+  const canDeleteContent = can('content_plan:delete');
+  const canEditAirDate = canEditContentPlanField(role, 'air_date', permissions);
+  const canEditVideoName = canEditContentPlanField(role, 'video_name', permissions);
+  const canEditNote = canEditContentPlanField(role, 'note', permissions);
+  const canEditCategory = canEditContentPlanField(role, 'category', permissions);
+  const canEditEditor = canEditContentPlanField(role, 'editor_id', permissions);
+  const canEditLink = canEditContentPlanField(role, 'link', permissions);
+
+  useEffect(() => {
+    if (!selectedDate.startsWith(selectedMonth)) {
+      setSelectedDate(`${selectedMonth}-01`);
+    }
+  }, [selectedDate, selectedMonth]);
+
+  useEffect(() => {
+    if (sourceParam) {
+      const nextFilter = getInitialCalendarFilter(sourceParam);
+      setCalendarFilter((current) => current === nextFilter ? current : nextFilter);
+    }
+    if (statusParam) {
+      const nextStatus = getInitialTaskStatus(statusParam);
+      setStatusFilter((current) => current === nextStatus ? current : nextStatus);
+    }
+  }, [sourceParam, statusParam]);
+
+  const rawEvents = useMemo<UnifiedCalendarEvent[]>(() => {
+    const shootEvents: UnifiedCalendarEvent[] = shootsData.shoots.map((shoot) => {
+      const meta = SHOOT_TYPES_META[shoot.type];
+      const crew = shoot.displayCrew || shoot.crew || 'Chưa có crew';
+      return {
+        id: `shoot:${shoot.id}`,
+        date: shoot.date,
+        source: 'shoot',
+        title: crew,
+        subtitle: shoot.place,
+        content: shoot.content,
+        time: shoot.time,
+        note: shoot.note,
+        color: meta.dot,
+        shootType: shoot.type,
+      };
+    });
+
+    const taskEvents: UnifiedCalendarEvent[] = tasksData.tasks.flatMap((task) => {
+      if (attentionParam === 'missing-link' && task.link) return [];
+      if (attentionParam === 'overdue' && !isOverdueTask(task, selectedMonth)) return [];
+      const date = displayDateToIso(task.airDate, selectedMonth);
+      if (!date) return [];
+      const editor = tasksData.editors.find((item) => item.id === task.editorId);
+      return [{
+        id: `task:${task.dbId ?? task.id}`,
+        date,
+        source: 'task',
+        title: task.name,
+        subtitle: editor?.short || editor?.name || 'Chưa phân công',
+        content: [task.status, task.category, task.orderTeam].filter(Boolean).join(' | '),
+        time: task.returnDate ? `Hạn trả ${task.returnDate}` : '',
+        note: task.note ?? '',
+        color: task.status === 'Đã xong'
+          ? 'var(--success)'
+          : task.status === 'Hoãn'
+            ? 'var(--muted)'
+            : 'var(--accent-2)',
+        category: task.category,
+        status: task.status,
+        editorId: task.editorId,
+      }];
+    });
+
+    const contentEvents: UnifiedCalendarEvent[] = contentData.items.map((item) => {
+      const editor = contentData.editorOptions.find((option) => option.id === item.editor_id);
+      return {
+        id: `content:${item.id}`,
+        date: item.air_date,
+        source: 'content',
+        title: item.video_name,
+        subtitle: editor?.short || editor?.name || 'Chưa phân công',
+        content: item.category,
+        time: item.linkedTaskStatus ? `Task: ${item.linkedTaskStatus}` : 'Chưa giao task',
+        note: item.note,
+        color: 'var(--accent)',
+        category: item.category,
+        status: item.linkedTaskStatus ?? undefined,
+      };
+    });
+
+    return [...shootEvents, ...taskEvents, ...contentEvents].sort((a, b) =>
+      a.date.localeCompare(b.date) || a.source.localeCompare(b.source) || a.title.localeCompare(b.title, 'vi')
+    );
+  }, [attentionParam, contentData.editorOptions, contentData.items, selectedMonth, shootsData.shoots, tasksData.editors, tasksData.tasks]);
+
+  const filteredEvents = useMemo(() =>
+    rawEvents.filter((event) => {
+      if (calendarFilter === 'task' && event.source !== 'task') return false;
+      if (calendarFilter === 'content' && event.source !== 'content') return false;
+      if (calendarFilter !== 'all' && calendarFilter !== 'task' && calendarFilter !== 'content') {
+        if (event.source !== 'shoot' || event.shootType !== calendarFilter) return false;
+      }
+      if (calendarFilter === 'task' && taskCategoryFilter !== 'all' && event.category !== taskCategoryFilter) return false;
+      if (calendarFilter === 'task' && statusFilter !== 'all' && event.status !== statusFilter) return false;
+      if (calendarFilter === 'content' && contentCategoryFilter !== 'all' && event.category !== contentCategoryFilter) return false;
+      return true;
+    }),
+    [calendarFilter, contentCategoryFilter, rawEvents, statusFilter, taskCategoryFilter]
+  );
+
+  const handleToday = () => {
+    const today = toIsoDate(new Date());
+    setSelectedDate(today);
+    goToCurrentMonth();
+  };
+
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date);
+    const nextMonth = date.slice(0, 7);
+    if (nextMonth !== selectedMonth) setSelectedMonth(nextMonth);
+  };
+
+  const openShootCreate = (date: string) => {
+    if (!canCreateShoot) return;
+    handleDateSelect(date);
+    shootsData.clearModalError();
+    setSelectedShoot(null);
+    setDefaultDateForShoot(date);
+    setIsShootModalOpen(true);
+  };
+
+  const openTaskCreate = (date: string) => {
+    if (!canCreateTask) return;
+    handleDateSelect(date);
+    tasksData.clearSaveError();
+    setSelectedTask(null);
+    setDefaultDateForTask(date);
+    setIsTaskModalOpen(true);
+  };
+
+  const openContentCreate = (date: string) => {
+    if (!canCreateContent) return;
+    handleDateSelect(date);
+    contentData.clearSaveError();
+    setSelectedContentItem(null);
+    setContentModalMode('create');
+    setContentDraft({
+      air_date: getDefaultContentDate(selectedMonth, date),
+      video_name: '',
+      note: '',
+      category: 'Video dài',
+      editor_id: '',
+      link: '',
+    });
+    setContentFormError(null);
+  };
+
+  const openShootEdit = (shoot: ShootSchedule) => {
+    shootsData.clearModalError();
+    setSelectedShoot(shoot);
+    setDefaultDateForShoot(shoot.date);
+    setIsShootModalOpen(true);
+  };
+
+  const openTaskEdit = (task: VideoTask) => {
+    if (!canUpdateTask) return;
+    tasksData.clearSaveError();
+    setSelectedTask(task);
+    setDefaultDateForTask('');
+    setIsTaskModalOpen(true);
+  };
+
+  const openContentEdit = (item: ContentPlanItem) => {
+    if (!canUpdateContent && !canAssignContent) return;
+    contentData.clearSaveError();
+    setSelectedContentItem(item);
+    setContentModalMode(canUpdateContent ? 'edit' : 'assign');
+    setContentDraft(toContentPlanFormData(item));
+    setContentFormError(null);
+  };
+
+  const handleEventClick = (event: UnifiedCalendarEvent) => {
+    if (event.source === 'shoot') {
+      const shoot = shootsData.shoots.find((item) => `shoot:${item.id}` === event.id);
+      if (shoot) openShootEdit(shoot);
+      return;
+    }
+
+    if (event.source === 'task') {
+      const task = tasksData.tasks.find((item) => `task:${item.dbId ?? item.id}` === event.id);
+      if (task) openTaskEdit(task);
+      return;
+    }
+
+    const item = contentData.items.find((contentItem) => `content:${contentItem.id}` === event.id);
+    if (!item) return;
+
+    // Dòng đã phân công editor thì mở modal Video tháng, dòng chưa phân công mở modal Content Plan.
+    if (item.editor_id && item.linkedTaskId) {
+      const linkedTask = tasksData.tasks.find((task) => task.dbId === item.linkedTaskId);
+      if (linkedTask) {
+        openTaskEdit(linkedTask);
+        return;
+      }
+    }
+
+    openContentEdit(item);
+  };
+
+  const closeShootModal = () => {
+    if (shootsData.isSaving || shootsData.isDeleting) return;
+    setIsShootModalOpen(false);
+    setSelectedShoot(null);
+    shootsData.clearModalError();
+  };
+
+  const closeTaskModal = useCallback(() => {
+    if (tasksData.isSaving) return;
+    setIsTaskModalOpen(false);
+    setSelectedTask(null);
+    setDefaultDateForTask('');
+    tasksData.clearSaveError();
+  }, [tasksData]);
+
+  const closeContentModal = () => {
+    setSelectedContentItem(null);
+    setContentDraft(null);
+    setContentFormError(null);
+  };
+
+  const handleShootSave = async (data: ShootFormData) => {
+    if (selectedShoot && !canUpdateShoot) return;
+    if (!selectedShoot && !canCreateShoot) return;
+    const saved = selectedShoot
+      ? await shootsData.updateShoot(selectedShoot.id, data)
+      : await shootsData.createShoot(data);
+    if (saved) {
+      closeShootModal();
+      showToast({ type: 'success', message: selectedShoot ? 'Đã lưu thay đổi lịch quay.' : 'Đã thêm lịch quay.' });
+    }
+  };
+
+  const handleShootDelete = async (id: string) => {
+    if (!canDeleteShoot) return;
+    const confirmed = await requestConfirm({
+      title: 'Xóa lịch quay?',
+      description: 'Thao tác này không thể hoàn tác.',
+      confirmLabel: 'Xóa lịch quay',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+    const deleted = await shootsData.deleteShoot(id);
+    if (deleted) {
+      closeShootModal();
+      showToast({ type: 'success', message: 'Đã xóa lịch quay.' });
+    }
+  };
+
+  const handleTaskSave = async (data: TaskFormData) => {
+    if (selectedTask && !canUpdateTask) return;
+    if (!selectedTask && !canCreateTask) return;
+    const saved = selectedTask
+      ? await tasksData.updateTask(selectedTask, data)
+      : await tasksData.createTask(data);
+    if (saved) {
+      closeTaskModal();
+      void contentData.refetch();
+      showToast({ type: 'success', message: selectedTask ? 'Đã lưu thay đổi video task.' : 'Đã thêm video task.' });
+    }
+  };
+
+  const handleTaskExecutionSave = async (data: LinkedVideoTaskExecutionData) => {
+    if (!selectedTask) return;
+    const saved = await tasksData.updateLinkedExecution(selectedTask, data);
+    if (saved) {
+      closeTaskModal();
+      void contentData.refetch();
+      showToast({ type: 'success', message: 'Đã lưu thông tin thực hiện Task.' });
+    }
+  };
+
+  const handleTaskComplete = async (data: LinkedVideoTaskExecutionData) => {
+    if (!selectedTask) return;
+    const completed = await tasksData.saveExecutionAndCompleteTask(selectedTask, data);
+    if (completed) {
+      closeTaskModal();
+      void contentData.refetch();
+      showToast({ type: 'success', message: 'Đã hoàn thành Task.' });
+    }
+  };
+
+  const handleTaskDelete = useCallback(async (task: VideoTask) => {
+    if (!canDeleteTask || tasksData.isSaving || tasksData.isDeleting) return;
+    const confirmed = await requestConfirm({
+      title: 'Xóa video task?',
+      description: task.contentPlanId
+        ? 'Task này được tạo từ Content Plan. Thao tác xóa sẽ gỡ task khỏi Video tháng nhưng không xóa dòng Content Plan.'
+        : 'Thao tác này không thể hoàn tác.',
+      confirmLabel: 'Xóa Task',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+    const deleted = await tasksData.deleteTask(task);
+    if (deleted) {
+      if (selectedTask?.dbId === task.dbId) closeTaskModal();
+      void contentData.refetch();
+      showToast({ type: 'success', message: 'Đã xóa video task.' });
+    }
+  }, [canDeleteTask, closeTaskModal, contentData, requestConfirm, selectedTask?.dbId, showToast, tasksData]);
+
+  const handleContentDraftChange = (data: Partial<ContentPlanFormData>) => {
+    setContentDraft((current) => current ? { ...current, ...data } : current);
+    setContentFormError(null);
+    contentData.clearSaveError();
+  };
+
+  const handleContentSave = async () => {
+    if (!contentDraft) return;
+    if (contentModalMode === 'create' && !canCreateContent) return;
+    if (contentModalMode === 'edit' && !canUpdateContent) return;
+    if (contentModalMode === 'assign' && !canAssignContent) return;
+    if (!contentDraft.air_date) {
+      setContentFormError('Vui lòng chọn ngày Air.');
+      return;
+    }
+    if (!contentDraft.video_name.trim()) {
+      setContentFormError('Vui lòng nhập tên video.');
+      return;
+    }
+    if (contentModalMode === 'assign' && !contentDraft.editor_id) {
+      setContentFormError('Vui lòng chọn editor.');
+      return;
+    }
+    if (contentModalMode !== 'create' && !selectedContentItem) {
+      setContentFormError('Không tìm thấy dòng lịch air cần lưu.');
+      return;
+    }
+
+    const sourceItem = selectedContentItem ? toContentPlanFormData(selectedContentItem) : null;
+    const nextData: ContentPlanFormData = {
+      air_date: canEditAirDate ? contentDraft.air_date : sourceItem?.air_date ?? contentDraft.air_date,
+      video_name: canEditVideoName ? contentDraft.video_name.trim() : sourceItem?.video_name ?? contentDraft.video_name.trim(),
+      note: canEditNote ? contentDraft.note.trim() : sourceItem?.note ?? contentDraft.note.trim(),
+      category: canEditCategory ? contentDraft.category : sourceItem?.category ?? contentDraft.category,
+      editor_id: canEditEditor ? contentDraft.editor_id : sourceItem?.editor_id ?? '',
+      link: canEditLink && !selectedContentItem?.hasLinkedTask ? contentDraft.link.trim() : sourceItem?.link ?? contentDraft.link.trim(),
+    };
+
+    let saved = false;
+    if (contentModalMode === 'create') {
+      saved = await contentData.createItem({ ...nextData, editor_id: '' });
+    } else if (selectedContentItem) {
+      const editorChanged = selectedContentItem.editor_id !== nextData.editor_id;
+      const contentChanged = hasContentFieldChanges(selectedContentItem, nextData);
+      if (editorChanged && contentChanged) {
+        setContentFormError('Vui lòng lưu nội dung trước, rồi phân công editor.');
+        return;
+      }
+      if (editorChanged) {
+        saved = await contentData.assignEditor(selectedContentItem, nextData.editor_id);
+      } else if (contentChanged) {
+        saved = await contentData.updateItem(selectedContentItem, nextData);
+      } else {
+        closeContentModal();
+        return;
+      }
+    }
+
+    if (saved) {
+      closeContentModal();
+      // Phân công editor sẽ sinh Video Task, nên phải tải lại task để nó hiện ngay.
+      void tasksData.refetch();
+      showToast({
+        type: 'success',
+        message: selectedContentItem && selectedContentItem.editor_id !== nextData.editor_id ? 'Đã phân công editor.' : 'Đã lưu lịch air.',
+      });
+    }
+  };
+
+  const handleContentDelete = async (item: ContentPlanItem) => {
+    if (!canDeleteContent || contentData.isSaving || contentData.isDeleting) return;
+    const confirmed = await requestConfirm({
+      title: 'Xóa kế hoạch content?',
+      description: 'Thao tác này không thể hoàn tác. Nếu dòng đã sinh Video Task, task liên kết cũng sẽ bị xóa.',
+      confirmLabel: 'Xóa dòng',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+    const deleted = await contentData.deleteItem(item);
+    if (deleted) {
+      if (selectedContentItem?.id === item.id) closeContentModal();
+      void tasksData.refetch();
+      showToast({ type: 'success', message: 'Đã xóa dòng lịch air.' });
+    }
+  };
+
+  const isLoading = shootsData.isLoading || tasksData.isLoading || contentData.isLoading;
+  const loadError = shootsData.loadError || tasksData.loadError || contentData.loadError;
+  const selectedTaskEditorProfileId = selectedTask
+    ? tasksData.editors.find((editor) => editor.id === selectedTask.editorId)?.profileId
+    : null;
+  const canManageSelectedLinkedTask = Boolean(selectedTask?.contentPlanId && canUpdateTask);
+  const canAcceptSelectedTask = Boolean(
+    selectedTask?.dbId &&
+    selectedTask.contentPlanId &&
+    selectedTask.status === 'Chờ' &&
+    canUpdateTask &&
+    !canManageSelectedLinkedTask &&
+    selectedTaskEditorProfileId
+  );
+  const canCompleteSelectedTask = Boolean(
+    selectedTask?.dbId &&
+    selectedTask.contentPlanId &&
+    selectedTask.status === 'Đang làm' &&
+    canUpdateTask &&
+    !canManageSelectedLinkedTask &&
+    selectedTaskEditorProfileId
+  );
+
+  return (
+    <div className="calendar-page" data-view="admin-unified-calendar">
+      {loadError ? (
+        <ErrorState
+          title="Không thể tải lịch tổng hợp"
+          message={loadError}
+          onRetry={() => {
+            void shootsData.refetch();
+            void tasksData.refetch();
+            void contentData.refetch();
+          }}
+        />
+      ) : null}
+
+      {isLoading ? (
+        <div className="calendar-card card">
+          <LoadingState
+            variant="block"
+            message="Đang tải lịch tổng hợp..."
+            shape="calendar"
+            className="calendar-loading px-3 py-12 text-center text-sub"
+          />
+        </div>
+      ) : (
+        <UnifiedCalendar
+          currentDate={currentDate}
+          selectedDate={selectedDate}
+          events={filteredEvents}
+          filter={calendarFilter}
+          categoryFilter={taskCategoryFilter}
+          contentCategoryFilter={contentCategoryFilter}
+          statusFilter={statusFilter}
+          canCreateShoot={canCreateShoot}
+          canCreateTask={canCreateTask}
+          canCreateContent={canCreateContent}
+          onToday={handleToday}
+          onFilterChange={setCalendarFilter}
+          onCategoryFilterChange={setTaskCategoryFilter}
+          onContentCategoryFilterChange={setContentCategoryFilter}
+          onStatusFilterChange={setStatusFilter}
+          onDateSelect={handleDateSelect}
+          onDayClick={openShootCreate}
+          onEventClick={handleEventClick}
+          onCreateTask={openTaskCreate}
+          onCreateContent={openContentCreate}
+        />
+      )}
+
+      <ShootModal
+        isOpen={isShootModalOpen}
+        shoot={selectedShoot}
+        editorOptions={shootsData.editorOptions}
+        defaultDate={defaultDateForShoot}
+        canEdit={selectedShoot ? canUpdateShoot : canCreateShoot}
+        onClose={closeShootModal}
+        onSave={handleShootSave}
+        onDelete={canDeleteShoot ? handleShootDelete : undefined}
+        isSaving={shootsData.isSaving}
+        isDeleting={shootsData.isDeleting}
+        errorMessage={shootsData.modalError}
+      />
+
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        task={selectedTask}
+        editors={tasksData.editors}
+        selectedMonth={selectedMonth}
+        defaultAirDate={defaultDateForTask}
+        onClose={closeTaskModal}
+        onSave={handleTaskSave}
+        onSaveExecution={handleTaskExecutionSave}
+        onComplete={handleTaskComplete}
+        onDelete={selectedTask ? () => void handleTaskDelete(selectedTask) : undefined}
+        canDelete={Boolean(selectedTask) && canDeleteTask && !tasksData.isDeleting}
+        canEditLinkedTask={canManageSelectedLinkedTask}
+        canAcceptLinkedTask={canAcceptSelectedTask}
+        canCompleteLinkedTask={canCompleteSelectedTask}
+        isSaving={tasksData.isSaving || tasksData.isDeleting}
+        errorMessage={tasksData.saveError}
+      />
+
+      <ContentPlanModal
+        isOpen={contentDraft !== null}
+        mode={contentModalMode}
+        draft={contentDraft}
+        editorOptions={contentData.editorOptions}
+        canEditAirDate={canEditAirDate && contentModalMode !== 'assign'}
+        canEditVideoName={canEditVideoName && contentModalMode !== 'assign'}
+        canEditNote={canEditNote && contentModalMode !== 'assign'}
+        canEditCategory={canEditCategory && contentModalMode !== 'assign'}
+        canEditEditor={canEditEditor && contentModalMode !== 'create'}
+        canEditLink={canEditLink && contentModalMode !== 'assign' && !selectedContentItem?.hasLinkedTask}
+        isLinkSynced={Boolean(selectedContentItem?.hasLinkedTask)}
+        canDelete={Boolean(selectedContentItem) && canDeleteContent && contentModalMode === 'edit' && !contentData.isDeleting}
+        isSaving={contentData.isSaving}
+        errorMessage={contentFormError ?? contentData.saveError}
+        onClose={closeContentModal}
+        onChange={handleContentDraftChange}
+        onSave={() => void handleContentSave()}
+        onDelete={selectedContentItem ? () => void handleContentDelete(selectedContentItem) : undefined}
+      />
+    </div>
+  );
+}
+
+export default function Calendar() {
+  const { role } = useAuth();
+  return role === 'admin' ? <AdminUnifiedCalendarPage /> : <ShootCalendarPage />;
+}
+
+function ShootCalendarPage() {
+  const { can } = useAuth();
+  const { requestConfirm } = useConfirmDialog();
+  const { showToast } = useToast();
+  const { selectedMonth, setSelectedMonth, goToCurrentMonth } = useMonth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [filter, setFilter] = useState<ShootType | 'all'>('all');
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedShoot, setSelectedShoot] = useState<ShootSchedule | null>(null);
+  const [defaultDateForModal, setDefaultDateForModal] = useState('');
+  const [agenda, setAgenda] = useState<{ date: string; events: ShootSchedule[] } | null>(null);
+  const canCreateShoot = can('shoots:create');
+  const canUpdateShoot = can('shoots:update');
+  const canDeleteShoot = can('shoots:delete');
+  const highlightParam = searchParams.get('highlight');
+  const legacyShootParam = searchParams.get('shoot');
+  const targetShootId = highlightParam ?? legacyShootParam;
+  const dateParam = searchParams.get('date');
+
+  const currentDate = useMemo(() => monthValueToDate(selectedMonth), [selectedMonth]);
+
+  const visibleRange = useMemo(() => getCalendarRange(currentDate), [currentDate]);
+  const {
+    shoots,
+    editorOptions,
+    isLoading,
+    isSaving,
+    isDeleting,
+    loadError,
+    modalError,
+    refetch,
+    createShoot,
+    updateShoot,
+    deleteShoot,
+    clearModalError,
+  } = useShoots(visibleRange);
+
+  const monthShoots = useMemo(
+    () => shoots.filter((shoot) => shoot.date.startsWith(selectedMonth)),
+    [selectedMonth, shoots]
+  );
+
+  const handleDayClick = (dateStr: string) => {
+    if (!canCreateShoot) return;
+    clearModalError();
+    setSelectedShoot(null);
+    setDefaultDateForModal(dateStr);
+    setIsModalOpen(true);
+  };
+
+  const handleShootClick = (shoot: ShootSchedule, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAgenda(null);
+    clearModalError();
+    setSelectedShoot(shoot);
+    setDefaultDateForModal(shoot.date);
+    setIsModalOpen(true);
+  };
+
+  const clearShootHighlightParams = useCallback(() => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('highlight');
+      next.delete('shoot');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const clearDateParam = useCallback(() => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('date');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const handleMoreClick = (dateStr: string, events: ShootSchedule[], e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAgenda({ date: dateStr, events });
+  };
+
+  const closeModal = () => {
+    if (isSaving || isDeleting) return;
+    setIsModalOpen(false);
+    setSelectedShoot(null);
+    clearModalError();
+  };
+
+  useEffect(() => {
+    if (dateParam && !isIsoDate(dateParam)) {
+      showToast({ type: 'warning', message: 'Đường dẫn ngày lịch quay không hợp lệ.' });
+      clearDateParam();
+      return;
+    }
+
+    if (dateParam) {
+      const targetMonth = dateParam.slice(0, 7);
+      if (targetMonth !== selectedMonth) setSelectedMonth(targetMonth);
+    }
+  }, [clearDateParam, dateParam, selectedMonth, setSelectedMonth, showToast]);
+
+  useEffect(() => {
+    if (!targetShootId) return;
+
+    if (!isUuid(targetShootId)) {
+      showToast({ type: 'warning', message: 'Đường dẫn lịch quay không hợp lệ.' });
+      clearShootHighlightParams();
+      return;
+    }
+
+    const visibleShoot = shoots.find((shoot) => shoot.id === targetShootId);
+    if (visibleShoot) {
+      if (visibleShoot.date.slice(0, 7) !== selectedMonth) {
+        setSelectedMonth(visibleShoot.date.slice(0, 7));
+      }
+      if (filter !== 'all' && visibleShoot.type !== filter) {
+        setFilter('all');
+      }
+      return;
+    }
+
+    if (isLoading) return;
+
+    let cancelled = false;
+
+    void fetchShootById(targetShootId)
+      .then((shoot) => {
+        if (cancelled) return;
+        if (!shoot) {
+          showToast({ type: 'warning', message: 'Nội dung liên quan không còn tồn tại hoặc bạn không có quyền xem.' });
+          clearShootHighlightParams();
+          return;
+        }
+
+        if (shoot.date.slice(0, 7) !== selectedMonth) {
+          setSelectedMonth(shoot.date.slice(0, 7));
+        }
+        if (filter !== 'all' && shoot.type !== filter) {
+          setFilter('all');
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        showToast({ type: 'warning', message: 'Nội dung liên quan không còn tồn tại hoặc bạn không có quyền xem.' });
+        clearShootHighlightParams();
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clearShootHighlightParams, filter, isLoading, selectedMonth, setSelectedMonth, shoots, showToast, targetShootId]);
+
+  const visibleTargetShoot = targetShootId && isUuid(targetShootId)
+    ? shoots.find((shoot) => shoot.id === targetShootId && (filter === 'all' || shoot.type === filter))
+    : null;
+  const handleShootHighlightMissing = useCallback(() => {
+    showToast({ type: 'warning', message: 'Nội dung liên quan không còn tồn tại hoặc bạn không có quyền xem.' });
+  }, [showToast]);
+  const handleDateHighlightMissing = useCallback(() => {
+    showToast({ type: 'warning', message: 'Không tìm thấy ngày lịch quay liên quan.' });
+  }, [showToast]);
+  const highlightedShootId = useRouteHighlight({
+    targetId: targetShootId && isUuid(targetShootId) ? targetShootId : null,
+    selector: targetShootId && isUuid(targetShootId) ? `[data-shoot-id="${targetShootId}"]` : null,
+    fallbackSelector: visibleTargetShoot ? `[data-calendar-date="${visibleTargetShoot.date}"]` : null,
+    ready: !isLoading && Boolean(visibleTargetShoot),
+    clearQuery: clearShootHighlightParams,
+    onMissing: handleShootHighlightMissing,
+  });
+  const highlightedDate = useRouteHighlight({
+    targetId: dateParam && isIsoDate(dateParam) ? dateParam : null,
+    selector: dateParam && isIsoDate(dateParam) ? `[data-calendar-date="${dateParam}"]` : null,
+    ready: !isLoading && Boolean(dateParam && isIsoDate(dateParam) && dateParam.startsWith(selectedMonth)),
+    clearQuery: clearDateParam,
+    onMissing: handleDateHighlightMissing,
+  });
+
+  const handleSave = async (data: ShootFormData) => {
+    if (selectedShoot && !canUpdateShoot) return;
+    if (!selectedShoot && !canCreateShoot) return;
+
+    const saved = selectedShoot
+      ? await updateShoot(selectedShoot.id, data)
+      : await createShoot(data);
+
+    if (saved) {
+      setIsModalOpen(false);
+      setSelectedShoot(null);
+      clearModalError();
+      showToast({
+        type: 'success',
+        message: selectedShoot ? 'Đã lưu thay đổi lịch quay.' : 'Đã thêm lịch quay.',
+      });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!canDeleteShoot) return;
+
+    const confirmed = await requestConfirm({
+      title: 'Xóa lịch quay?',
+      description: 'Thao tác này không thể hoàn tác.',
+      confirmLabel: 'Xóa lịch quay',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
+
+    const deleted = await deleteShoot(id);
+
+    if (deleted) {
+      setIsModalOpen(false);
+      setSelectedShoot(null);
+      clearModalError();
+      showToast({ type: 'success', message: 'Đã xóa lịch quay.' });
+    }
+  };
+
+  return (
+    <div className="calendar-page" data-view="calendar">
+      <CalendarHeader
+        filter={filter}
+        onToday={goToCurrentMonth}
+        onFilterChange={setFilter}
+      />
+
+      {loadError ? (
+        <ErrorState title="Không thể tải lịch quay" message={loadError} onRetry={() => void refetch()} />
+      ) : null}
+
+      {!isLoading && !loadError && monthShoots.length === 0 ? (
+        <EmptyState
+          title="Chưa có lịch quay trong tháng đã chọn"
+          message={canCreateShoot ? 'Bấm vào một ngày trên lịch để thêm lịch quay.' : 'Chưa có lịch quay trong tháng đã chọn.'}
+        />
+      ) : null}
+
+      <div className="calendar-card card">
+        {isLoading ? (
+          <LoadingState
+            variant="block"
+            message="Đang tải lịch quay..."
+            shape="calendar"
+            className="calendar-loading px-3 py-12 text-center text-sub"
+          />
+        ) : (
+          <CalendarGrid
+            currentDate={currentDate}
+            shoots={shoots}
+            filter={filter}
+            onDayClick={handleDayClick}
+            onShootClick={handleShootClick}
+            onMoreClick={handleMoreClick}
+            canCreateShoot={canCreateShoot}
+            highlightedShootId={highlightedShootId}
+            highlightedDate={highlightedDate}
+          />
+        )}
+      </div>
+
+      {agenda ? (
+        <DayAgendaModal
+          date={agenda.date}
+          events={agenda.events}
+          onClose={() => setAgenda(null)}
+          onShootClick={handleShootClick}
+        />
+      ) : null}
+
+      <ShootModal
+        isOpen={isModalOpen}
+        shoot={selectedShoot}
+        editorOptions={editorOptions}
+        defaultDate={defaultDateForModal}
+        canEdit={selectedShoot ? canUpdateShoot : canCreateShoot}
+        onClose={closeModal}
+        onSave={handleSave}
+        onDelete={canDeleteShoot ? handleDelete : undefined}
+        isSaving={isSaving}
+        isDeleting={isDeleting}
+        errorMessage={modalError}
+      />
+    </div>
+  );
+}

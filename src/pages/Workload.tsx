@@ -3,7 +3,7 @@ import { Plus, Search } from 'lucide-react';
 import { EmptyState } from '../components/common/EmptyState';
 import { ErrorState } from '../components/common/ErrorState';
 import { LoadingState } from '../components/common/LoadingState';
-import { StyledSelect } from '../components/common/StyledSelect';
+import { MultiSelect } from '../components/common/MultiSelect';
 import { ShootModal } from '../components/calendar/ShootModal';
 import { ContentPlanModal } from '../components/content-plan/ContentPlanModal';
 import { TaskModal } from '../components/tasks/TaskModal';
@@ -21,11 +21,17 @@ import { editorBadgeMap, toIsoDate, useWorkload } from '../hooks/useWorkload';
 import type { WorkloadDay, WorkloadItem } from '../hooks/useWorkload';
 import type { ContentPlanFormData, ContentPlanItem } from '../types/contentPlan';
 import type { ShootFormData, ShootSchedule } from '../types/shoot';
-import type { LinkedVideoTaskExecutionData, TaskFormData, TaskStatus, VideoTask } from '../types/task';
+import type { LinkedVideoTaskExecutionData, TaskFormData, VideoTask } from '../types/task';
 import { getDefaultContentDate, hasContentFieldChanges, toContentPlanFormData } from '../utils/contentPlanForm';
 import { monthValueToDate } from '../utils/month';
 
-type KindFilter = 'all' | 'task' | 'lichquay' | 'live';
+type KindFilter = 'task' | 'lichquay' | 'live';
+
+const KIND_OPTIONS: Array<{ value: KindFilter; label: string }> = [
+  { value: 'task', label: 'Task' },
+  { value: 'lichquay', label: 'Lịch quay' },
+  { value: 'live', label: 'Live' },
+];
 
 function getCalendarRange(date: Date) {
   const year = date.getFullYear();
@@ -41,11 +47,10 @@ function getCalendarRange(date: Date) {
   };
 }
 
-function matchesFilter(item: WorkloadItem, filter: KindFilter) {
-  if (filter === 'all') return true;
+function matchesKind(item: WorkloadItem, kind: KindFilter) {
   // Task chính là lịch dựng, gồm cả việc chưa dựng lẫn đã dựng xong.
-  if (filter === 'task') return item.kind === 'task' || item.kind === 'plan';
-  if (filter === 'live') return item.shootType === 'livestream';
+  if (kind === 'task') return item.kind === 'task' || item.kind === 'plan';
+  if (kind === 'live') return item.shootType === 'livestream';
   return item.shootType === 'lichquay' || item.shootType === 'onset' || item.shootType === 'other';
 }
 
@@ -64,12 +69,12 @@ export default function Workload() {
   const shootsData = useShoots(visibleRange);
 
   const [editorFilter, setEditorFilter] = useState<string>('all');
-  const [kindFilter, setKindFilter] = useState<KindFilter>('all');
+  const [kindFilters, setKindFilters] = useState<KindFilter[]>([]);
   const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
-  const [orderFilter, setOrderFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  const [orderFilters, setOrderFilters] = useState<string[]>([]);
+  const [categoryFilters, setCategoryFilters] = useState<string[]>([]);
 
   const [isShootModalOpen, setIsShootModalOpen] = useState(false);
   const [selectedShoot, setSelectedShoot] = useState<ShootSchedule | null>(null);
@@ -124,10 +129,10 @@ export default function Workload() {
       const items = day.items.filter((item) => {
         if (editorFilter !== 'all' && !item.editorIds.includes(editorFilter)) return false;
         if (unassignedOnly && !item.needsAssign) return false;
-        if (!matchesFilter(item, kindFilter)) return false;
-        if (statusFilter !== 'all' && item.status !== statusFilter) return false;
-        if (orderFilter !== 'all' && item.orderTeam !== orderFilter) return false;
-        if (categoryFilter !== 'all' && item.category !== categoryFilter) return false;
+        if (kindFilters.length && !kindFilters.some((kind) => matchesKind(item, kind))) return false;
+        if (statusFilters.length && (!item.status || !statusFilters.includes(item.status))) return false;
+        if (orderFilters.length && (!item.orderTeam || !orderFilters.includes(item.orderTeam))) return false;
+        if (categoryFilters.length && (!item.category || !categoryFilters.includes(item.category))) return false;
         if (keyword) {
           const haystack = `${item.title} ${item.subtitle} ${item.detail}`.toLowerCase();
           if (!haystack.includes(keyword)) return false;
@@ -139,7 +144,7 @@ export default function Workload() {
     });
 
     return next;
-  }, [categoryFilter, editorFilter, kindFilter, orderFilter, search, statusFilter, unassignedOnly, workload.days]);
+  }, [categoryFilters, editorFilter, kindFilters, orderFilters, search, statusFilters, unassignedOnly, workload.days]);
 
   const visibleCount = useMemo(() => {
     let total = 0;
@@ -484,53 +489,45 @@ export default function Workload() {
             />
           </div>
 
-          <StyledSelect
+          <MultiSelect
             className="wl-select"
-            value={kindFilter}
-            onChange={(event) => setKindFilter(event.target.value as KindFilter)}
-            aria-label="Lọc theo nguồn việc"
-          >
-            <option value="all">Tất cả</option>
-            <option value="task">Task</option>
-            <option value="lichquay">Lịch quay</option>
-            <option value="live">Live</option>
-          </StyledSelect>
+            options={KIND_OPTIONS}
+            values={kindFilters}
+            onChange={(next) => setKindFilters(next as KindFilter[])}
+            allLabel="Tất cả"
+            summaryUnit="loại"
+            ariaLabel="Lọc theo nguồn việc"
+          />
 
-          <StyledSelect
+          <MultiSelect
             className="wl-select"
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as TaskStatus | 'all')}
-            aria-label="Lọc theo trạng thái"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            {TASK_STATUSES.map((status) => (
-              <option key={status} value={status}>{status}</option>
-            ))}
-          </StyledSelect>
+            options={TASK_STATUSES.map((status) => ({ value: status, label: status }))}
+            values={statusFilters}
+            onChange={setStatusFilters}
+            allLabel="Tất cả trạng thái"
+            summaryUnit="trạng thái"
+            ariaLabel="Lọc theo trạng thái"
+          />
 
-          <StyledSelect
+          <MultiSelect
             className="wl-select"
-            value={orderFilter}
-            onChange={(event) => setOrderFilter(event.target.value)}
-            aria-label="Lọc theo order"
-          >
-            <option value="all">Tất cả order</option>
-            {ORDER_TEAMS.map((team) => (
-              <option key={team} value={team}>{team}</option>
-            ))}
-          </StyledSelect>
+            options={ORDER_TEAMS.map((team) => ({ value: team, label: team }))}
+            values={orderFilters}
+            onChange={setOrderFilters}
+            allLabel="Tất cả order"
+            summaryUnit="order"
+            ariaLabel="Lọc theo order"
+          />
 
-          <StyledSelect
+          <MultiSelect
             className="wl-select"
-            value={categoryFilter}
-            onChange={(event) => setCategoryFilter(event.target.value)}
-            aria-label="Lọc theo thể loại"
-          >
-            <option value="all">Tất cả thể loại</option>
-            {TASK_CATEGORIES.map((category) => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </StyledSelect>
+            options={TASK_CATEGORIES.map((category) => ({ value: category, label: category }))}
+            values={categoryFilters}
+            onChange={setCategoryFilters}
+            allLabel="Tất cả thể loại"
+            summaryUnit="thể loại"
+            ariaLabel="Lọc theo thể loại"
+          />
 
           <div className="wl-people" role="group" aria-label="Lọc theo editor">
             {workload.summaries.map((summary) => (

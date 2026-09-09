@@ -102,7 +102,8 @@ function resolveTaskModalFieldState(
     return {
       isLinkedTask: true,
       canEditTitle: false,
-      canEditEditor: false,
+      // Đổi editor được, phần đồng bộ ngược sang Content Plan do RPC phân công lo.
+      canEditEditor: true,
       canEditStatus: true,
       canEditOrderTeam: true,
       canEditCategory: false,

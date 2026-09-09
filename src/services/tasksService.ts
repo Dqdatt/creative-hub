@@ -501,6 +501,28 @@ async function syncLinkedVideoTask(input: SyncLinkedVideoTaskInput): Promise<Upd
   return mapSyncLinkedVideoTaskRpcRow(row as SyncLinkedVideoTaskRpcRow);
 }
 
+// Đổi editor của task liên kết phải đi qua RPC phân công để Content Plan và Video tháng
+// cùng cập nhật, kèm activity log và thông báo cho editor mới.
+async function reassignLinkedTaskEditor(contentPlanId: string, editorCode: string) {
+  const cleanCode = editorCode.trim();
+  if (!cleanCode) {
+    throw new Error('Task liên kết phải có editor. Hãy chọn editor khác.');
+  }
+
+  const client = requireSupabase();
+  const editorProfileId = await resolveEditorProfileId(cleanCode);
+  if (!editorProfileId) {
+    throw new Error('Không tìm thấy editor được chọn.');
+  }
+
+  const { error } = await client.rpc('assign_content_plan_editor', {
+    p_content_plan_id: validateContentPlanId(contentPlanId),
+    p_editor_id: editorProfileId,
+  });
+
+  if (error) throw new Error(mapDatabaseError(error));
+}
+
 async function updateLinkedVideoTaskAsAdmin(
   taskId: string,
   data: TaskFormData,
@@ -771,6 +793,10 @@ export async function updateVideoTask(
   options?: UpdateVideoTaskOptions,
 ) {
   if (previousTask?.contentPlanId) {
+    if (data.editorId !== previousTask.editorId) {
+      await reassignLinkedTaskEditor(previousTask.contentPlanId, data.editorId);
+    }
+
     if (options?.allowLinkedOverride) {
       await updateLinkedVideoTaskAsAdmin(taskId, data, userId, previousTask);
       return;
