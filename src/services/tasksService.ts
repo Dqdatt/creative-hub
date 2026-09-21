@@ -16,6 +16,7 @@ import type {
   VideoTask,
 } from '../types/task';
 import { getMonthRange } from '../utils/month';
+import type { DateRange } from '../utils/month';
 import { normalizeHttpUrl, normalizeOptionalHttpUrl } from '../utils/url';
 
 const DEFAULT_TASK_YEAR = 2026;
@@ -599,7 +600,8 @@ async function updateLinkedVideoTaskAsAdmin(
   });
 }
 
-export async function fetchVideoTasks(monthValue?: string): Promise<VideoTask[]> {
+// dateRange cho phép màn Workload lấy thêm việc của các ngày tháng sau đang nằm trong lưới lịch.
+export async function fetchVideoTasks(monthValue?: string, dateRange?: DateRange): Promise<VideoTask[]> {
   const client = requireSupabase();
   let query = client
     .from('video_tasks')
@@ -651,11 +653,11 @@ export async function fetchVideoTasks(monthValue?: string): Promise<VideoTask[]>
   if (error) throw new Error(mapDatabaseError(error));
 
   const rows = (data ?? []) as unknown as VideoTaskRow[];
-  const monthRange = monthValue ? getMonthRange(monthValue) : null;
-  const filteredRows = monthRange
+  const range = dateRange ?? (monthValue ? getMonthRange(monthValue) : null);
+  const filteredRows = range
     ? rows.filter((row) => {
       const airDate = getEffectiveAirDate(row);
-      return Boolean(airDate && airDate >= monthRange.startDate && airDate <= monthRange.endDate);
+      return Boolean(airDate && airDate >= range.startDate && airDate <= range.endDate);
     })
     : rows;
 

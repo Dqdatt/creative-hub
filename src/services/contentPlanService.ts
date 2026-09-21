@@ -9,6 +9,7 @@ import type {
 } from '../types/contentPlan';
 import type { TaskStatus } from '../types/task';
 import { getMonthRange } from '../utils/month';
+import type { DateRange } from '../utils/month';
 import { normalizeOptionalHttpUrl } from '../utils/url';
 
 type Nullable<T> = T | null;
@@ -331,7 +332,8 @@ function mapAssignEditorRpcRow(row: AssignEditorRpcRow): AssignContentPlanEditor
   };
 }
 
-export async function fetchContentPlan(monthValue?: string): Promise<ContentPlanItem[]> {
+// dateRange cho phép màn Workload lấy thêm dòng của các ngày tháng sau đang nằm trong lưới lịch.
+export async function fetchContentPlan(monthValue?: string, dateRange?: DateRange): Promise<ContentPlanItem[]> {
   const client = requireSupabase();
   let query = client
     .from('content_plan')
@@ -359,9 +361,9 @@ export async function fetchContentPlan(monthValue?: string): Promise<ContentPlan
       )
     `);
 
-  if (monthValue) {
-    const { startDate, endDate } = getMonthRange(monthValue);
-    query = query.gte('air_date', startDate).lte('air_date', endDate);
+  const range = dateRange ?? (monthValue ? getMonthRange(monthValue) : null);
+  if (range) {
+    query = query.gte('air_date', range.startDate).lte('air_date', range.endDate);
   }
 
   const { data, error } = await query

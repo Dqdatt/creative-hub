@@ -20,7 +20,12 @@ export function shiftMonthValue(monthValue: string, delta: number) {
   return getCurrentMonthValue(date);
 }
 
-export function getMonthRange(monthValue: string) {
+export interface DateRange {
+  startDate: string;
+  endDate: string;
+}
+
+export function getMonthRange(monthValue: string): DateRange {
   const date = monthValueToDate(monthValue);
   const year = date.getFullYear();
   const month = date.getMonth();

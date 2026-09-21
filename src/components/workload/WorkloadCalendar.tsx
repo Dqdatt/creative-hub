@@ -63,6 +63,8 @@ interface WorkloadCalendarProps {
   badges: Map<string, EditorBadge>;
   todayIso: string;
   onOpenItem: (item: WorkloadItem) => void;
+  canCreateShoot?: boolean;
+  onDayClick?: (date: string) => void;
 }
 
 function chipClassName(item: WorkloadItem) {
@@ -81,6 +83,8 @@ export function WorkloadCalendar({
   badges,
   todayIso,
   onOpenItem,
+  canCreateShoot = false,
+  onDayClick,
 }: WorkloadCalendarProps) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -108,9 +112,10 @@ export function WorkloadCalendar({
     let busiestDay = 0;
 
     for (let column = 0; column < 7; column += 1) {
-      const cell = cells[week * 7 + column];
-      if (!cell || cell.out) continue;
-      const cellDate = new Date(year, month, 1 - startDow + week * 7 + column);
+      const index = week * 7 + column;
+      const cell = cells[index];
+      if (!cell || index < startDow) continue;
+      const cellDate = new Date(year, month, 1 - startDow + index);
       const count = days.get(toIsoDate(cellDate))?.items.length ?? 0;
       if (count > busiestDay) busiestDay = count;
     }
@@ -137,7 +142,10 @@ export function WorkloadCalendar({
           const cellDate = new Date(year, month, 1 - startDow + index);
           const iso = toIsoDate(cellDate);
           const weekend = index % 7 >= 5;
-          const items = cell.out ? [] : days.get(iso)?.items ?? [];
+          // Ngày của tháng sau lọt vào lưới thì vẫn xem được việc, ngày của tháng trước thì bỏ qua.
+          const items = index < startDow ? [] : days.get(iso)?.items ?? [];
+          // Ô của tháng trước luôn trống nên không cho tạo lịch quay ở đó.
+          const canAddShoot = Boolean(canCreateShoot && onDayClick && index >= startDow);
 
           return (
             <div
@@ -147,8 +155,11 @@ export function WorkloadCalendar({
                 cell.out ? 'out' : '',
                 weekend ? 'wknd' : '',
                 iso === todayIso ? 'wl-cell--today' : '',
+                canAddShoot ? 'wl-cell--addable' : '',
               ].filter(Boolean).join(' ')}
               data-calendar-date={iso}
+              title={canAddShoot ? 'Bấm vùng trống để thêm lịch quay' : undefined}
+              onClick={canAddShoot ? () => onDayClick?.(iso) : undefined}
             >
               <div className="cal-day-head wl-day-head">
                 <span className="cal-daynum">{cell.label}</span>
@@ -168,7 +179,11 @@ export function WorkloadCalendar({
                       className={chipClassName(item)}
                       style={{ ['--wl-kind' as string]: item.accent || 'var(--border-strong)' }}
                       title={[item.title, item.subtitle, item.detail].filter(Boolean).join(' · ')}
-                      onClick={() => onOpenItem(item)}
+                      onClick={(event) => {
+                        // Không để click chip lọt xuống ô ngày và mở luôn modal thêm lịch quay.
+                        event.stopPropagation();
+                        onOpenItem(item);
+                      }}
                     >
                       <span className="wl-chip-who">
                         {owners.length ? (

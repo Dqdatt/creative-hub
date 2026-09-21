@@ -33,6 +33,8 @@ const KIND_OPTIONS: Array<{ value: KindFilter; label: string }> = [
   { value: 'live', label: 'Live' },
 ];
 
+// Khoảng ngày thật sự hiển thị trên lưới: từ mùng 1 tới ô cuối cùng, tức gồm cả vài ngày đầu
+// của tháng sau. Các ô của tháng trước luôn để trống nên không cần tải dữ liệu cho chúng.
 function getCalendarRange(date: Date) {
   const year = date.getFullYear();
   const month = date.getMonth();
@@ -42,7 +44,7 @@ function getCalendarRange(date: Date) {
   const cellCount = Math.ceil((startDow + daysInMonth) / 7) * 7;
 
   return {
-    startDate: toIsoDate(new Date(year, month, 1 - startDow)),
+    startDate: toIsoDate(first),
     endDate: toIsoDate(new Date(year, month, cellCount - startDow)),
   };
 }
@@ -64,8 +66,8 @@ export default function Workload() {
   const todayIso = useMemo(() => toIsoDate(new Date()), []);
   const defaultDate = todayIso.startsWith(selectedMonth) ? todayIso : `${selectedMonth}-01`;
 
-  const tasksData = useTasks(selectedMonth);
-  const contentData = useContentPlan(selectedMonth);
+  const tasksData = useTasks(selectedMonth, visibleRange);
+  const contentData = useContentPlan(selectedMonth, visibleRange);
   const shootsData = useShoots(visibleRange);
 
   const [editorFilter, setEditorFilter] = useState<string>('all');
@@ -78,6 +80,7 @@ export default function Workload() {
 
   const [isShootModalOpen, setIsShootModalOpen] = useState(false);
   const [selectedShoot, setSelectedShoot] = useState<ShootSchedule | null>(null);
+  const [defaultDateForShoot, setDefaultDateForShoot] = useState('');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<VideoTask | null>(null);
   const [defaultDateForTask, setDefaultDateForTask] = useState('');
@@ -159,6 +162,7 @@ export default function Workload() {
     if (shootsData.isSaving || shootsData.isDeleting) return;
     setIsShootModalOpen(false);
     setSelectedShoot(null);
+    setDefaultDateForShoot('');
     shootsData.clearModalError();
   };
 
@@ -200,9 +204,19 @@ export default function Workload() {
     setContentFormError(null);
   };
 
+  // Bấm vào vùng trống của một ngày thì mở modal thêm lịch quay cho đúng ngày đó.
+  const openShootCreate = (date: string) => {
+    if (!canCreateShoot) return;
+    shootsData.clearModalError();
+    setSelectedShoot(null);
+    setDefaultDateForShoot(date);
+    setIsShootModalOpen(true);
+  };
+
   const openShootEdit = (shoot: ShootSchedule) => {
     shootsData.clearModalError();
     setSelectedShoot(shoot);
+    setDefaultDateForShoot(shoot.date);
     setIsShootModalOpen(true);
   };
 
@@ -570,6 +584,16 @@ export default function Workload() {
                 <Plus style={{ width: '15px', height: '15px' }} /><span className="wl-btn-text">Thêm </span>content
               </button>
             ) : null}
+            {canCreateShoot ? (
+              <button
+                type="button"
+                className="btn-ghost wl-btn"
+                onClick={() => openShootCreate(defaultDate)}
+                title="Thêm lịch quay"
+              >
+                <Plus style={{ width: '15px', height: '15px' }} /><span className="wl-btn-text">Thêm </span>lịch quay
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -583,7 +607,7 @@ export default function Workload() {
             className="calendar-loading px-3 py-12 text-center text-sub"
           />
         </div>
-      ) : workload.itemCount === 0 ? (
+      ) : workload.itemCount === 0 && !canCreateShoot ? (
         <EmptyState title="Tháng này chưa có việc nào" />
       ) : (
         <WorkloadCalendar
@@ -592,6 +616,8 @@ export default function Workload() {
           badges={badges}
           todayIso={todayIso}
           onOpenItem={handleOpenItem}
+          canCreateShoot={canCreateShoot}
+          onDayClick={openShootCreate}
         />
       )}
 
@@ -599,7 +625,7 @@ export default function Workload() {
         isOpen={isShootModalOpen}
         shoot={selectedShoot}
         editorOptions={shootsData.editorOptions}
-        defaultDate={selectedShoot?.date ?? defaultDate}
+        defaultDate={selectedShoot?.date ?? (defaultDateForShoot || defaultDate)}
         canEdit={selectedShoot ? canUpdateShoot : canCreateShoot}
         onClose={closeShootModal}
         onSave={handleShootSave}

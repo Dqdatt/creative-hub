@@ -48,36 +48,22 @@ export function LoadingState(props: LoadingStateProps) {
   if (props.shape === 'dashboard') {
     return (
       <div className={`skeleton-dashboard ${props.className}`} aria-label={props.message}>
-        <div className="skeleton-kpis">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="card skeleton-card">
-              <span className="skel-box skel-icon" />
-              <div className="min-w-0 flex-1">
-                <SkeletonLine className="w-[46%]" />
-                <SkeletonLine className="mt-3 w-[72%]" />
-              </div>
-              <SkeletonLine className="w-[42px]" />
-            </div>
-          ))}
+        <div className="dsection skeleton-strip">
+          <SkeletonLine className="w-[12%]" />
+          <SkeletonLine className="flex-1" />
+          <SkeletonLine className="w-[18%]" />
         </div>
-        <div className="skeleton-workload">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="card skeleton-editor-card">
-              <div className="flex items-center gap-3">
-                <span className="skel-box skel-avatar" />
-                <div className="min-w-0 flex-1">
-                  <SkeletonLine className="w-[58%]" />
-                  <SkeletonLine className="mt-3 w-[36%]" />
-                </div>
-                <SkeletonLine className="w-[34px]" />
-              </div>
-              <div className="mt-5 space-y-3">
-                <SkeletonLine className="w-full" />
-                <SkeletonLine className="w-[92%]" />
-                <SkeletonLine className="w-[84%]" />
-              </div>
-            </div>
-          ))}
+        <div className="skeleton-main">
+          <div className="dsection skeleton-panel">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <SkeletonLine key={index} className={index === 0 ? 'w-[34%]' : 'w-full'} />
+            ))}
+          </div>
+          <div className="dsection skeleton-panel">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <SkeletonLine key={index} className={index === 0 ? 'w-[46%]' : 'w-full'} />
+            ))}
+          </div>
         </div>
       </div>
     );

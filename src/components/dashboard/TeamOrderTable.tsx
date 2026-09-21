@@ -1,80 +1,70 @@
-import { Building2 } from 'lucide-react';
-import type { Editor, VideoTask } from '../../types/task';
-import { ORDER_TEAMS } from '../../data/tasks';
+import type { Editor } from '../../types/task';
+import type { TeamStat } from '../../hooks/useDashboard';
+import { SectionCard } from './SectionCard';
 
 interface TeamOrderTableProps {
   editors: Editor[];
-  tasks: VideoTask[];
+  teamStats: TeamStat[];
+  totalVideos: number;
 }
 
-export function TeamOrderTable({ editors, tasks }: TeamOrderTableProps) {
-  const activeTeams = ORDER_TEAMS.map((t) => {
-    const perEditor = editors.map((e) => tasks.filter((v) => v.orderTeam === t && v.editorId === e.id).length);
-    const n = tasks.filter((v) => v.orderTeam === t).length;
-    return { t, n, perEditor };
-  })
-    .filter((o) => o.n > 0)
-    .sort((a, b) => b.n - a.n);
+export function TeamOrderTable({ editors, teamStats, totalVideos }: TeamOrderTableProps) {
+  const grandTotal = teamStats.reduce((sum, entry) => sum + entry.total, 0);
+  const grandDone = teamStats.reduce((sum, entry) => sum + entry.done, 0);
+  // Video chưa điền team order không nằm trong bảng, nói rõ ra để số liệu báo cáo khớp nhau.
+  const withoutTeam = Math.max(0, totalVideos - grandTotal);
 
-  const maxN = Math.max(1, ...activeTeams.map((o) => o.n));
-  const totalTasks = tasks.length;
+  if (teamStats.length === 0) return null;
 
   return (
-    <>
-      <div className="section-eyebrow pt-2">
-        <span className="icoc" style={{ background: 'var(--chip-2)', color: 'var(--accent)' }}><Building2 /></span>
-        <div>
-          <h2 className="text-[17px] font-extrabold leading-none tracking-tight">Tổng theo team order</h2>
-          <p className="text-[12.5px] text-sub mt-1.5">Số video mỗi bên order, chia theo editor phụ trách</p>
-        </div>
-      </div>
-      
-      <div className="card p-3 overflow-x-auto">
-        <table className="ctable min-w-[620px]">
+    <SectionCard
+      title="Khối lượng theo team order"
+      subtitle={withoutTeam
+        ? `${withoutTeam} video chưa gắn team order nên không có trong bảng.`
+        : 'Bên nào đặt nhiều video nhất, và ai đang nhận.'}
+      flush
+    >
+      <div className="dtable-wrap">
+        <table className="dtable min-w-[520px]">
           <thead>
             <tr>
-              <th>Team Order</th>
-              {editors.map((e) => (
-                <th key={e.id} className="text-center" style={{ width: '96px' }}>{e.short}</th>
+              <th>Team order</th>
+              {editors.map((editor) => (
+                <th key={editor.id}>{editor.short}</th>
               ))}
-              <th className="text-center" style={{ width: '88px' }}>Tổng</th>
-              <th style={{ width: '190px' }}>Tỉ trọng</th>
+              <th>Đã xong</th>
+              <th>Tổng</th>
+              <th>Tỉ trọng</th>
             </tr>
           </thead>
           <tbody>
-            {activeTeams.map((o) => (
-              <tr key={o.t}>
-                <td><span className="mini-chip" style={{ fontWeight: 800, color: 'var(--text)' }}>{o.t}</span></td>
-                {o.perEditor.map((n, idx) => (
-                  <td 
-                    key={idx} 
-                    className={`text-center ${n ? 'font-bold' : ''}`} 
-                    style={{ color: n ? editors[idx].color : 'var(--muted)' }}
-                  >
-                    {n || '-'}
-                  </td>
+            {teamStats.map((entry) => (
+              <tr key={entry.team}>
+                <td><span className="dtable-team">{entry.team}</span></td>
+                {entry.perEditor.map((count, index) => (
+                  count
+                    ? <td key={editors[index]?.id ?? index}>{count}</td>
+                    : <td key={editors[index]?.id ?? index} className="zero">–</td>
                 ))}
-                <td className="text-center font-extrabold th-total">{o.n}</td>
-                <td>
-                  <div className="bar-track">
-                    <div className="bar-fill" style={{ width: `${Math.round((o.n / maxN) * 100)}%` }}></div>
-                  </div>
-                </td>
+                <td>{entry.done}/{entry.total}</td>
+                <td className="strong">{entry.total}</td>
+                <td className="strong">{entry.share}%</td>
               </tr>
             ))}
-            <tr className="total">
-              <td className="font-extrabold">Tổng cộng</td>
-              {editors.map((e) => (
-                <td key={e.id} className="text-center font-extrabold" style={{ color: e.color }}>
-                  {tasks.filter((v) => v.editorId === e.id).length}
+            <tr className="dtable-total">
+              <td>Tổng cộng</td>
+              {editors.map((editor, index) => (
+                <td key={editor.id}>
+                  {teamStats.reduce((sum, entry) => sum + (entry.perEditor[index] ?? 0), 0)}
                 </td>
               ))}
-              <td className="text-center font-extrabold th-total">{totalTasks}</td>
-              <td></td>
+              <td>{grandDone}/{grandTotal}</td>
+              <td>{grandTotal}</td>
+              <td>100%</td>
             </tr>
           </tbody>
         </table>
       </div>
-    </>
+    </SectionCard>
   );
 }

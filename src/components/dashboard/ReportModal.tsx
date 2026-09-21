@@ -18,11 +18,6 @@ interface ReportModalProps {
   onClose: () => void;
 }
 
-function resizeCount(value: string) {
-  if (!value) return 0;
-  return value.split('&').filter((item) => item.trim()).length;
-}
-
 function getEditorName(editorId: string, editors: Editor[]) {
   return editors.find((editor) => editor.id === editorId)?.short ?? (editorId || 'Chưa phân công');
 }
@@ -48,11 +43,12 @@ export function ReportModal({
   if (!isOpen) return null;
 
   const scopedTasks = editorFilter === 'all' ? tasks : tasks.filter((task) => task.editorId === editorFilter);
-  const totalResize = scopedTasks.reduce((sum, task) => sum + resizeCount(task.resize), 0);
   const done = scopedTasks.filter((task) => task.status === 'Đã xong').length;
   const pending = scopedTasks.filter((task) => task.status === 'Chờ').length;
   const doing = scopedTasks.filter((task) => task.status === 'Đang làm').length;
+  const hold = scopedTasks.filter((task) => task.status === 'Hoãn').length;
   const missingLinks = scopedTasks.filter((task) => task.status === 'Đã xong' && !task.link).length;
+  const completionRate = scopedTasks.length ? Math.round((done / scopedTasks.length) * 100) : 0;
   const title = `Báo cáo CreativeHub ${formatVietnameseMonth(monthValue)}`;
   const subtitle = editorFilter === 'all' ? 'Tất cả editor' : getEditorName(editorFilter, editors);
 
@@ -115,7 +111,8 @@ export function ReportModal({
             <div><strong>{done}</strong><span>Đã xong</span></div>
             <div><strong>{doing}</strong><span>Đang làm</span></div>
             <div><strong>{pending}</strong><span>Chờ</span></div>
-            <div><strong>{totalResize}</strong><span>Resize</span></div>
+            <div><strong>{hold}</strong><span>Hoãn</span></div>
+            <div><strong>{completionRate}%</strong><span>Hoàn thành</span></div>
             <div><strong>{shoots.length}</strong><span>Buổi quay</span></div>
           </section>
 

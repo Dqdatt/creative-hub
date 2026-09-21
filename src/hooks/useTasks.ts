@@ -4,6 +4,7 @@ import { fetchContentPlanEditorOptions } from '../services/contentPlanService';
 import { acceptLinkedVideoTask, completeLinkedVideoTask, createVideoTask, deleteVideoTask, fetchVideoTasks, updateLinkedVideoTaskExecution, updateVideoTask } from '../services/tasksService';
 import type { ContentPlanEditorOption } from '../types/contentPlan';
 import type { Editor, LinkedVideoTaskExecutionData, TaskFormData, VideoTask } from '../types/task';
+import type { DateRange } from '../utils/month';
 import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -30,8 +31,11 @@ function toTaskEditor(editor: ContentPlanEditorOption): Editor {
   };
 }
 
-export function useTasks(monthValue: string) {
+// dateRange (tuỳ chọn) thay cho bộ lọc theo tháng, dùng khi lịch cần thêm ngày của tháng sau.
+export function useTasks(monthValue: string, dateRange?: DateRange) {
   const { user, profile } = useAuth();
+  const rangeStart = dateRange?.startDate;
+  const rangeEnd = dateRange?.endDate;
   const requestIdRef = useRef(0);
   const [tasks, setTasks] = useState<VideoTask[]>([]);
   const [editors, setEditors] = useState<Editor[]>([]);
@@ -52,7 +56,7 @@ export function useTasks(monthValue: string) {
 
     try {
       const [nextTasks, nextEditors] = await Promise.all([
-        fetchVideoTasks(monthValue),
+        fetchVideoTasks(monthValue, rangeStart && rangeEnd ? { startDate: rangeStart, endDate: rangeEnd } : undefined),
         fetchContentPlanEditorOptions(),
       ]);
       if (requestId !== requestIdRef.current) return;
@@ -68,7 +72,7 @@ export function useTasks(monthValue: string) {
         setIsLoading(false);
       }
     }
-  }, [monthValue]);
+  }, [monthValue, rangeEnd, rangeStart]);
 
   useEffect(() => {
     void loadTasks();

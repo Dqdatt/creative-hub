@@ -9,6 +9,7 @@ import {
   updateContentPlanRow,
 } from '../services/contentPlanService';
 import type { ContentPlanEditorOption, ContentPlanFormData, ContentPlanItem } from '../types/contentPlan';
+import type { DateRange } from '../utils/month';
 import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -19,8 +20,11 @@ interface LoadOptions {
   silent?: boolean;
 }
 
-export function useContentPlan(monthValue: string) {
+// dateRange (tuỳ chọn) thay cho bộ lọc theo tháng, dùng khi lịch cần thêm ngày của tháng sau.
+export function useContentPlan(monthValue: string, dateRange?: DateRange) {
   const { user } = useAuth();
+  const rangeStart = dateRange?.startDate;
+  const rangeEnd = dateRange?.endDate;
   const requestIdRef = useRef(0);
   const [items, setItems] = useState<ContentPlanItem[]>([]);
   const [editorOptions, setEditorOptions] = useState<ContentPlanEditorOption[]>([]);
@@ -41,7 +45,7 @@ export function useContentPlan(monthValue: string) {
 
     try {
       const [nextItems, nextEditors] = await Promise.all([
-        fetchContentPlan(monthValue),
+        fetchContentPlan(monthValue, rangeStart && rangeEnd ? { startDate: rangeStart, endDate: rangeEnd } : undefined),
         fetchContentPlanEditorOptions(),
       ]);
       if (requestId !== requestIdRef.current) return;
@@ -57,7 +61,7 @@ export function useContentPlan(monthValue: string) {
         setIsLoading(false);
       }
     }
-  }, [monthValue]);
+  }, [monthValue, rangeEnd, rangeStart]);
 
   useEffect(() => {
     void loadContentPlan();
