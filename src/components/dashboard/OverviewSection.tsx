@@ -74,7 +74,7 @@ export function OverviewSection({
           icon={Video}
           value={metrics.totalShoots}
           label="Buổi quay"
-          hint="Lịch quay và sự kiện, không tính livestream."
+          hint="Chỉ tính Lịch quay và On set."
           delta={metrics.totalShoots - metrics.previous.totalShoots}
           deltaTone="neutral"
           deltaLabel={compare}

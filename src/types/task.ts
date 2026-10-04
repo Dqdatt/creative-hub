@@ -34,6 +34,9 @@ export interface VideoTask {
   priority: TaskPriority;
   link: string;
   note?: string;
+  // Mốc task chuyển sang "Đã xong", do database đóng dấu. null nghĩa là chưa
+  // xong, hoặc dữ liệu cũ không còn mốc hoàn thành để đối chiếu Ngày Air.
+  completedAt?: string | null;
 }
 
 export interface TaskFormData {

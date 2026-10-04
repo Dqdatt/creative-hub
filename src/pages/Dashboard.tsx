@@ -7,16 +7,22 @@ import { LoadingState } from '../components/common/LoadingState';
 import { DashboardView } from '../components/dashboard/DashboardView';
 import { SectionCard } from '../components/dashboard/SectionCard';
 import { ReportModal } from '../components/dashboard/ReportModal';
+import { BrandKpiModal } from '../components/dashboard/BrandKpiModal';
 import { useDashboard } from '../hooks/useDashboard';
+import { useBrandKpiTarget } from '../hooks/useBrandKpiTarget';
 import { useMonth } from '../context/monthContext';
 import { useAuth } from '../context/authContext';
+import { useToast } from '../components/common/toastContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { can, role } = useAuth();
+  const { can, role, user } = useAuth();
+  const { showToast } = useToast();
   const { selectedMonth, setSelectedMonth } = useMonth();
   const [reportOpen, setReportOpen] = useState(false);
   const [reportEditorFilter, setReportEditorFilter] = useState('all');
+  const [showLateDeadline, setShowLateDeadline] = useState(true);
+  const [brandKpiOpen, setBrandKpiOpen] = useState(false);
   const {
     tasks,
     shoots,
@@ -27,11 +33,31 @@ export default function Dashboard() {
     isEmpty,
     refetch,
   } = useDashboard(selectedMonth);
+  const isAdmin = role === 'admin';
   const canCreateReport = can('dashboard:report');
+  // Chỉ admin thấy card KPI nên cũng chỉ admin cần tải chỉ tiêu.
+  const brandKpi = useBrandKpiTarget(selectedMonth, isAdmin);
   const taskListPath = (params: Record<string, string>) => {
     const query = new URLSearchParams(params).toString();
-    return role === 'admin' ? `/calendar?source=task&${query}` : `/tasks?${query}`;
+    return isAdmin ? `/calendar?source=task&${query}` : `/tasks?${query}`;
   };
+
+  const brandKpiModal = (
+    <BrandKpiModal
+      isOpen={brandKpiOpen}
+      monthValue={selectedMonth}
+      target={brandKpi.target}
+      onSave={async (longVideos, motion) => {
+        await brandKpi.save(longVideos, motion, user?.id);
+        showToast({ type: 'success', message: 'Đã lưu chỉ tiêu KPI BRAND.' });
+      }}
+      onClear={async () => {
+        await brandKpi.clear();
+        showToast({ type: 'success', message: 'Đã xóa chỉ tiêu KPI BRAND.' });
+      }}
+      onClose={() => setBrandKpiOpen(false)}
+    />
+  );
 
   const reportModal = (
     <ReportModal
@@ -99,12 +125,18 @@ export default function Dashboard() {
         tasks={tasks}
         shoots={shoots}
         canCreateReport={canCreateReport}
+        isAdmin={isAdmin}
+        showLateDeadline={showLateDeadline}
+        onToggleLateDeadline={() => setShowLateDeadline((value) => !value)}
+        brandKpiTarget={brandKpi.target}
+        onEditBrandKpi={() => setBrandKpiOpen(true)}
         onOpenReport={() => setReportOpen(true)}
         onOpenWaiting={() => navigate(taskListPath({ status: 'Chờ' }))}
         onOpenOverdue={() => navigate(taskListPath({ attention: 'overdue' }))}
         onOpenMissingLinks={() => navigate(taskListPath({ status: 'Đã xong', attention: 'missing-link' }))}
       />
       {reportModal}
+      {isAdmin ? brandKpiModal : null}
     </>
   );
 }

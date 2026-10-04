@@ -5,6 +5,7 @@ import { useDocumentScrollLock } from '../common/useDocumentScrollLock';
 import type { Editor, VideoTask } from '../../types/task';
 import type { ShootSchedule } from '../../types/shoot';
 import { formatVietnameseMonth } from '../../utils/month';
+import { countShootsOfEditor, isCountedShoot } from '../../utils/shoot';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -49,6 +50,14 @@ export function ReportModal({
   const hold = scopedTasks.filter((task) => task.status === 'Hoãn').length;
   const missingLinks = scopedTasks.filter((task) => task.status === 'Đã xong' && !task.link).length;
   const completionRate = scopedTasks.length ? Math.round((done / scopedTasks.length) * 100) : 0;
+  // Cùng quy tắc với Dashboard: chỉ Lịch quay và On set mới là buổi quay.
+  // Lọc theo editor thì ô buổi quay cũng phải theo editor đó, không lấy cả tháng.
+  const scopedEditor = editorFilter === 'all'
+    ? null
+    : editors.find((editor) => editor.id === editorFilter) ?? null;
+  const countedShoots = scopedEditor
+    ? countShootsOfEditor(shoots, scopedEditor)
+    : shoots.filter(isCountedShoot).length;
   const title = `Báo cáo CreativeHub ${formatVietnameseMonth(monthValue)}`;
   const subtitle = editorFilter === 'all' ? 'Tất cả editor' : getEditorName(editorFilter, editors);
 
@@ -113,7 +122,7 @@ export function ReportModal({
             <div><strong>{pending}</strong><span>Chờ</span></div>
             <div><strong>{hold}</strong><span>Hoãn</span></div>
             <div><strong>{completionRate}%</strong><span>Hoàn thành</span></div>
-            <div><strong>{shoots.length}</strong><span>Buổi quay</span></div>
+            <div><strong>{countedShoots}</strong><span>Buổi quay</span></div>
           </section>
 
           <section className="report-section">

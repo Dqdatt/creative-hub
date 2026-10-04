@@ -57,3 +57,27 @@ export function isDisplayDateInMonth(value: string | undefined, monthValue: stri
   if (!compactDateMatch) return false;
   return Number(compactDateMatch[1]) === selectedMonth;
 }
+
+// Ngày trong Video Task lưu ở dạng hiển thị "d/M" (đôi khi "d/M/yyyy" hoặc ISO).
+// Năm còn thiếu được suy ra từ tháng đang xem để so sánh không bị lệch.
+export function displayDateToLocalDate(value: string | undefined | null, monthValue: string) {
+  if (!value) return null;
+
+  const cleanValue = value.trim();
+  if (!cleanValue || cleanValue === '#') return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanValue)) return new Date(`${cleanValue}T00:00:00`);
+
+  const match = cleanValue.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+  if (!match) return null;
+
+  const fallbackYear = Number(monthValue.slice(0, 4)) || new Date().getFullYear();
+  const parsedYear = match[3] ? Number(match[3]) : fallbackYear;
+  const year = parsedYear < 100 ? 2000 + parsedYear : parsedYear;
+  return new Date(year, Number(match[2]) - 1, Number(match[1]));
+}
+
+export function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}

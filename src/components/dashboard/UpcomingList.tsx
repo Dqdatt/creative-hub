@@ -44,7 +44,7 @@ export function UpcomingShootsCard({ shoots }: { shoots: ShootSchedule[] }) {
   return (
     <SectionCard
       title="Lịch quay sắp tới"
-      subtitle={upcoming.length ? `${upcoming.length} buổi quay từ hôm nay trở đi.` : undefined}
+      subtitle={upcoming.length ? `${upcoming.length} lịch từ hôm nay trở đi, gồm cả livestream.` : undefined}
     >
       <div className="dlist">
         {upcoming.length === 0 ? (
@@ -64,7 +64,7 @@ export function UpcomingShootsCard({ shoots }: { shoots: ShootSchedule[] }) {
           ))
         )}
         {upcoming.length > MAX_ROWS ? (
-          <p className="dlist-empty">và {upcoming.length - MAX_ROWS} buổi quay khác</p>
+          <p className="dlist-empty">và {upcoming.length - MAX_ROWS} lịch khác</p>
         ) : null}
       </div>
     </SectionCard>

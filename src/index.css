@@ -423,6 +423,26 @@ html.dark .dsection{ box-shadow:none; }
   color:var(--text-2);
 }
 .dsection-head-end{ flex:none; }
+.dsection-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+/* Nút bật/tắt: trạng thái bật được tô rõ để biết bảng đang hiện cột nào. */
+.btn-ghost[aria-pressed="true"]{
+  color:var(--accent);
+  background:color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color:color-mix(in srgb, var(--accent) 38%, transparent);
+}
+.btn-ghost[aria-pressed="false"]{
+  color:var(--muted);
+}
+.btn-ghost[aria-pressed] svg{
+  width:15px;
+  height:15px;
+}
 
 /* Ô chỉ số --------------------------------------------------- */
 /* auto-fit + 1fr: số ô trên một hàng tự co theo bề ngang thật của khối,
@@ -543,6 +563,88 @@ html.dark .dsection{ box-shadow:none; }
 .dtable .zero{ color:var(--muted);font-weight:400; }
 .dtable .strong{ color:var(--text);font-weight:700; }
 .dtable .alert{ color:var(--danger);font-weight:700; }
+.dtable td.dtable-rowhead{
+  text-align:left;
+  vertical-align:middle;
+  border-right:1px solid var(--border);
+}
+/* Bảng chéo: editor là nhóm cột, team order là cột con --------- */
+.dtable-matrix th{
+  padding:6px 8px;
+}
+.dtable-matrix thead tr:first-child th{
+  border-bottom:1px solid var(--border);
+}
+.dtable th.dtable-grouphead{
+  border-left:1px solid var(--border-strong);
+  border-right:1px solid var(--border-strong);
+}
+.dtable th.dtable-teamhead{
+  font-size:9.5px;
+  color:var(--muted);
+}
+/* Đầu nhóm cột: avatar trên, tên editor dưới. */
+.dtable-colhead{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  text-transform:none;
+  letter-spacing:0;
+  font-size:11.5px;
+  font-weight:650;
+  color:var(--text);
+}
+.dtable th.dtable-groupedge,
+.dtable td.dtable-groupedge{
+  border-right:1px solid var(--border-strong);
+}
+.dtable-matrix tbody td{
+  font-size:12px;
+}
+/* Hàng tổng trong bảng chéo. */
+.dtable tr.dtable-band td{
+  background:var(--bg2);
+  color:var(--text);
+  font-weight:700;
+}
+.dtable tr.dtable-band:hover td{
+  background:var(--bg2);
+}
+/* Vạch tách khối khối-lượng với khối tỉ lệ. */
+.dtable tr.dtable-blockstart td{
+  border-top:1px solid var(--border-strong);
+}
+.dtable tr.dtable-alert td{
+  color:var(--danger);
+  font-weight:700;
+}
+.dtable tr.dtable-alert td:first-child{
+  color:var(--text);
+}
+/* Cột tỉ trọng: thanh nền đọc nhanh hơn con số đứng một mình. */
+.dtable-share{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:64px;
+  height:20px;
+  border-radius:6px;
+  overflow:hidden;
+  background:var(--bg2);
+}
+.dtable-share-bar{
+  position:absolute;
+  inset:0 auto 0 0;
+  background:color-mix(in srgb, var(--accent) 24%, transparent);
+}
+.dtable-share-value{
+  position:relative;
+  font-size:11.5px;
+  font-weight:700;
+  color:var(--text);
+}
 .dtable tr.dtable-total td{
   border-top:1px solid var(--border-strong);
   border-bottom:none;

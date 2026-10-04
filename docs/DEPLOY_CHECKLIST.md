@@ -12,6 +12,12 @@ Run these SQL files in Supabase SQL Editor, in order:
 6. `supabase/content_plan_note_patch.sql`
 7. `supabase/user_permission_overrides_patch.sql`
 8. `supabase/activity_log_schema.sql`
+9. `supabase/video_task_completion_deadline_patch.sql`
+10. `supabase/brand_kpi_target_patch.sql`
+
+Hai file cuối phục vụ dashboard admin. `video_task_completion_deadline_patch.sql` thêm
+`video_tasks.completed_at` để tính trễ deadline; `brand_kpi_target_patch.sql` tạo bảng
+chỉ tiêu KPI của BRAND. Chưa chạy thì dashboard vẫn mở được, chỉ thiếu hai phần đó.
 
 Optional seed data for first setup:
 

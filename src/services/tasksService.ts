@@ -47,6 +47,7 @@ interface VideoTaskRow {
   priority: Nullable<TaskPriority>;
   result_link: Nullable<string>;
   notes: Nullable<string>;
+  completed_at?: Nullable<string>;
   content_plan: {
     title: string;
     note: Nullable<string>;
@@ -136,6 +137,63 @@ interface SyncLinkedVideoTaskRpcRow {
 export interface VideoTaskDeepLinkTarget {
   task: VideoTask;
   monthValue: string | null;
+}
+
+// completed_at do supabase/video_task_completion_deadline_patch.sql thêm vào.
+// Môi trường chưa chạy patch sẽ báo lỗi thiếu cột; khi đó tắt cờ và truy vấn lại
+// để danh sách task vẫn tải được, chỉ mất phần đối chiếu trễ deadline.
+let hasCompletedAtColumn = true;
+
+function buildVideoTaskSelect() {
+  return `
+      id,
+      stt,
+      title,
+      resize_reqs,
+      editor_id,
+      order_team,
+      category,
+      receive_date,
+      return_date,
+      air_date,
+      status,
+      priority,
+      result_link,
+      notes,${hasCompletedAtColumn ? '\n      completed_at,' : ''}
+      content_plan_id,
+      content_plan:content_plan_id (
+        title,
+        note,
+        category,
+        air_date,
+        editor_id,
+        profiles!content_plan_editor_id_fkey (
+          id,
+          editor_code,
+          short_name,
+          display_name,
+          full_name,
+          ui_color
+        )
+      ),
+      profiles!video_tasks_editor_id_fkey (
+        id,
+        editor_code,
+        short_name,
+        display_name,
+        full_name,
+        ui_color
+      )
+    `;
+}
+
+function isMissingCompletedAtColumn(error: { message?: string } | null | undefined) {
+  if (!hasCompletedAtColumn || !error) return false;
+  return (error.message ?? '').toLowerCase().includes('completed_at');
+}
+
+export function isCompletedAtColumnAvailable() {
+  return hasCompletedAtColumn;
 }
 
 const editorIdCache = new Map<string, string | null>();
@@ -345,6 +403,7 @@ function mapTaskRow(row: VideoTaskRow): VideoTask {
     priority: row.priority ?? '',
     link: row.result_link ?? '',
     note: isLinkedTask ? contentPlan?.note ?? '' : row.notes ?? '',
+    completedAt: row.completed_at ?? null,
   };
 }
 
@@ -603,52 +662,18 @@ async function updateLinkedVideoTaskAsAdmin(
 // dateRange cho phép màn Workload lấy thêm việc của các ngày tháng sau đang nằm trong lưới lịch.
 export async function fetchVideoTasks(monthValue?: string, dateRange?: DateRange): Promise<VideoTask[]> {
   const client = requireSupabase();
-  let query = client
+  const runQuery = () => client
     .from('video_tasks')
-    .select(`
-      id,
-      stt,
-      title,
-      resize_reqs,
-      editor_id,
-      order_team,
-      category,
-      receive_date,
-      return_date,
-      air_date,
-      status,
-      priority,
-      result_link,
-      notes,
-      content_plan_id,
-      content_plan:content_plan_id (
-        title,
-        note,
-        category,
-        air_date,
-        editor_id,
-        profiles!content_plan_editor_id_fkey (
-          id,
-          editor_code,
-          short_name,
-          display_name,
-          full_name,
-          ui_color
-        )
-      ),
-      profiles!video_tasks_editor_id_fkey (
-        id,
-        editor_code,
-        short_name,
-        display_name,
-        full_name,
-        ui_color
-      )
-    `);
-
-  const { data, error } = await query
+    .select(buildVideoTaskSelect())
     .order('air_date', { ascending: true, nullsFirst: false })
     .order('stt', { ascending: true });
+
+  let { data, error } = await runQuery();
+
+  if (isMissingCompletedAtColumn(error)) {
+    hasCompletedAtColumn = false;
+    ({ data, error } = await runQuery());
+  }
 
   if (error) throw new Error(mapDatabaseError(error));
 
@@ -673,50 +698,18 @@ export async function fetchVideoTasks(monthValue?: string, dateRange?: DateRange
 
 export async function fetchVideoTaskById(taskId: string): Promise<VideoTaskDeepLinkTarget | null> {
   const client = requireSupabase();
-  const { data, error } = await client
+  const runQuery = () => client
     .from('video_tasks')
-    .select(`
-      id,
-      stt,
-      title,
-      resize_reqs,
-      editor_id,
-      order_team,
-      category,
-      receive_date,
-      return_date,
-      air_date,
-      status,
-      priority,
-      result_link,
-      notes,
-      content_plan_id,
-      content_plan:content_plan_id (
-        title,
-        note,
-        category,
-        air_date,
-        editor_id,
-        profiles!content_plan_editor_id_fkey (
-          id,
-          editor_code,
-          short_name,
-          display_name,
-          full_name,
-          ui_color
-        )
-      ),
-      profiles!video_tasks_editor_id_fkey (
-        id,
-        editor_code,
-        short_name,
-        display_name,
-        full_name,
-        ui_color
-      )
-    `)
+    .select(buildVideoTaskSelect())
     .eq('id', taskId)
     .maybeSingle();
+
+  let { data, error } = await runQuery();
+
+  if (isMissingCompletedAtColumn(error)) {
+    hasCompletedAtColumn = false;
+    ({ data, error } = await runQuery());
+  }
 
   if (error) throw new Error(mapDatabaseError(error));
   if (!data) return null;
