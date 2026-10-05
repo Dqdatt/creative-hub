@@ -6,6 +6,11 @@ import { UserFilters } from '../components/users/UserFilters';
 import { UserModal } from '../components/users/UserModal';
 import { UserTable } from '../components/users/UserTable';
 import type { AppRole } from '../config/permissions';
+import { ROLE_LABELS } from '../config/permissions';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { useCreateParam } from '../hooks/useCreateParam';
+import { MobileToolbar, FilterGroup } from '../components/mobile/MobileToolbar';
+import { UserCardList } from '../components/mobile/UserCardList';
 import { useUsers } from '../hooks/useUsers';
 import type { CreateMemberFormData, ManagedUserProfile, UserProfileFormData } from '../types/userManagement';
 import { useToast } from '../components/common/toastContext';
@@ -122,6 +127,9 @@ export default function Users() {
     setFormError(null);
   };
 
+  const isMobile = useIsMobile();
+  useCreateParam({ user: openCreateModal });
+
   const openEditModal = (user: ManagedUserProfile) => {
     clearSaveError();
     clearMessage();
@@ -208,6 +216,35 @@ export default function Users() {
 
   return (
     <div className="space-y-4" data-view="users">
+      {isMobile ? (
+        <MobileToolbar<AppRole | 'all'>
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Tìm theo tên hoặc email"
+          chips={[
+            { value: 'all', label: 'Tất cả' },
+            ...(Object.keys(ROLE_LABELS) as AppRole[]).map((role) => ({ value: role, label: ROLE_LABELS[role] })),
+          ]}
+          chipValue={roleFilter}
+          onChipChange={setRoleFilter}
+          chipsLabel="Lọc theo vai trò"
+          activeFilterCount={statusFilter !== 'all' ? 1 : 0}
+          onResetFilters={() => setStatusFilter('all')}
+          resultLabel={`${filteredUsers.length} thành viên`}
+          filters={(
+            <FilterGroup<'all' | 'active' | 'inactive'>
+              label="Trạng thái"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: 'all', label: 'Tất cả trạng thái' },
+                { value: 'active', label: 'Đang hoạt động' },
+                { value: 'inactive', label: 'Tạm khóa' },
+              ]}
+            />
+          )}
+        />
+      ) : (
       <UserFilters
         search={search}
         roleFilter={roleFilter}
@@ -219,6 +256,7 @@ export default function Users() {
         onStatusChange={setStatusFilter}
         onCreateUser={openCreateModal}
       />
+      )}
 
       {loadError ? (
         <ErrorState title="Không thể tải thành viên" message={loadError} onRetry={() => void refetch()} />
@@ -233,6 +271,11 @@ export default function Users() {
         />
       ) : null}
 
+      {isMobile ? (
+        isLoading
+          ? <LoadingState variant="block" message="Đang tải danh sách thành viên..." className="m-card m-empty" />
+          : <UserCardList users={filteredUsers} onEditUser={openEditModal} />
+      ) : (
       <div className="card p-3 overflow-x-auto">
         {isLoading ? (
           <LoadingState
@@ -246,6 +289,7 @@ export default function Users() {
           <UserTable users={filteredUsers} onEditUser={openEditModal} />
         )}
       </div>
+      )}
 
       <UserModal
         isOpen={Boolean(draft)}

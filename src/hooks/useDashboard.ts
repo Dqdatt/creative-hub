@@ -6,8 +6,8 @@ import type { ShootSchedule } from '../types/shoot';
 import type { Editor, TaskStatus, VideoTask } from '../types/task';
 import { useRealtimeSubscription } from './useRealtimeSubscription';
 import { countShootsOfEditor, isCountedShoot } from '../utils/shoot';
-import { displayDateToLocalDate, getCurrentMonthValue, shiftMonthValue, startOfToday } from '../utils/month';
-import { isLateTask } from '../utils/taskDeadline';
+import { getCurrentMonthValue, shiftMonthValue, startOfToday } from '../utils/month';
+import { isLateTask, isOverdueTask } from '../utils/taskDeadline';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -15,13 +15,6 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 interface LoadOptions {
   silent?: boolean;
-}
-
-// Trễ hạn = chưa xong mà hạn trả (hoặc ngày air nếu trống hạn trả) đã qua.
-function isOverdue(task: VideoTask, monthValue: string, today: Date) {
-  if (task.status === 'Đã xong') return false;
-  const deadline = displayDateToLocalDate(task.returnDate || task.airDate, monthValue);
-  return Boolean(deadline && deadline < today);
 }
 
 export interface StatusCount {
@@ -66,7 +59,7 @@ export interface MatrixCell {
   motion: number;
   total: number;
   done: number;
-  /** Trễ deadline: xong sau Ngày Air, hoặc chưa xong khi Ngày Air đã qua. */
+  /** Trễ deadline: xong sau Ngày Air + 1 ngày làm việc, hoặc chưa xong khi mốc đó đã qua. */
   late: number;
   completionRate: number;
   share: number;
@@ -288,7 +281,7 @@ function summarize(tasks: VideoTask[], shoots: ShootSchedule[], monthValue: stri
   return {
     totalVideos,
     doneVideos,
-    overdueVideos: tasks.filter((task) => isOverdue(task, monthValue, today)).length,
+    overdueVideos: tasks.filter((task) => isOverdueTask(task, monthValue, today)).length,
     totalShoots: shoots.filter(isCountedShoot).length,
     completionRate: totalVideos ? Math.round((doneVideos / totalVideos) * 100) : 0,
   };
@@ -371,7 +364,7 @@ export function useDashboard(monthValue = getCurrentMonthValue()) {
           doing: editorTasks.filter((task) => task.status === 'Đang làm').length,
           waiting: editorTasks.filter((task) => task.status === 'Chờ').length,
           hold: editorTasks.filter((task) => task.status === 'Hoãn').length,
-          overdue: editorTasks.filter((task) => isOverdue(task, monthValue, today)).length,
+          overdue: editorTasks.filter((task) => isOverdueTask(task, monthValue, today)).length,
           longVideos: editorTasks.filter((task) => task.category === 'Video dài').length,
           motionVideos: editorTasks.filter((task) => task.category === 'Motion').length,
           shoots: editorShoots,

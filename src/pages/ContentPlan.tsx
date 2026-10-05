@@ -17,6 +17,11 @@ import { useToast } from '../components/common/toastContext';
 import { useMonth } from '../context/monthContext';
 import { isUuid } from '../utils/id';
 import { isSafeHttpUrl } from '../utils/url';
+import { CONTENT_PLAN_CATEGORIES } from '../data/contentPlan';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { useCreateParam } from '../hooks/useCreateParam';
+import { MobileToolbar, FilterGroup } from '../components/mobile/MobileToolbar';
+import { ContentPlanCardList } from '../components/mobile/ContentPlanCardList';
 
 function toFormData(item: ContentPlanItem): ContentPlanFormData {
   return {
@@ -145,6 +150,9 @@ export default function ContentPlan() {
     });
     setFormError(null);
   };
+
+  const isMobile = useIsMobile();
+  useCreateParam({ content: handleAddRow }, !isLoading);
 
   const handleOpenEditor = (item: ContentPlanItem) => {
     if (!canOpenEditor) return;
@@ -314,6 +322,19 @@ export default function ContentPlan() {
   };
 
   const renderTableContent = () => {
+    if (isMobile) {
+      if (isLoading) return <LoadingState variant="block" message="Đang tải Content Plan..." className="m-card m-empty" />;
+      return (
+        <ContentPlanCardList
+          items={filteredItems}
+          editorOptions={editorOptions}
+          canEdit={canOpenEditor && !isSaving && !isDeleting}
+          onEdit={handleOpenEditor}
+          highlightedId={highlightedContentPlanId}
+        />
+      );
+    }
+
     if (isLoading) {
       return (
         <LoadingState
@@ -339,6 +360,28 @@ export default function ContentPlan() {
 
   return (
     <div className="space-y-4" data-view="content-plan">
+      {isMobile ? (
+        <MobileToolbar<ContentPlanCategory | 'all'>
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Tìm tên video..."
+          chips={[{ value: 'all', label: 'Tất cả' }, ...CONTENT_PLAN_CATEGORIES.map((category) => ({ value: category, label: category }))]}
+          chipValue={categoryFilter}
+          onChipChange={setCategoryFilter}
+          chipsLabel="Lọc theo thể loại"
+          activeFilterCount={editorFilter !== 'all' ? 1 : 0}
+          onResetFilters={() => setEditorFilter('all')}
+          resultLabel={`${filteredItems.length} dòng${filteredItems.length !== monthItems.length ? ` (trên tổng ${monthItems.length})` : ''}`}
+          filters={(
+            <FilterGroup
+              label="Editor"
+              value={editorFilter}
+              onChange={setEditorFilter}
+              options={[{ value: 'all', label: 'Tất cả editor' }, ...editorOptions.map((editor) => ({ value: editor.id, label: editor.short }))]}
+            />
+          )}
+        />
+      ) : (
       <ContentPlanFilters
         search={search}
         editorFilter={editorFilter}
@@ -352,6 +395,7 @@ export default function ContentPlan() {
         onCategoryChange={setCategoryFilter}
         onCreate={handleAddRow}
       />
+      )}
 
       {loadError ? (
         <ErrorState title="Không thể tải Content Plan" message={loadError} onRetry={() => void refetch()} />
@@ -370,9 +414,11 @@ export default function ContentPlan() {
         />
       ) : null}
 
-      <div className="card p-2 overflow-x-auto">
-        {renderTableContent()}
-      </div>
+      {isMobile ? renderTableContent() : (
+        <div className="card p-2 overflow-x-auto">
+          {renderTableContent()}
+        </div>
+      )}
 
       <ContentPlanModal
         isOpen={draft !== null}

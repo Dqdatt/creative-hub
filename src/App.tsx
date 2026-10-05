@@ -20,6 +20,8 @@ const Profile = lazy(() => import('./pages/Profile'));
 const ContentPlan = lazy(() => import('./pages/ContentPlan'));
 const Workload = lazy(() => import('./pages/Workload'));
 const Users = lazy(() => import('./pages/Users'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const Account = lazy(() => import('./pages/Account'));
 
 function DefaultRedirect() {
   const { role, permissions } = useAuth();
@@ -61,6 +63,8 @@ function App() {
                   <Route path="/users" element={lazyPage(<Users />)} />
                   <Route path="/calendar" element={lazyPage(<Calendar />)} />
                   <Route path="/profile" element={lazyPage(<Profile />)} />
+                  <Route path="/notifications" element={lazyPage(<Notifications />)} />
+                  <Route path="/account" element={lazyPage(<Account />)} />
                   <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>

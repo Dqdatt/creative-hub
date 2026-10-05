@@ -4,13 +4,18 @@ import { ErrorState } from '../components/common/ErrorState';
 import { LoadingState } from '../components/common/LoadingState';
 import { useProfile } from '../hooks/useProfile';
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useToast } from '../components/common/toastContext';
 import { useAuth } from '../context/authContext';
 
 const DEFAULT_AVATAR = 'https://i.pravatar.cc/160?img=13';
 
 export default function Profile() {
-  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+  const location = useLocation();
+  // Trang Tài khoản (mobile) mở thẳng hộp Đổi mật khẩu.
+  const [isPasswordOpen, setIsPasswordOpen] = useState(
+    Boolean((location.state as { openPassword?: boolean } | null)?.openPassword)
+  );
   const { showToast } = useToast();
   const { can } = useAuth();
   const canEditProfile = can('profile:edit_self');

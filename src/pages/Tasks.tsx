@@ -15,6 +15,13 @@ import { useToast } from '../components/common/toastContext';
 import { useConfirmDialog } from '../components/common/confirmDialogContext';
 import { useMonth } from '../context/monthContext';
 import { isUuid } from '../utils/id';
+import { startOfToday } from '../utils/month';
+import { isOverdueTask } from '../utils/taskDeadline';
+import { ORDER_TEAMS, TASK_CATEGORIES } from '../data/tasks';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { useCreateParam } from '../hooks/useCreateParam';
+import { MobileToolbar, FilterGroup } from '../components/mobile/MobileToolbar';
+import { TaskCardList } from '../components/mobile/TaskCardList';
 
 export default function Tasks() {
   const { can, profile } = useAuth();
@@ -84,41 +91,33 @@ export default function Tasks() {
     canManageSelectedLinkedTask
   );
 
-  const filteredTasks = useMemo(() =>
-    tasks
+  const filteredTasks = useMemo(() => {
+    const today = startOfToday();
+    return tasks
       .filter((t) => {
         if (editorFilter !== 'all' && t.editorId !== editorFilter) return false;
         if (statusFilter !== 'all' && t.status !== statusFilter) return false;
         if (orderFilter !== 'all' && t.orderTeam !== orderFilter) return false;
         if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
         if (attentionParam === 'missing-link' && t.link) return false;
-        if (attentionParam === 'overdue') {
-          if (t.status === 'Đã xong') return false;
-          const returnDate = t.returnDate || t.airDate;
-          if (!returnDate) return false;
-          const [day, month, year] = returnDate.split('/');
-          const normalizedYear = Number(year ?? selectedMonth.slice(0, 4));
-          const dueDate = new Date(normalizedYear < 100 ? 2000 + normalizedYear : normalizedYear, Number(month) - 1, Number(day));
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          if (!Number.isFinite(dueDate.getTime()) || dueDate >= today) return false;
-        }
+        if (attentionParam === 'overdue' && !isOverdueTask(t, selectedMonth, today)) return false;
         if (search) {
           const searchValue = search.toLowerCase();
           if (![t.name, t.airDate, t.note ?? ''].some((value) => value.toLowerCase().includes(searchValue))) return false;
         }
         return true;
       })
-      .sort((a, b) => a.id - b.id),
-    [attentionParam, categoryFilter, editorFilter, orderFilter, search, selectedMonth, statusFilter, tasks]
-  );
+      .sort((a, b) => a.id - b.id);
+  }, [attentionParam, categoryFilter, editorFilter, orderFilter, search, selectedMonth, statusFilter, tasks]);
 
+  const isMobile = useIsMobile();
   const openAddModal = () => {
     if (!canCreateTask) return;
     clearSaveError();
     setSelectedTask(null);
     setIsModalOpen(true);
   };
+  useCreateParam({ task: openAddModal });
 
   useEffect(() => {
     const requestedStatus = searchParams.get('status');
@@ -302,6 +301,20 @@ export default function Tasks() {
   }, [canDeleteTask, closeModal, deleteTask, isDeleting, isSaving, requestConfirm, selectedTask?.dbId, showToast]);
 
   const renderTableContent = () => {
+    if (isMobile) {
+      if (isLoading) return <LoadingState variant="block" message="Đang tải dữ liệu video..." className="m-card m-empty" />;
+      return (
+        <TaskCardList
+          tasks={filteredTasks}
+          editors={editors}
+          monthValue={selectedMonth}
+          canOpen={canUpdateTask}
+          onOpen={openEditModal}
+          highlightedId={highlightedTaskId}
+        />
+      );
+    }
+
     if (isLoading) {
       return (
         <LoadingState
@@ -329,6 +342,52 @@ export default function Tasks() {
 
   return (
     <div className="space-y-4" data-view="tasks">
+      {isMobile ? (
+        <MobileToolbar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Tìm tên video..."
+          chips={[
+            { value: 'all', label: 'Tất cả' },
+            { value: 'Chờ', label: 'Chờ' },
+            { value: 'Đang làm', label: 'Đang làm' },
+            { value: 'Đã xong', label: 'Đã xong' },
+            { value: 'Hoãn', label: 'Hoãn' },
+          ]}
+          chipValue={statusFilter}
+          onChipChange={setStatusFilter}
+          chipsLabel="Lọc theo trạng thái"
+          activeFilterCount={[editorFilter, orderFilter, categoryFilter].filter((value) => value !== 'all').length}
+          onResetFilters={() => {
+            setEditorFilter('all');
+            setOrderFilter('all');
+            setCategoryFilter('all');
+          }}
+          resultLabel={`${filteredTasks.length} video${filteredTasks.length !== tasks.length ? ` (trên tổng ${tasks.length})` : ''}`}
+          filters={(
+            <>
+              <FilterGroup
+                label="Editor"
+                value={editorFilter}
+                onChange={setEditorFilter}
+                options={[{ value: 'all', label: 'Tất cả editor' }, ...editors.map((editor) => ({ value: editor.id, label: editor.short }))]}
+              />
+              <FilterGroup
+                label="Team Order"
+                value={orderFilter}
+                onChange={setOrderFilter}
+                options={[{ value: 'all', label: 'Tất cả order' }, ...ORDER_TEAMS.map((team) => ({ value: team, label: team }))]}
+              />
+              <FilterGroup<TaskCategory | 'all'>
+                label="Thể loại"
+                value={categoryFilter}
+                onChange={setCategoryFilter}
+                options={[{ value: 'all', label: 'Tất cả thể loại' }, ...TASK_CATEGORIES.map((category) => ({ value: category, label: category }))]}
+              />
+            </>
+          )}
+        />
+      ) : (
       <TaskFilters
         editors={editors}
         search={search}
@@ -346,6 +405,7 @@ export default function Tasks() {
         onAddTask={openAddModal}
         canAddTask={canCreateTask}
       />
+      )}
 
       {loadError ? (
         <ErrorState title="Không thể tải video tháng" message={loadError} onRetry={() => void refetch()} />
@@ -360,9 +420,11 @@ export default function Tasks() {
         />
       ) : null}
 
-      <div className="card p-3 overflow-x-auto">
-        {renderTableContent()}
-      </div>
+      {isMobile ? renderTableContent() : (
+        <div className="card p-3 overflow-x-auto">
+          {renderTableContent()}
+        </div>
+      )}
 
       <TaskModal
         isOpen={isModalOpen}

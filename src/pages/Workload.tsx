@@ -24,6 +24,10 @@ import type { ShootFormData, ShootSchedule } from '../types/shoot';
 import type { LinkedVideoTaskExecutionData, TaskFormData, VideoTask } from '../types/task';
 import { getDefaultContentDate, hasContentFieldChanges, toContentPlanFormData } from '../utils/contentPlanForm';
 import { monthValueToDate } from '../utils/month';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { useCreateParam } from '../hooks/useCreateParam';
+import { MobileToolbar } from '../components/mobile/MobileToolbar';
+import { WorkloadAgenda } from '../components/mobile/WorkloadAgenda';
 
 type KindFilter = 'task' | 'lichquay' | 'live';
 
@@ -480,6 +484,14 @@ export default function Workload() {
     canManageSelectedLinkedTask
   );
 
+  const isMobile = useIsMobile();
+  useCreateParam({
+    task: openTaskCreate,
+    content: openContentCreate,
+    shoot: () => openShootCreate(defaultDate),
+  }, !isLoading);
+  const mobileFilterCount = kindFilters.length + statusFilters.length + orderFilters.length + categoryFilters.length;
+
   if (loadError) {
     return (
       <div className="calendar-page" data-view="workload">
@@ -490,6 +502,57 @@ export default function Workload() {
 
   return (
     <div className="calendar-page" data-view="workload">
+      {isMobile ? (
+        <MobileToolbar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Tìm tên video..."
+          chips={[
+            { value: 'all', label: 'Tất cả' },
+            ...workload.summaries.map((summary) => ({ value: summary.editorId, label: `${summary.label} · ${summary.total}` })),
+            ...(workload.unassignedCount ? [{ value: '__unassigned_only__', label: `Chưa phân công · ${workload.unassignedCount}` }] : []),
+          ]}
+          chipValue={unassignedOnly ? '__unassigned_only__' : editorFilter}
+          onChipChange={(value) => {
+            if (value === '__unassigned_only__') {
+              setUnassignedOnly(true);
+              setEditorFilter('all');
+              return;
+            }
+            setUnassignedOnly(false);
+            setEditorFilter(value);
+          }}
+          chipsLabel="Lọc theo editor"
+          activeFilterCount={mobileFilterCount}
+          onResetFilters={() => {
+            setKindFilters([]);
+            setStatusFilters([]);
+            setOrderFilters([]);
+            setCategoryFilters([]);
+          }}
+          resultLabel={`${visibleCount} việc`}
+          filters={(
+            <>
+              <div className="m-filter-group">
+                <span className="m-filter-label">Nguồn việc</span>
+                <MultiSelect className="wl-select" options={KIND_OPTIONS} values={kindFilters} onChange={(next) => setKindFilters(next as KindFilter[])} allLabel="Tất cả" summaryUnit="loại" ariaLabel="Lọc theo nguồn việc" />
+              </div>
+              <div className="m-filter-group">
+                <span className="m-filter-label">Trạng thái</span>
+                <MultiSelect className="wl-select" options={TASK_STATUSES.map((status) => ({ value: status, label: status }))} values={statusFilters} onChange={setStatusFilters} allLabel="Tất cả trạng thái" summaryUnit="trạng thái" ariaLabel="Lọc theo trạng thái" />
+              </div>
+              <div className="m-filter-group">
+                <span className="m-filter-label">Order</span>
+                <MultiSelect className="wl-select" options={ORDER_TEAMS.map((team) => ({ value: team, label: team }))} values={orderFilters} onChange={setOrderFilters} allLabel="Tất cả order" summaryUnit="order" ariaLabel="Lọc theo order" />
+              </div>
+              <div className="m-filter-group">
+                <span className="m-filter-label">Thể loại</span>
+                <MultiSelect className="wl-select" options={TASK_CATEGORIES.map((category) => ({ value: category, label: category }))} values={categoryFilters} onChange={setCategoryFilters} allLabel="Tất cả thể loại" summaryUnit="thể loại" ariaLabel="Lọc theo thể loại" />
+              </div>
+            </>
+          )}
+        />
+      ) : (
       <div className="card wl-toolbar">
         <div className="wl-row">
           <div className="wl-search">
@@ -597,6 +660,7 @@ export default function Workload() {
           </div>
         </div>
       </div>
+      )}
 
       {isLoading ? (
         <div className="calendar-card card">
@@ -610,6 +674,17 @@ export default function Workload() {
       ) : workload.itemCount === 0 && !canCreateShoot ? (
         <EmptyState title="Tháng này chưa có việc nào" />
       ) : (
+        isMobile ? (
+          <WorkloadAgenda
+            currentDate={currentDate}
+            days={filteredDays}
+            badges={badges}
+            todayIso={todayIso}
+            onOpenItem={handleOpenItem}
+            canCreateShoot={canCreateShoot}
+            onDayClick={openShootCreate}
+          />
+        ) : (
         <WorkloadCalendar
           currentDate={currentDate}
           days={filteredDays}
@@ -619,6 +694,7 @@ export default function Workload() {
           canCreateShoot={canCreateShoot}
           onDayClick={openShootCreate}
         />
+        )
       )}
 
       <ShootModal

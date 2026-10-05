@@ -20,6 +20,9 @@ import { monthValueToDate } from '../utils/month';
 import { isIsoDate, isUuid } from '../utils/id';
 import { SHOOT_TYPES_META } from '../data/shoots';
 import { useDocumentScrollLock } from '../components/common/useDocumentScrollLock';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { useCreateParam } from '../hooks/useCreateParam';
+import { ShootMonthMobile } from '../components/mobile/ShootMonthMobile';
 
 function toIsoDate(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -338,6 +341,12 @@ export default function Calendar() {
     }
   };
 
+  const isMobile = useIsMobile();
+  const todayIso = toIsoDate(new Date());
+  useCreateParam({
+    shoot: () => handleDayClick(todayIso.startsWith(selectedMonth) ? todayIso : `${selectedMonth}-01`),
+  }, !isLoading);
+
   return (
     <div className="calendar-page" data-view="calendar">
       <CalendarHeader
@@ -357,6 +366,22 @@ export default function Calendar() {
         />
       ) : null}
 
+      {isMobile ? (
+        isLoading ? (
+          <LoadingState variant="block" message="Đang tải lịch quay..." className="m-card m-empty" />
+        ) : (
+          <ShootMonthMobile
+            currentDate={currentDate}
+            shoots={shoots}
+            filter={filter}
+            onDayClick={handleDayClick}
+            onShootClick={handleShootClick}
+            canCreateShoot={canCreateShoot}
+            highlightedShootId={highlightedShootId}
+            highlightedDate={highlightedDate}
+          />
+        )
+      ) : (
       <div className="calendar-card card">
         {isLoading ? (
           <LoadingState
@@ -379,6 +404,7 @@ export default function Calendar() {
           />
         )}
       </div>
+      )}
 
       {agenda ? (
         <DayAgendaModal
