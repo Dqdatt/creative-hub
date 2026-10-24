@@ -273,7 +273,7 @@ export default function Users() {
 
       {isMobile ? (
         isLoading
-          ? <LoadingState variant="block" message="Đang tải danh sách thành viên..." className="m-card m-empty" />
+          ? <LoadingState variant="block" shape="list" message="Đang tải danh sách thành viên..." className="m-loading-list" />
           : <UserCardList users={filteredUsers} onEditUser={openEditModal} />
       ) : (
       <div className="card p-3 overflow-x-auto">

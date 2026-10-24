@@ -115,7 +115,9 @@ export function initPwa() {
   });
 
   window.matchMedia('(display-mode: standalone)').addEventListener('change', () => {
-    setState({ isStandalone: detectStandalone() });
+    const isStandalone = detectStandalone();
+    document.documentElement.toggleAttribute('data-standalone', isStandalone);
+    setState({ isStandalone });
   });
 
   window.addEventListener('online', () => setState({ isOnline: true }));

@@ -12,10 +12,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
+    const themeColor = document.querySelector<HTMLMetaElement>('#app-theme-color');
     if (theme === 'dark') {
       root.classList.add('dark');
+      themeColor?.setAttribute('content', '#0F141D');
     } else {
       root.classList.remove('dark');
+      themeColor?.setAttribute('content', '#F3F5F8');
     }
     localStorage.setItem('vo-theme', theme);
   }, [theme]);

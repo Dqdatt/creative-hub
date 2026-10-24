@@ -10,7 +10,7 @@ type LoadingStateProps =
       variant: 'block';
       message: string;
       className: string;
-      shape?: 'card' | 'calendar' | 'dashboard' | 'profile';
+      shape?: 'card' | 'calendar' | 'dashboard' | 'profile' | 'list';
     };
 
 function SkeletonLine({ className = '' }: { className?: string }) {
@@ -110,6 +110,28 @@ export function LoadingState(props: LoadingStateProps) {
             ))}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (props.shape === 'list') {
+    return (
+      <div className={`skeleton-list ${props.className}`} aria-label={props.message}>
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div className="skeleton-list-card" key={index} aria-hidden="true">
+            <div className="skeleton-list-top">
+              <span className="skel-box skeleton-list-pill" />
+              <span className="skel-box skeleton-list-pill skeleton-list-pill--short" />
+            </div>
+            <SkeletonLine className={index % 2 ? 'w-[74%]' : 'w-[88%]'} />
+            <SkeletonLine className="w-[52%]" />
+            <div className="skeleton-list-meta">
+              <span className="skel-box" />
+              <span className="skel-box" />
+              <span className="skel-box" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

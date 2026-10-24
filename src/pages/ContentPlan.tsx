@@ -323,7 +323,7 @@ export default function ContentPlan() {
 
   const renderTableContent = () => {
     if (isMobile) {
-      if (isLoading) return <LoadingState variant="block" message="Đang tải Content Plan..." className="m-card m-empty" />;
+      if (isLoading) return <LoadingState variant="block" shape="list" message="Đang tải Content Plan..." className="m-loading-list" />;
       return (
         <ContentPlanCardList
           items={filteredItems}

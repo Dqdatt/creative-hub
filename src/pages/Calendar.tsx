@@ -368,7 +368,7 @@ export default function Calendar() {
 
       {isMobile ? (
         isLoading ? (
-          <LoadingState variant="block" message="Đang tải lịch quay..." className="m-card m-empty" />
+          <LoadingState variant="block" shape="list" message="Đang tải lịch quay..." className="m-loading-list" />
         ) : (
           <ShootMonthMobile
             currentDate={currentDate}

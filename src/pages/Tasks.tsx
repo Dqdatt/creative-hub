@@ -302,7 +302,7 @@ export default function Tasks() {
 
   const renderTableContent = () => {
     if (isMobile) {
-      if (isLoading) return <LoadingState variant="block" message="Đang tải dữ liệu video..." className="m-card m-empty" />;
+      if (isLoading) return <LoadingState variant="block" shape="list" message="Đang tải dữ liệu video..." className="m-loading-list" />;
       return (
         <TaskCardList
           tasks={filteredTasks}

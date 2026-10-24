@@ -4,7 +4,7 @@
  * - Font Google, icon, logo: dùng cache rồi cập nhật ngầm.
  * - Supabase và mọi request khác: không can thiệp, luôn đi thẳng ra mạng.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = `ch-shell-${VERSION}`;
 const ASSET_CACHE = `ch-assets-${VERSION}`;
 const RUNTIME_CACHE = `ch-runtime-${VERSION}`;
