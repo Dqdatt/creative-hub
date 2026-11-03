@@ -8,6 +8,7 @@ import { useRealtimeSubscription } from './useRealtimeSubscription';
 import { countShootsOfEditor, isCountedShoot } from '../utils/shoot';
 import { getCurrentMonthValue, shiftMonthValue, startOfToday } from '../utils/month';
 import { isLateTask, isOverdueTask } from '../utils/taskDeadline';
+import { isSafeHttpUrl } from '../utils/url';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -88,7 +89,7 @@ export interface EditorMatrix {
   load: number;
 }
 
-// KPI riêng của team order BRAND: tự đếm theo tháng đang xem, không có chỉ tiêu
+// KPI riêng của team order BRAND: chỉ đếm video đã có link thành phẩm, theo tháng đang xem, không có chỉ tiêu
 // đặt trước. Liệt kê đủ mọi editor để người không có việc BRAND vẫn hiện số 0.
 export interface BrandKpiRow {
   key: string;
@@ -240,7 +241,10 @@ function buildEditorMatrix(
 }
 
 function buildBrandKpi(tasks: VideoTask[], editors: Editor[]): BrandKpi {
-  const brandTasks = tasks.filter((task) => taskTeam(task) === BRAND_TEAM);
+  // KPI chỉ tính video đã hoàn thành, tức là đã có link thành phẩm hợp lệ.
+  const brandTasks = tasks.filter(
+    (task) => taskTeam(task) === BRAND_TEAM && isSafeHttpUrl(task.link ?? '')
+  );
   const total = brandTasks.length;
 
   const toRow = (key: string, label: string, editor: Editor | null, rowTasks: VideoTask[]): BrandKpiRow => ({

@@ -38,7 +38,7 @@ export function BrandKpiCard({ brandKpi, monthValue, target, onEditTarget }: Bra
   const monthLabel = monthValueToDate(monthValue).getMonth() + 1;
   const targetTotal = target ? target.longVideos + target.motion : 0;
   const subtitle = total === 0
-    ? 'Tháng này chưa có video nào thuộc BRAND.'
+    ? 'Tháng này chưa có video BRAND nào hoàn thành (có link thành phẩm).'
     : target
       ? undefined
       : 'Chưa nhập chỉ tiêu cho tháng này, bảng chỉ hiện số đếm được.';
