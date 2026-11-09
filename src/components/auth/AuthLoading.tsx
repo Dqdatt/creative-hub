@@ -3,8 +3,6 @@ import logoSymbol from '../../assets/logo.png';
 
 const DESKTOP_NAV_ITEMS = Array.from({ length: 6 }, (_, index) => index);
 const DESKTOP_ROWS = Array.from({ length: 8 }, (_, index) => index);
-const MOBILE_CARDS = Array.from({ length: 4 }, (_, index) => index);
-const MOBILE_NAV_ITEMS = Array.from({ length: 5 }, (_, index) => index);
 
 function Skeleton({ className = '', box = false }: { className?: string; box?: boolean }) {
   return <span className={`${box ? 'skel-box' : 'skel-line'} ${className}`} aria-hidden="true" />;
@@ -80,53 +78,24 @@ function DesktopBootSkeleton() {
   );
 }
 
-function MobileBootSkeleton() {
+function MobileNativeSplash() {
   return (
-    <div className="boot-mobile">
-      <header className="boot-mobile-head" aria-hidden="true">
-        <div className="boot-mobile-title">
-          <Skeleton className="w-[118px]" />
-          <Skeleton className="w-[72px]" />
+    <div className="native-splash" aria-hidden="true">
+      <span className="native-splash-light" />
+      <div className="native-splash-content">
+        <div className="native-splash-mark">
+          <span className="native-splash-mark-glow" />
+          <img src={logoSymbol} alt="" draggable={false} />
         </div>
-        <Skeleton box className="boot-mobile-avatar" />
-      </header>
-
-      <div className="boot-mobile-month" aria-hidden="true">
-        <Skeleton className="w-[96px]" />
+        <div className="native-splash-brand">
+          <strong>CreativeHub</strong>
+          <span>TEAM MARKETING</span>
+        </div>
+        <div className="native-splash-progress">
+          <span />
+        </div>
+        <p>Đang chuẩn bị không gian làm việc</p>
       </div>
-
-      <main className="boot-mobile-content">
-        <Skeleton box className="boot-mobile-search" />
-        <div className="boot-chip-row" aria-hidden="true">
-          <Skeleton box className="w-[64px]" />
-          <Skeleton box className="w-[58px]" />
-          <Skeleton box className="w-[76px]" />
-          <Skeleton box className="w-[68px]" />
-        </div>
-        <div className="boot-mobile-list" aria-hidden="true">
-          {MOBILE_CARDS.map((card) => (
-            <section key={card} className="boot-mobile-card">
-              <div className="boot-mobile-card-top">
-                <Skeleton box className="boot-pill" />
-                <Skeleton box className="boot-pill boot-pill--short" />
-              </div>
-              <Skeleton className={card % 2 ? 'w-[72%]' : 'w-[88%]'} />
-              <Skeleton className="w-[54%]" />
-              <div className="boot-mobile-dates">
-                <Skeleton box />
-                <Skeleton box />
-                <Skeleton box />
-              </div>
-            </section>
-          ))}
-        </div>
-      </main>
-
-      <nav className="boot-mobile-dock" aria-hidden="true">
-        {MOBILE_NAV_ITEMS.map((item) => (
-          <Skeleton key={item} box className={`boot-dock-icon ${item === 1 ? 'is-active' : ''}`} />
-        ))}
-      </nav>
     </div>
   );
 }
@@ -143,7 +112,7 @@ export function AuthLoading() {
       aria-label="Đang khởi động CreativeHub"
     >
       <span className="sr-only">Đang khởi động CreativeHub...</span>
-      {isMobile ? <MobileBootSkeleton /> : <DesktopBootSkeleton />}
+      {isMobile ? <MobileNativeSplash /> : <DesktopBootSkeleton />}
     </div>
   );
 }

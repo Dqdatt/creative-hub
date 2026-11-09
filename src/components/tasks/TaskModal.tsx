@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Clapperboard, CircleCheck, Trash2 } from 'lucide-react';
+import { ChevronLeft, X, Clapperboard, CircleCheck, Trash2 } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
 import type { Editor, VideoTask, TaskFormData, TaskStatus, TaskCategory, TaskPriority, LinkedVideoTaskExecutionData } from '../../types/task';
 import { ORDER_TEAMS, TASK_CATEGORIES, TASK_STATUSES } from '../../data/tasks';
 import { useDocumentScrollLock } from '../common/useDocumentScrollLock';
 import { isSafeHttpUrl } from '../../utils/url';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -197,14 +198,15 @@ export function TaskModal({
   const [acceptReceiveDate, setAcceptReceiveDate] = useState('');
   const [acceptReturnDate, setAcceptReturnDate] = useState('');
   const [completeLink, setCompleteLink] = useState('');
+  const isMobile = useIsMobile();
 
   useDocumentScrollLock(isOpen);
 
   useEffect(() => {
-    if (!isOpen || fieldState.isLinkedTask) return undefined;
+    if (!isOpen || isMobile || fieldState.isLinkedTask) return undefined;
     const focusTimer = window.setTimeout(() => nameRef.current?.focus(), 80);
     return () => window.clearTimeout(focusTimer);
-  }, [fieldState.isLinkedTask, isOpen]);
+  }, [fieldState.isLinkedTask, isMobile, isOpen]);
 
   useEffect(() => {
     if (!isOpen || !task) return;
@@ -335,57 +337,50 @@ export function TaskModal({
 
   return createPortal(
     <div 
-      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto py-10 px-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      className={`modal-overlay native-form-overlay fixed inset-0 z-50 flex ${!isEditMode ? 'native-create-overlay' : ''}`}
+      onClick={(e) => { if (isEditMode && e.target === e.currentTarget) onClose(); }}
     >
-      <div className="modal-card w-[90%] max-w-2xl p-7 my-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
-            <span className="icoc icoc-lg" style={{ background: 'var(--grad)', color: '#fff' }}>
-              <Clapperboard style={{ width: '20px', height: '20px' }} />
+      <form ref={formRef} className={`modal-card native-form-modal task-form-modal ${!isEditMode ? 'native-create-screen' : ''}`} onSubmit={handleSubmit} role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
+        <span className="native-sheet-grabber" aria-hidden="true" />
+        <header className="native-modal-head">
+          <div className="native-modal-title-wrap">
+            <span className="native-modal-icon">
+              <Clapperboard />
             </span>
-            <h3 className="font-extrabold text-[19px] leading-none tracking-tight">
-              {isAcceptMode ? 'Nhận Task' : isCompleteMode ? 'Hoàn thành Task' : isEditMode ? 'Chỉnh sửa Task' : 'Thêm Task mới'}
-            </h3>
-          </div>
-          <button onClick={onClose} className="icon-btn"><X /></button>
-        </div>
-
-        <form ref={formRef} onSubmit={handleSubmit}>
-          <div className="modal-actions-top">
-            {isEditMode && canDelete && onDelete ? (
-              <button type="button" className="btn-ghost mr-auto" onClick={onDelete} disabled={isSaving} style={{ color: 'var(--danger)' }}>
-                <Trash2 style={{ width: '16px', height: '16px' }} />
-                Xóa Task
-              </button>
-            ) : null}
-            <div className="ml-auto flex gap-3">
-            <button type="button" onClick={onClose} className="btn-ghost" disabled={isSaving}>Đóng</button>
-            {fieldState.canSaveExecution ? (
-              <button type="button" className="btn-ghost" onClick={handleSaveExecution} disabled={isSaving}>
-                <CircleCheck style={{ width: '17px', height: '17px' }} />
-                {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
-              </button>
-            ) : null}
-            {showSubmitButton ? (
-              <button type="submit" className="btn" disabled={submitDisabled}>
-                <CircleCheck style={{ width: '17px', height: '17px' }} />
-                {isSaving ? 'Đang lưu...' : isAcceptMode ? 'Nhận Task' : isCompleteMode ? 'Hoàn thành' : 'Lưu thay đổi'}
-              </button>
-            ) : null}
+            <div className="min-w-0">
+              <h3 id="taskModalTitle" className="native-modal-title">
+                {isAcceptMode ? 'Nhận Task' : isCompleteMode ? 'Hoàn thành Task' : isEditMode ? 'Chỉnh sửa Task' : 'Thêm Task mới'}
+              </h3>
+              <p className="native-modal-subtitle">Video tháng</p>
             </div>
           </div>
+          <button type="button" onClick={onClose} className="icon-btn native-modal-close" disabled={isSaving} aria-label={isMobile && !isEditMode ? 'Quay lại' : 'Đóng'}>
+            {isMobile && !isEditMode ? <ChevronLeft /> : <X />}
+          </button>
+          {isMobile && !isEditMode && showSubmitButton ? (
+            <button type="submit" className="native-create-save" disabled={submitDisabled}>
+              {isSaving ? 'Đang lưu' : 'Lưu'}
+            </button>
+          ) : null}
+        </header>
+
+        <div className="native-modal-body">
 
           {acceptValidationError || completeValidationError ? (
-            <div className="modal-actions-alert">{acceptValidationError ?? completeValidationError}</div>
+            <div className="native-modal-error">{acceptValidationError ?? completeValidationError}</div>
           ) : null}
 
           {errorMessage ? (
-            <div className="modal-actions-alert">{errorMessage}</div>
+            <div className="native-modal-error">{errorMessage}</div>
           ) : null}
 
-          <div className="space-y-5">
-            <div>
+          <div className="native-form-stack">
+            <section className="native-form-section">
+              <div className="native-section-heading">
+                <h4>Thông tin chính</h4>
+                <p>Tên video, người thực hiện và phân loại công việc.</p>
+              </div>
+              <div className="native-field-block">
               <label className="flabel">Tên video <span style={{ color: 'var(--danger)' }}>*</span></label>
               <input
                 ref={nameRef}
@@ -398,9 +393,9 @@ export function TaskModal({
                 aria-readonly={!fieldState.canEditTitle}
                 placeholder="Nhập tên video..."
               />
-            </div>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="native-form-grid grid grid-cols-1 sm:grid-cols-2">
               <div>
                 <label className="flabel">Người làm (Editor)</label>
                 <StyledSelect name="editorId" defaultValue={dv.editorId} disabled={isSaving || !fieldState.canEditEditor}>
@@ -453,9 +448,15 @@ export function TaskModal({
                   placeholder="VD: 9x16 & 1x1"
                 />
               </div>
-            </div>
+              </div>
+            </section>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
+            <section className="native-form-section">
+              <div className="native-section-heading">
+                <h4>Tiến độ & thời gian</h4>
+                <p>Các mốc ngày dùng để theo dõi và lên lịch air.</p>
+              </div>
+              <div className="native-form-grid native-date-grid grid grid-cols-1 sm:grid-cols-3">
               <div>
                 <label className="flabel">Ngày nhận</label>
                 <input
@@ -490,9 +491,15 @@ export function TaskModal({
                   className="field task-date-field"
                 />
               </div>
-            </div>
+              </div>
+            </section>
 
-            <div className="pt-5" style={{ borderTop: '1px solid var(--border)' }}>
+            <section className="native-form-section">
+              <div className="native-section-heading">
+                <h4>Bàn giao</h4>
+                <p>Đính kèm thành phẩm và ghi chú cần thiết.</p>
+              </div>
+              <div className="native-field-block">
               <label className="flabel">Link thành phẩm</label>
               <input
                 name="resultLink"
@@ -505,9 +512,9 @@ export function TaskModal({
                 onChange={isCompleteMode ? (event) => setCompleteLink(event.target.value) : undefined}
                 placeholder="Nhập link (Drive, Youtube, etc.)..."
               />
-            </div>
+              </div>
 
-            <div className="pt-5" style={{ borderTop: '1px solid var(--border)' }}>
+              <div className="native-field-block">
               <label className="flabel">Ghi chú</label>
               <textarea
                 name="note"
@@ -518,11 +525,37 @@ export function TaskModal({
                 aria-readonly={readOnly || (fieldState.isLinkedTask && !fieldState.canUseGenericSave)}
                 placeholder="Ghi chú thêm cho task..."
               />
-            </div>
+              </div>
+            </section>
           </div>
+        </div>
 
-        </form>
-      </div>
+        <footer className="native-modal-footer">
+          <div className="native-modal-destructive">
+            {isEditMode && canDelete && onDelete ? (
+              <button type="button" className="btn-ghost native-danger-button" onClick={onDelete} disabled={isSaving}>
+                <Trash2 />
+                Xóa Task
+              </button>
+            ) : null}
+          </div>
+          <div className="native-modal-actions">
+            <button type="button" onClick={onClose} className="btn-ghost" disabled={isSaving}>Đóng</button>
+            {fieldState.canSaveExecution ? (
+              <button type="button" className="btn-ghost" onClick={handleSaveExecution} disabled={isSaving}>
+                <CircleCheck />
+                {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+              </button>
+            ) : null}
+            {showSubmitButton ? (
+              <button type="submit" className="btn" disabled={submitDisabled}>
+                <CircleCheck />
+                {isSaving ? 'Đang lưu...' : isAcceptMode ? 'Nhận Task' : isCompleteMode ? 'Hoàn thành' : isEditMode ? 'Lưu thay đổi' : 'Thêm Task'}
+              </button>
+            ) : null}
+          </div>
+        </footer>
+      </form>
     </div>,
     document.body
   );

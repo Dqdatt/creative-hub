@@ -77,12 +77,12 @@ export function useContentPlan(monthValue: string, dateRange?: DateRange) {
     setSaveError(null);
 
     try {
-      await createContentPlanRow(data, user?.id);
+      const createdId = await createContentPlanRow(data, user?.id);
       await loadContentPlan();
-      return true;
+      return createdId || true;
     } catch (error) {
       setSaveError(getErrorMessage(error, 'Không thể lưu lịch air. Vui lòng thử lại.'));
-      return false;
+      return false as const;
     } finally {
       setIsSaving(false);
     }

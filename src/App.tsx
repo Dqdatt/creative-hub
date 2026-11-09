@@ -14,7 +14,6 @@ import { MonthProvider } from './context/monthProvider';
 import { useAuth } from './context/authContext';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Tasks = lazy(() => import('./pages/Tasks'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const Profile = lazy(() => import('./pages/Profile'));
 const ContentPlan = lazy(() => import('./pages/ContentPlan'));
@@ -22,6 +21,7 @@ const Workload = lazy(() => import('./pages/Workload'));
 const Users = lazy(() => import('./pages/Users'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const Account = lazy(() => import('./pages/Account'));
+const NativePrototype = lazy(() => import('./pages/NativePrototype'));
 
 function DefaultRedirect() {
   const { role, permissions } = useAuth();
@@ -52,12 +52,13 @@ function App() {
           <MonthProvider>
             <BrowserRouter>
               <Routes>
+                <Route path="/native-prototype" element={lazyPage(<NativePrototype />)} />
                 <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
                 
                 <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   <Route path="/" element={<DefaultRedirect />} />
                   <Route path="/dashboard" element={lazyPage(<Dashboard />)} />
-                  <Route path="/tasks" element={lazyPage(<Tasks />)} />
+                  <Route path="/tasks" element={<Navigate to="/content-plan" replace />} />
                   <Route path="/workload" element={lazyPage(<Workload />)} />
                   <Route path="/content-plan" element={lazyPage(<ContentPlan />)} />
                   <Route path="/users" element={lazyPage(<Users />)} />

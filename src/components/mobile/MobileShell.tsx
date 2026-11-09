@@ -7,9 +7,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Clapperboard,
-  ClipboardList,
   LayoutDashboard,
+  Moon,
   Plus,
+  Sun,
   WifiOff,
 } from 'lucide-react';
 import { useAuth } from '../../context/authContext';
@@ -19,6 +20,7 @@ import { formatVietnameseMonth } from '../../utils/month';
 import { Avatar } from '../common/Avatar';
 import { useToast } from '../common/toastContext';
 import { usePwa } from '../../hooks/usePwa';
+import { useTheme } from '../../context/themeContext';
 import { wasInstallDismissedRecently } from '../../pwa/pwa';
 import type { useNotifications } from '../../hooks/useNotifications';
 import { MobileChromeContext } from './mobileChrome';
@@ -32,8 +34,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Tổng quan',
   '/calendar': 'Lịch',
   '/workload': 'Lịch',
-  '/tasks': 'Video tháng',
-  '/content-plan': 'Content Plan',
+  '/content-plan': 'Task',
   '/users': 'Thành viên',
   '/profile': 'Hồ sơ cá nhân',
   '/notifications': 'Thông báo',
@@ -52,11 +53,10 @@ const CALENDAR_ROUTES = new Set(['/workload', '/calendar']);
 
 // Nút + làm gì ở từng trang. Trang không có trong bảng thì mở bảng Thêm nhanh.
 const ROUTE_CREATE_KINDS: Record<string, CreateKind[]> = {
-  '/tasks': ['task'],
   '/calendar': ['shoot'],
   '/content-plan': ['content'],
   '/users': ['user'],
-  '/workload': ['task', 'content', 'shoot'],
+  '/workload': ['content', 'shoot'],
 };
 const CREATE_TARGET: Record<CreateKind, string> = {
   task: '/tasks',
@@ -75,16 +75,16 @@ const INSTALL_PROMPT_DELAY_MS = 4000;
 
 interface MobileShellProps {
   notifications: ReturnType<typeof useNotifications>;
-  onOpenWhatsNew: () => void;
 }
 
-export function MobileShell({ notifications, onOpenWhatsNew }: MobileShellProps) {
+export function MobileShell({ notifications }: MobileShellProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, profile, role, permissions, can } = useAuth();
   const { selectedMonth, setSelectedMonth, goToPreviousMonth, goToNextMonth } = useMonth();
   const { showToast } = useToast();
   const pwa = usePwa();
+  const { theme, toggle: toggleTheme } = useTheme();
   const contentRef = useRef<HTMLElement>(null);
   const lastScrollRef = useRef(0);
   const [toolbarHidden, setToolbarHidden] = useState(false);
@@ -95,6 +95,7 @@ export function MobileShell({ notifications, onOpenWhatsNew }: MobileShellProps)
   const name = profile?.displayName || profile?.fullName || user?.email?.split('@')[0] || 'Thành viên';
   const title = PAGE_TITLES[pathname] ?? 'CreativeHub';
   const backTo = BACK_TARGETS[pathname];
+  const isPrimaryRoute = ['/dashboard', '/tasks', '/calendar', '/workload', '/content-plan'].includes(pathname);
 
   // Đổi trang thì về đầu trang và hiện lại thanh tìm kiếm.
   useEffect(() => {
@@ -135,16 +136,14 @@ export function MobileShell({ notifications, onOpenWhatsNew }: MobileShellProps)
   const tabs = useMemo(() => {
     const calendarTarget = access('/workload') ? '/workload' : '/calendar';
     return [
-      { to: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard, visible: access('/dashboard') },
-      { to: '/tasks', label: 'Video tháng', icon: Clapperboard, visible: access('/tasks') },
-      { to: calendarTarget, label: 'Lịch', icon: CalendarDays, visible: access('/workload') || access('/calendar'), group: CALENDAR_ROUTES },
-      { to: '/content-plan', label: 'Content Plan', icon: ClipboardList, visible: access('/content-plan') },
-      { to: '/notifications', label: 'Thông báo', icon: Bell, visible: true, badge: notifications.unreadCount },
+      { to: '/dashboard', label: 'Tổng quan', shortLabel: 'Tổng quan', icon: LayoutDashboard, visible: access('/dashboard') },
+      { to: calendarTarget, label: 'Lịch', shortLabel: 'Lịch', icon: CalendarDays, visible: access('/workload') || access('/calendar'), group: CALENDAR_ROUTES },
+      { to: '/content-plan', label: 'Task', shortLabel: 'Task', icon: Clapperboard, visible: access('/content-plan') },
     ].filter((tab) => tab.visible);
-  }, [access, notifications.unreadCount]);
+  }, [access]);
 
   const allowedKinds = (kinds: CreateKind[]) => kinds.filter((kind) => can(CREATE_PERMISSION[kind]));
-  const plusKinds = allowedKinds(ROUTE_CREATE_KINDS[pathname] ?? ['task', 'shoot', 'content']);
+  const plusKinds = allowedKinds(ROUTE_CREATE_KINDS[pathname] ?? ['content', 'shoot']);
 
   const startCreate = (kind: CreateKind) => {
     setQuickAddKinds(null);
@@ -164,7 +163,6 @@ export function MobileShell({ notifications, onOpenWhatsNew }: MobileShellProps)
 
   const outletContext: AppOutletContext = {
     notifications,
-    openWhatsNew: onOpenWhatsNew,
     openInstall: () => setInstallOpen(true),
   };
 
@@ -178,18 +176,35 @@ export function MobileShell({ notifications, onOpenWhatsNew }: MobileShellProps)
           </div>
         ) : null}
 
-        <header className="m-topbar">
-          {backTo ? (
-            <button type="button" className="m-circle" aria-label="Quay lại" onClick={() => navigate(backTo)}>
-              <ChevronLeft />
-            </button>
-          ) : null}
-          <h1 className="m-title">{title}</h1>
-          {pathname !== '/account' ? (
-            <Link to="/account" className="m-avatar-btn" aria-label="Tài khoản">
+        <header className={`m-topbar ${isPrimaryRoute ? 'is-primary' : ''}`}>
+          {isPrimaryRoute ? (
+            <Link to="/account" className="m-avatar-btn m-glass-control" aria-label="Tài khoản">
               <Avatar src={profile?.avatarUrl} name={name} size="md" />
             </Link>
-          ) : null}
+          ) : (
+            <button type="button" className="m-circle m-glass-control" aria-label="Quay lại" onClick={() => navigate(backTo ?? '/dashboard')}>
+              <ChevronLeft />
+            </button>
+          )}
+          {!isPrimaryRoute ? <h1 className="m-title">{title}</h1> : <span className="m-topbar-space" aria-hidden="true" />}
+          <div className="m-topbar-actions">
+            <button
+              type="button"
+              className="m-circle m-glass-control"
+              aria-label={theme === 'dark' ? 'Dùng giao diện sáng' : 'Dùng giao diện tối'}
+              onClick={toggleTheme}
+            >
+              {theme === 'dark' ? <Sun /> : <Moon />}
+            </button>
+            <Link
+              to="/notifications"
+              className={`m-circle m-glass-control m-notification-button ${pathname === '/notifications' ? 'is-active' : ''}`}
+              aria-label={notifications.unreadCount ? `Thông báo, ${notifications.unreadCount} chưa đọc` : 'Thông báo'}
+            >
+              <Bell aria-hidden="true" />
+              {notifications.unreadCount ? <span className="m-topbar-badge">{notifications.unreadCount > 99 ? '99+' : notifications.unreadCount}</span> : null}
+            </Link>
+          </div>
         </header>
 
         {MONTH_ROUTES.has(pathname) ? (
@@ -235,11 +250,11 @@ export function MobileShell({ notifications, onOpenWhatsNew }: MobileShellProps)
                   key={tab.label}
                   to={tab.to}
                   className={`m-nav-item ${active ? 'is-active' : ''}`}
-                  aria-label={tab.badge ? `${tab.label}, ${tab.badge} chưa đọc` : tab.label}
+                  aria-label={tab.label}
                   aria-current={active ? 'page' : undefined}
                 >
                   <Icon aria-hidden="true" />
-                  {tab.badge && !active ? <span className="m-nav-badge">{tab.badge > 99 ? '99+' : tab.badge}</span> : null}
+                  <span className="m-nav-label">{tab.shortLabel}</span>
                 </Link>
               );
             })}

@@ -72,7 +72,7 @@ export function ContentPlanFilters({
 
         {canCreate ? (
           <button type="button" onClick={onCreate} className="btn btn-sm">
-            <Plus style={{ width: '17px', height: '17px' }} /> Thêm dòng
+            <Plus style={{ width: '17px', height: '17px' }} /> Tạo task
           </button>
         ) : null}
       </div>

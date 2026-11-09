@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Menu, Calendar, Clapperboard, ClipboardList, Mail, Moon, Sun, Sparkles, UserRound, LogOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Calendar, Clapperboard, ClipboardList, Mail, Moon, Sun, UserRound, LogOut } from 'lucide-react';
 import { useTheme } from '../../context/themeContext';
 import { useAuth } from '../../context/authContext';
 import { useMonth } from '../../context/monthContext';
@@ -15,8 +15,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Tổng quan',
   '/calendar': 'Lịch quay',
   '/workload': 'Workload',
-  '/tasks': 'Video tháng',
-  '/content-plan': 'Content Plan',
+  '/content-plan': 'Task',
   '/users': 'Thành viên',
   '/profile': 'Hồ sơ',
 };
@@ -31,11 +30,10 @@ const MONTH_ROUTES = new Set(['/dashboard', '/calendar', '/workload', '/tasks', 
 
 interface HeaderProps {
   onOpenSidebar?: () => void;
-  onOpenWhatsNew?: () => void;
   notifications: ReturnType<typeof useNotifications>;
 }
 
-export default function Header({ onOpenSidebar, onOpenWhatsNew, notifications }: HeaderProps) {
+export default function Header({ onOpenSidebar, notifications }: HeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [monthOpen, setMonthOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -119,11 +117,6 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew, notifications }:
   const openProfile = () => {
     setAccountOpen(false);
     setProfileOpen(true);
-  };
-
-  const openWhatsNew = () => {
-    setAccountOpen(false);
-    onOpenWhatsNew?.();
   };
 
   const handleLogout = async () => {
@@ -250,10 +243,6 @@ export default function Header({ onOpenSidebar, onOpenWhatsNew, notifications }:
                 <button type="button" className="header-account-item" role="menuitem" onClick={openProfile}>
                   <UserRound />
                   <span>Hồ sơ cá nhân</span>
-                </button>
-                <button type="button" className="header-account-item" role="menuitem" onClick={openWhatsNew}>
-                  <Sparkles />
-                  <span>Có gì mới?</span>
                 </button>
                 <button type="button" className="header-account-item header-account-item-danger" role="menuitem" onClick={() => void handleLogout()}>
                   <LogOut />

@@ -6,6 +6,7 @@ export function toContentPlanFormData(item: ContentPlanItem): ContentPlanFormDat
     video_name: item.video_name,
     note: item.note,
     category: item.category,
+    order_team: item.order_team,
     editor_id: item.editor_id,
     link: item.link,
   };
@@ -16,6 +17,7 @@ export function hasContentFieldChanges(current: ContentPlanItem, nextData: Conte
     || current.video_name !== nextData.video_name
     || current.note !== nextData.note
     || current.category !== nextData.category
+    || current.order_team !== nextData.order_team
     || current.link !== nextData.link;
 }
 

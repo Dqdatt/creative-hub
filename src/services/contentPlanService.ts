@@ -34,6 +34,7 @@ interface ContentPlanRow {
   title: string;
   note: Nullable<string>;
   category: Nullable<string>;
+  order_team?: Nullable<string>;
   editor_id: Nullable<string>;
   link: Nullable<string>;
   profiles: ProfileRow | ProfileRow[] | null;
@@ -49,6 +50,7 @@ type ContentPlanPayload = {
   title: string;
   note: string | null;
   category: ContentPlanCategory | null;
+  order_team?: string | null;
   editor_id?: string | null;
   link: string | null;
   created_by?: string | null;
@@ -169,6 +171,17 @@ function normalizeTaskStatus(value: string | null | undefined): TaskStatus {
   return 'Chờ';
 }
 
+// DB lưu 'DIGITAL', UI hiển thị 'DIGITAL - ADS' (giống Video tháng).
+function toUiOrderTeam(value: Nullable<string> | undefined) {
+  if (value === 'DIGITAL') return 'DIGITAL - ADS';
+  return value?.trim() || 'BRAND';
+}
+
+function toDbOrderTeam(value: string) {
+  const team = value.trim() || 'BRAND';
+  return team === 'DIGITAL - ADS' ? 'DIGITAL' : team;
+}
+
 function mapContentPlanRow(row: ContentPlanRow): ContentPlanItem {
   const profile = firstProfile(row.profiles);
   const linkedTask = row.video_tasks?.[0] ?? null;
@@ -180,6 +193,7 @@ function mapContentPlanRow(row: ContentPlanRow): ContentPlanItem {
     video_name: row.title,
     note: row.note ?? '',
     category: normalizeContentPlanCategory(row.category),
+    order_team: toUiOrderTeam(row.order_team),
     editor_id: profile?.editor_code ?? '',
     link: linkedTaskLink || (row.link ?? ''),
     hasLinkedTask: Boolean(linkedTask),
@@ -309,6 +323,7 @@ async function toContentPlanPayload(
     title,
     note: note || null,
     category: data.category || null,
+    order_team: toDbOrderTeam(data.order_team ?? ''),
     link,
     ...(includeCreatedBy ? { created_by: userId ?? null } : {}),
     updated_by: userId ?? null,
@@ -343,6 +358,7 @@ export async function fetchContentPlan(monthValue?: string, dateRange?: DateRang
       title,
       note,
       category,
+      order_team,
       editor_id,
       link,
       video_tasks!video_tasks_content_plan_id_fkey (
@@ -385,6 +401,7 @@ export async function fetchContentPlanItemById(rowId: string): Promise<ContentPl
       title,
       note,
       category,
+      order_team,
       editor_id,
       link,
       video_tasks!video_tasks_content_plan_id_fkey (
@@ -462,6 +479,13 @@ export async function createContentPlanRow(data: ContentPlanFormData, userId?: s
   if (!(createdRow as CreateContentPlanRpcRow | null)?.content_plan_id) {
     throw new Error('Không nhận được kết quả tạo Content Plan.');
   }
+
+  const createdId = (createdRow as CreateContentPlanRpcRow).content_plan_id as string;
+  if (payload.order_team && payload.order_team !== 'BRAND') {
+    const { error: teamError } = await client.from('content_plan').update({ order_team: payload.order_team }).eq('id', createdId);
+    if (teamError) throw new Error(mapDatabaseError(teamError));
+  }
+  return createdId;
 }
 
 export async function updateContentPlanRow(
@@ -472,9 +496,6 @@ export async function updateContentPlanRow(
 ) {
   const client = requireSupabase();
   const payload = await toContentPlanPayload(data, userId);
-  if (previousItem?.hasLinkedTask) {
-    payload.link = previousItem.link.trim() || null;
-  }
   const { error } = await client
     .from('content_plan')
     .update(payload)

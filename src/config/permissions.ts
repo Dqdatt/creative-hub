@@ -129,8 +129,7 @@ const NAVIGATION: NavigationItem[] = [
   { id: 'dashboard', label: 'Tổng quan', to: '/dashboard', permission: 'dashboard:view' },
   { id: 'calendar', label: 'Lịch quay', to: '/calendar', permission: 'shoots:view' },
   { id: 'workload', label: 'Workload', to: '/workload', permission: 'video_tasks:view' },
-  { id: 'tasks', label: 'Video tháng', to: '/tasks', permission: 'video_tasks:view' },
-  { id: 'content_plan', label: 'Content Plan', to: '/content-plan', permission: 'content_plan:view' },
+  { id: 'content_plan', label: 'Task', to: '/content-plan', permission: 'content_plan:view' },
   { id: 'users', label: 'Thành viên', to: '/users', permission: 'user_management:view' },
 ];
 
@@ -217,7 +216,25 @@ function setUserManagePermissions(permissions: EffectivePermissions, enabled: bo
   permissions['user_management:update'] = enabled;
 }
 
+// v2.0.0: Task (Content Plan) không phân quyền - mọi tài khoản đều tạo, sửa và tự nhận Task.
+function openTaskBoard(permissions: EffectivePermissions) {
+  permissions['content_plan:view'] = true;
+  permissions['content_plan:create'] = true;
+  permissions['content_plan:update'] = true;
+  permissions['content_plan:assign'] = true;
+  permissions['content_plan:delete'] = true;
+  return permissions;
+}
+
 export function getEffectivePermissions(
+  role: AppRole | string | null | undefined,
+  override?: UserPermissionOverride | null
+) {
+  const permissions = getBaseEffectivePermissions(role, override);
+  return openTaskBoard(permissions);
+}
+
+function getBaseEffectivePermissions(
   role: AppRole | string | null | undefined,
   override?: UserPermissionOverride | null
 ) {

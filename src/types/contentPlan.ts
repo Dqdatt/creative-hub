@@ -6,6 +6,7 @@ export interface ContentPlanItem {
   video_name: string;
   note: string;
   category: ContentPlanCategory;
+  order_team: string;
   editor_id: string;
   link: string;
   hasLinkedTask: boolean;
@@ -19,6 +20,7 @@ export interface ContentPlanFormData {
   video_name: string;
   note: string;
   category: ContentPlanCategory;
+  order_team: string;
   editor_id: string;
   link: string;
 }

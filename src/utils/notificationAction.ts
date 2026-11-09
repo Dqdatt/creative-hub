@@ -3,8 +3,9 @@ import type { AppRoute } from '../config/permissions';
 const ROUTE_ALIASES: Record<string, AppRoute> = {
   '/calendar': '/calendar',
   '/content-plan': '/content-plan',
-  '/tasks': '/tasks',
-  '/video-thang': '/tasks',
+  // v2.0.0: Video tháng đã gộp vào Task (Content Plan).
+  '/tasks': '/content-plan',
+  '/video-thang': '/content-plan',
 };
 
 const ROUTE_ALLOWED_PARAMS: Record<AppRoute, ReadonlySet<string>> = {
@@ -37,7 +38,8 @@ export function resolveNotificationActionUrl(value: string | null | undefined): 
 
   const route = ROUTE_ALIASES[url.pathname];
   if (!route) return null;
-  const params = new URLSearchParams(url.search);
+  const isLegacyTaskRoute = url.pathname === '/tasks' || url.pathname === '/video-thang';
+  const params = new URLSearchParams(isLegacyTaskRoute ? '' : url.search);
 
   if (route === '/calendar') {
     const oldShootId = params.get('shoot');

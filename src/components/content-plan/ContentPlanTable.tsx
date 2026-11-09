@@ -2,6 +2,7 @@ import { Link2 } from 'lucide-react';
 import type { ContentPlanCategory, ContentPlanEditorOption, ContentPlanItem } from '../../types/contentPlan';
 import { Avatar } from '../common/Avatar';
 import { isSafeHttpUrl } from '../../utils/url';
+import { getTodayIso } from '../../utils/month';
 import { StatusBadge } from '../tasks/TaskBadges';
 
 interface ContentPlanTableProps {
@@ -44,12 +45,12 @@ export function ContentPlanTable({
 }: ContentPlanTableProps) {
   if (items.length === 0) {
     return (
-      <table className="ctable min-w-[1120px]" data-tour="content-plan-table">
+      <table className="ctable min-w-[1240px]" data-tour="content-plan-table">
         <tbody>
           <tr>
-            <td colSpan={7} className="px-3 py-12 text-center text-sub">
+            <td colSpan={8} className="px-3 py-12 text-center text-sub">
               <div className="table-empty-state">
-                <strong>Không có lịch air phù hợp</strong>
+                <strong>Không có task phù hợp</strong>
                 <span>Thử đổi tháng, editor hoặc thể loại.</span>
               </div>
             </td>
@@ -59,10 +60,13 @@ export function ContentPlanTable({
     );
   }
 
+  const todayIso = getTodayIso();
+
   return (
-    <table className="ctable min-w-[1120px]" data-tour="content-plan-table">
+    <table className="ctable min-w-[1240px]" data-tour="content-plan-table">
       <colgroup>
         <col style={{ width: '108px' }} />
+        <col style={{ width: '96px' }} />
         <col style={{ width: '132px' }} />
         <col />
         <col style={{ width: '220px' }} />
@@ -73,6 +77,7 @@ export function ContentPlanTable({
       <thead>
         <tr>
           <th>Ngày Air</th>
+          <th>Order</th>
           <th>Thể loại</th>
           <th>Tên video</th>
           <th>Ghi chú</th>
@@ -83,11 +88,13 @@ export function ContentPlanTable({
       </thead>
       <tbody>
         {items.map((item) => {
+          const isToday = item.air_date === todayIso;
           const editor = getEditor(item.editor_id, editorOptions);
           const hasLink = hasValidContentPlanLink(item.link);
           const rowClassName = [
             canEdit ? 'cursor-pointer' : '',
             hasLink ? 'vrow-done' : '',
+            isToday ? 'vrow-today' : '',
             highlightedId === item.id ? 'route-highlight route-highlight--row' : '',
           ].filter(Boolean).join(' ');
 
@@ -102,6 +109,8 @@ export function ContentPlanTable({
               <td className="text-sub tabular-nums font-bold">
                 {formatDate(item.air_date)}
               </td>
+
+              <td className="font-semibold text-sub whitespace-nowrap">{item.order_team}</td>
 
               <td>
                 <span className={`tag ${getCategoryClass(item.category)}`}>{item.category}</span>
@@ -122,22 +131,23 @@ export function ContentPlanTable({
               </td>
 
               <td data-tour={editor ? 'content-plan-editor' : undefined}>
-                <div className="flex items-center gap-2">
-                  <Avatar
-                    src={editor?.avatarUrl}
-                    name={editor?.short ?? 'Chưa phân công'}
-                    color={editor?.color}
-                    size="xs"
-                  />
-                  <span className="font-semibold truncate">{editor?.short ?? 'Chưa phân công'}</span>
-                </div>
+                {editor ? (
+                  <div className="flex items-center gap-2">
+                    <Avatar src={editor.avatarUrl} name={editor.short} color={editor.color} size="xs" />
+                    <span className="font-semibold truncate">{editor.short}</span>
+                  </div>
+                ) : (
+                  <span className="text-sub/60">Chưa có người nhận</span>
+                )}
               </td>
 
               <td>
-                {item.linkedTaskStatus ? (
-                  <StatusBadge status={item.linkedTaskStatus} />
+                {hasLink ? (
+                  <StatusBadge status="Đã xong" />
+                ) : item.linkedTaskStatus ? (
+                  <StatusBadge status={item.linkedTaskStatus === 'Chờ' ? 'Đang làm' : item.linkedTaskStatus} />
                 ) : (
-                  <span className="text-sub/40">Chưa giao</span>
+                  <span className="text-sub/40">Chưa nhận</span>
                 )}
               </td>
 

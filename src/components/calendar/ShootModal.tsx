@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CalendarDays, CircleCheck, Trash2 } from 'lucide-react';
+import { ChevronLeft, X, CalendarDays, CircleCheck, Trash2 } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
 import { Avatar } from '../common/Avatar';
 import type { ShootSchedule, ShootType, ShootFormData } from '../../types/shoot';
 import type { ContentPlanEditorOption } from '../../types/contentPlan';
 import { SHOOT_TYPES_META } from '../../data/shoots';
 import { useDocumentScrollLock } from '../common/useDocumentScrollLock';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface ShootModalProps {
   isOpen: boolean;
@@ -38,12 +39,15 @@ export function ShootModal({
   const crewRef = useRef<HTMLInputElement>(null);
   const isEditMode = shoot !== null;
   const isBusy = isSaving || isDeleting;
+  const isMobile = useIsMobile();
 
   useDocumentScrollLock(isOpen);
 
   useEffect(() => {
-    if (isOpen && canEdit) setTimeout(() => crewRef.current?.focus(), 80);
-  }, [canEdit, isOpen]);
+    if (!isOpen || !canEdit || isMobile) return undefined;
+    const focusTimer = window.setTimeout(() => crewRef.current?.focus(), 80);
+    return () => window.clearTimeout(focusTimer);
+  }, [canEdit, isMobile, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -94,56 +98,45 @@ export function ShootModal({
 
   return createPortal(
     <div
-      className="shoot-modal-overlay modal-overlay fixed inset-0 z-50 flex items-center justify-center"
-      onClick={(e) => { if (e.target === e.currentTarget && !isBusy) onClose(); }}
+      className={`shoot-modal-overlay modal-overlay native-form-overlay fixed inset-0 z-50 flex ${!isEditMode ? 'native-create-overlay' : ''}`}
+      onClick={(e) => { if (isEditMode && e.target === e.currentTarget && !isBusy) onClose(); }}
     >
-      <form className="modal-card shoot-modal-card" onSubmit={handleSubmit} role="dialog" aria-modal="true" aria-labelledby="shootModalTitle">
-        <div className="shoot-modal-head">
-          <div className="shoot-modal-title-wrap">
-            <span className="shoot-modal-icon" style={{ background: 'var(--grad)', color: '#fff' }}>
+      <form className={`modal-card shoot-modal-card native-form-modal shoot-form-modal ${!isEditMode ? 'native-create-screen' : ''}`} onSubmit={handleSubmit} role="dialog" aria-modal="true" aria-labelledby="shootModalTitle">
+        <span className="native-sheet-grabber" aria-hidden="true" />
+        <header className="native-modal-head">
+          <div className="native-modal-title-wrap">
+            <span className="native-modal-icon">
               <CalendarDays />
             </span>
-            <h3 id="shootModalTitle" className="shoot-modal-title">
-              {!canEdit && isEditMode ? 'Chi tiết lịch quay' : isEditMode ? 'Chỉnh sửa lịch quay' : 'Thêm lịch quay'}
-            </h3>
+            <div className="min-w-0">
+              <h3 id="shootModalTitle" className="native-modal-title">
+                {!canEdit && isEditMode ? 'Chi tiết lịch quay' : isEditMode ? 'Chỉnh sửa lịch quay' : 'Thêm lịch quay'}
+              </h3>
+              <p className="native-modal-subtitle">Lịch sản xuất</p>
+            </div>
           </div>
-          <button type="button" onClick={onClose} className="icon-btn" disabled={isBusy} aria-label="Đóng modal">
-            <X />
+          <button type="button" onClick={onClose} className="icon-btn native-modal-close" disabled={isBusy} aria-label={isMobile && !isEditMode ? 'Quay lại' : 'Đóng modal'}>
+            {isMobile && !isEditMode ? <ChevronLeft /> : <X />}
           </button>
-        </div>
-
-        <div className="modal-actions-top" style={{ justifyContent: 'space-between' }}>
-          {canEdit && isEditMode && onDelete && shoot ? (
-            <button
-              type="button"
-              onClick={() => onDelete(shoot.id)}
-              className="btn-ghost"
-              style={{ color: 'var(--danger)' }}
-              disabled={isBusy}
-            >
-              <Trash2 style={{ width: '16px', height: '16px' }} />
-              {isDeleting ? 'Đang xóa...' : 'Xóa'}
+          {isMobile && !isEditMode && canEdit ? (
+            <button type="submit" className="native-create-save" disabled={isBusy}>
+              {isSaving ? 'Đang lưu' : 'Lưu'}
             </button>
-          ) : <div />}
+          ) : null}
+        </header>
 
-          <div className="shoot-modal-action-group">
-            <button type="button" onClick={onClose} className="btn-ghost" disabled={isBusy}>Đóng</button>
-            {canEdit ? (
-              <button type="submit" className="btn" disabled={isBusy}>
-                <CircleCheck style={{ width: '17px', height: '17px' }} />
-                {isSaving ? 'Đang lưu...' : isEditMode ? 'Lưu thay đổi' : 'Lưu lịch quay'}
-              </button>
-            ) : null}
-          </div>
-        </div>
+        <div className="native-modal-body shoot-modal-body modal-scroll-body">
+          {errorMessage ? (
+            <div className="native-modal-error">{errorMessage}</div>
+          ) : null}
 
-        {errorMessage ? (
-          <div className="modal-actions-alert">{errorMessage}</div>
-        ) : null}
-
-        <div className="shoot-modal-body modal-scroll-body">
-          <div className="shoot-modal-stack">
-            <div>
+          <div className="native-form-stack shoot-modal-stack">
+            <section className="native-form-section">
+              <div className="native-section-heading">
+                <h4>Thời gian & địa điểm</h4>
+                <p>Thiết lập lịch và nơi diễn ra buổi quay.</p>
+              </div>
+              <div className="native-field-block">
               <label className="flabel">Ngày quay <span style={{ color: 'var(--danger)' }}>*</span></label>
               <input
                 name="date"
@@ -153,9 +146,9 @@ export function ShootModal({
                 className="field"
                 disabled={isBusy || !canEdit}
               />
-            </div>
+              </div>
             
-            <div className="shoot-form-grid grid grid-cols-1 sm:grid-cols-2">
+              <div className="native-form-grid shoot-form-grid grid grid-cols-1 sm:grid-cols-2">
               <div>
                 <label className="flabel">Loại lịch</label>
                 <StyledSelect name="type" defaultValue={dv.type} disabled={isBusy || !canEdit}>
@@ -174,9 +167,9 @@ export function ShootModal({
                   disabled={isBusy || !canEdit}
                 />
               </div>
-            </div>
+              </div>
 
-            <div>
+              <div className="native-field-block">
               <label className="flabel">Địa điểm <span style={{ color: 'var(--danger)' }}>*</span></label>
               <input
                 name="place"
@@ -186,9 +179,15 @@ export function ShootModal({
                 className="field"
                 disabled={isBusy || !canEdit}
               />
-            </div>
+              </div>
+            </section>
 
-            <div>
+            <section className="native-form-section">
+              <div className="native-section-heading">
+                <h4>Nhân sự</h4>
+                <p>Phân công editor và ghi nhận ekip tham gia.</p>
+              </div>
+              <div className="native-field-block">
               <label className="flabel">Editor</label>
               <div
                 className="shoot-editor-list grid gap-2 rounded-[14px] border p-2"
@@ -216,9 +215,9 @@ export function ShootModal({
                   </div>
                 )}
               </div>
-            </div>
+              </div>
 
-            <div>
+              <div className="native-field-block">
               <label className="flabel">Crew</label>
               <input
                 ref={crewRef}
@@ -228,9 +227,15 @@ export function ShootModal({
                 className="field"
                 disabled={isBusy || !canEdit}
               />
-            </div>
+              </div>
+            </section>
 
-            <div>
+            <section className="native-form-section">
+              <div className="native-section-heading">
+                <h4>Nội dung quay</h4>
+                <p>Mô tả đầu việc và các lưu ý cho buổi sản xuất.</p>
+              </div>
+              <div className="native-field-block">
               <label className="flabel">Nội dung <span style={{ color: 'var(--danger)' }}>*</span></label>
               <textarea
                 name="content"
@@ -240,9 +245,9 @@ export function ShootModal({
                 className="field shoot-textarea-field"
                 disabled={isBusy || !canEdit}
               />
-            </div>
+              </div>
 
-            <div>
+              <div className="native-field-block">
               <label className="flabel">Ghi chú</label>
               <textarea
                 name="note"
@@ -251,12 +256,35 @@ export function ShootModal({
                 className="field shoot-textarea-field shoot-note-field"
                 disabled={isBusy || !canEdit}
               />
-            </div>
+              </div>
+            </section>
           </div>
         </div>
 
-        <div className="shoot-modal-footer">
-        </div>
+        <footer className="native-modal-footer shoot-modal-footer">
+          <div className="native-modal-destructive">
+            {canEdit && isEditMode && onDelete && shoot ? (
+              <button
+                type="button"
+                onClick={() => onDelete(shoot.id)}
+                className="btn-ghost native-danger-button"
+                disabled={isBusy}
+              >
+                <Trash2 />
+                {isDeleting ? 'Đang xóa...' : 'Xóa'}
+              </button>
+            ) : null}
+          </div>
+          <div className="native-modal-actions">
+            <button type="button" onClick={onClose} className="btn-ghost" disabled={isBusy}>Đóng</button>
+            {canEdit ? (
+              <button type="submit" className="btn" disabled={isBusy}>
+                <CircleCheck />
+                {isSaving ? 'Đang lưu...' : isEditMode ? 'Lưu thay đổi' : 'Lưu lịch quay'}
+              </button>
+            ) : null}
+          </div>
+        </footer>
       </form>
     </div>,
     document.body

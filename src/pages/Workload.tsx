@@ -202,6 +202,7 @@ export default function Workload() {
       video_name: '',
       note: '',
       category: 'Video dài',
+      order_team: 'BRAND',
       editor_id: '',
       link: '',
     });
@@ -393,13 +394,14 @@ export default function Workload() {
       video_name: canEditVideoName ? contentDraft.video_name.trim() : sourceItem?.video_name ?? contentDraft.video_name.trim(),
       note: canEditNote ? contentDraft.note.trim() : sourceItem?.note ?? contentDraft.note.trim(),
       category: canEditCategory ? contentDraft.category : sourceItem?.category ?? contentDraft.category,
+      order_team: contentDraft.order_team,
       editor_id: canEditEditor ? contentDraft.editor_id : sourceItem?.editor_id ?? '',
       link: canEditLink && !selectedContentItem?.hasLinkedTask ? contentDraft.link.trim() : sourceItem?.link ?? contentDraft.link.trim(),
     };
 
     let saved = false;
     if (contentModalMode === 'create') {
-      saved = await contentData.createItem({ ...nextData, editor_id: '' });
+      saved = Boolean(await contentData.createItem({ ...nextData, editor_id: "" }));
     } else if (selectedContentItem) {
       const editorChanged = selectedContentItem.editor_id !== nextData.editor_id;
       const contentChanged = hasContentFieldChanges(selectedContentItem, nextData);

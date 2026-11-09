@@ -3,7 +3,6 @@ import type { useNotifications } from '../../hooks/useNotifications';
 
 export interface AppOutletContext {
   notifications: ReturnType<typeof useNotifications>;
-  openWhatsNew: () => void;
   openInstall: () => void;
 }
 

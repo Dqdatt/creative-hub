@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle2, ChevronRight, Download, KeyRound, LogOut, Moon, Sparkles, Sun, UsersRound } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Download, KeyRound, LogOut, Moon, Sun, UsersRound } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Avatar } from '../components/common/Avatar';
@@ -9,7 +9,7 @@ import { useAuth } from '../context/authContext';
 import { useTheme } from '../context/themeContext';
 import { usePwa } from '../hooks/usePwa';
 
-const APP_VERSION = 'v1.0.12';
+const APP_VERSION = 'v2.0.0';
 
 function Row({ icon: Icon, label, right, to, onClick, danger = false }: {
   icon: LucideIcon;
@@ -38,7 +38,7 @@ export default function Account() {
   const navigate = useNavigate();
   const { user, profile, role, roleLabel, permissions, signOut } = useAuth();
   const { theme, toggle } = useTheme();
-  const { openWhatsNew, openInstall } = useAppOutlet();
+  const { openInstall } = useAppOutlet();
   const pwa = usePwa();
   const name = profile?.displayName || profile?.fullName || user?.email?.split('@')[0] || 'Thành viên';
   const canManageUsers = canAccessRoute(role, '/users', permissions);
@@ -92,7 +92,6 @@ export default function Account() {
               </button>
             </div>
           </div>
-          <Row icon={Sparkles} label="Có gì mới?" onClick={openWhatsNew} />
           {pwa.isStandalone ? (
             <Row icon={CheckCircle2} label="Đang dùng bản app đã cài" />
           ) : (

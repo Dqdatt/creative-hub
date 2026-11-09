@@ -23,17 +23,24 @@
       } catch (_) {}
     </script>
     <style>
-      .app-first-paint{position:fixed;inset:0;display:grid;place-items:center;background:#F3F5F8;color:#172033;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-      .app-first-paint__brand{display:grid;justify-items:center;gap:14px}
-      .app-first-paint__logo{width:52px;height:52px;object-fit:contain}
-      .app-first-paint__name{font-size:17px;font-weight:750;letter-spacing:-.02em}
-      .app-first-paint__track{width:96px;height:3px;overflow:hidden;border-radius:999px;background:#E1E7F0}
-      .app-first-paint__bar{display:block;width:42%;height:100%;border-radius:inherit;background:#2563EB;animation:first-paint 1.1s ease-in-out infinite alternate}
-      @keyframes first-paint{from{transform:translateX(-12px)}to{transform:translateX(68px)}}
+      .app-first-paint{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden;background:#F3F5F8;color:#172033;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      .app-first-paint::before{content:"";position:absolute;inset:-20%;background:radial-gradient(circle at 50% 34%,rgba(37,99,235,.18),transparent 38%);pointer-events:none}
+      .app-first-paint__brand{position:relative;display:grid;justify-items:center;gap:0}
+      .app-first-paint__mark{width:88px;height:88px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.82);border-radius:26px;background:rgba(255,255,255,.58);box-shadow:inset 0 1px 0 rgba(255,255,255,.92),0 18px 50px rgba(37,99,235,.16);backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);animation:first-mark .55s cubic-bezier(.2,.8,.2,1) both}
+      .app-first-paint__logo{width:58px;height:58px;object-fit:contain}
+      .app-first-paint__name{margin-top:20px;font-size:21px;font-weight:780;letter-spacing:-.035em}
+      .app-first-paint__team{margin-top:5px;color:#58657A;font-size:10px;font-weight:700;letter-spacing:.13em}
+      .app-first-paint__track{width:112px;height:3px;margin-top:28px;overflow:hidden;border-radius:999px;background:rgba(138,150,168,.22)}
+      .app-first-paint__bar{display:block;width:46%;height:100%;border-radius:inherit;background:#2563EB;animation:first-paint 1.05s ease-in-out infinite alternate}
+      @keyframes first-mark{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+      @keyframes first-paint{from{transform:translateX(-28px)}to{transform:translateX(82px)}}
       html.dark .app-first-paint{background:#0F141D;color:#F2F5F9}
-      html.dark .app-first-paint__track{background:#273244}
+      html.dark .app-first-paint::before{background:radial-gradient(circle at 50% 34%,rgba(76,130,247,.22),transparent 38%)}
+      html.dark .app-first-paint__mark{border-color:rgba(255,255,255,.1);background:rgba(25,33,46,.64);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 54px rgba(0,0,0,.34)}
+      html.dark .app-first-paint__team{color:#A8B2C2}
+      html.dark .app-first-paint__track{background:rgba(116,129,152,.25)}
       html.dark .app-first-paint__bar{background:#4C82F7}
-      @media (prefers-color-scheme:dark){.app-first-paint{background:#0F141D;color:#F2F5F9}.app-first-paint__track{background:#273244}.app-first-paint__bar{background:#4C82F7}}
+      @media (prefers-color-scheme:dark){.app-first-paint{background:#0F141D;color:#F2F5F9}.app-first-paint::before{background:radial-gradient(circle at 50% 34%,rgba(76,130,247,.22),transparent 38%)}.app-first-paint__mark{border-color:rgba(255,255,255,.1);background:rgba(25,33,46,.64);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 54px rgba(0,0,0,.34)}.app-first-paint__team{color:#A8B2C2}.app-first-paint__track{background:rgba(116,129,152,.25)}.app-first-paint__bar{background:#4C82F7}}
       @media (prefers-reduced-motion:reduce){.app-first-paint__bar{width:100%;animation:none;opacity:.7}}
     </style>
   </head>
@@ -41,8 +48,9 @@
     <div id="root">
       <div class="app-first-paint" role="status" aria-label="Đang mở CreativeHub">
         <div class="app-first-paint__brand">
-          <img class="app-first-paint__logo" src="/logo.png" alt="" />
+          <span class="app-first-paint__mark"><img class="app-first-paint__logo" src="/logo.png" alt="" /></span>
           <span class="app-first-paint__name">CreativeHub</span>
+          <span class="app-first-paint__team">TEAM MARKETING</span>
           <span class="app-first-paint__track" aria-hidden="true"><span class="app-first-paint__bar"></span></span>
         </div>
       </div>

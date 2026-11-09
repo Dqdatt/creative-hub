@@ -29,6 +29,7 @@ function toFormData(item: ContentPlanItem): ContentPlanFormData {
     video_name: item.video_name,
     note: item.note,
     category: item.category,
+    order_team: item.order_team,
     editor_id: item.editor_id,
     link: item.link,
   };
@@ -47,6 +48,7 @@ function hasContentFieldChanges(current: ContentPlanItem, nextData: ContentPlanF
     || current.video_name !== nextData.video_name
     || current.note !== nextData.note
     || current.category !== nextData.category
+    || current.order_team !== nextData.order_team
     || current.link !== nextData.link;
 }
 
@@ -83,7 +85,6 @@ export default function ContentPlan() {
 
   const canCreate = can('content_plan:create');
   const canUpdate = can('content_plan:update');
-  const canAssign = can('content_plan:assign');
   const canDelete = can('content_plan:delete');
   const canEditAirDate = canEditContentPlanField(role, 'air_date', permissions);
   const canEditVideoName = canEditContentPlanField(role, 'video_name', permissions);
@@ -145,6 +146,7 @@ export default function ContentPlan() {
       video_name: '',
       note: '',
       category: 'Video dài',
+      order_team: 'BRAND',
       editor_id: '',
       link: '',
     });
@@ -229,11 +231,9 @@ export default function ContentPlan() {
     clearSaveError();
   };
 
+  // v2.0.0: không phân quyền. Mọi tài khoản sửa được mọi thông tin và chọn Editor cho Task.
   const handleSave = async () => {
     if (!draft) return;
-    if (modalMode === 'create' && !canCreate) return;
-    if (modalMode === 'edit' && !canUpdate) return;
-    if (modalMode === 'assign' && !canAssign) return;
 
     if (!draft.air_date) {
       setFormError('Vui lòng chọn ngày Air.');
@@ -243,58 +243,50 @@ export default function ContentPlan() {
       setFormError('Vui lòng nhập tên video.');
       return;
     }
-    if (modalMode === 'assign' && !draft.editor_id) {
-      setFormError('Vui lòng chọn editor.');
+    const link = draft.link.trim();
+    if (link && !hasValidContentPlanLink(link)) {
+      setFormError('Link thành phẩm không hợp lệ.');
       return;
     }
 
-    if (modalMode !== 'create' && !selectedItem) {
-      setFormError('Không tìm thấy dòng lịch air cần lưu.');
-      return;
-    }
-
-    const sourceItem = selectedItem ? toFormData(selectedItem) : null;
     const nextData: ContentPlanFormData = {
-      air_date: canEditAirDate ? draft.air_date : sourceItem?.air_date ?? draft.air_date,
-      video_name: canEditVideoName ? draft.video_name.trim() : sourceItem?.video_name ?? draft.video_name.trim(),
-      note: canEditNote ? draft.note.trim() : sourceItem?.note ?? draft.note.trim(),
-      category: canEditCategory ? draft.category : sourceItem?.category ?? draft.category,
-      editor_id: canEditEditor ? draft.editor_id : sourceItem?.editor_id ?? '',
-      link: canEditLink && !selectedItem?.hasLinkedTask ? draft.link.trim() : sourceItem?.link ?? draft.link.trim(),
+      ...draft,
+      video_name: draft.video_name.trim(),
+      note: draft.note.trim(),
+      link,
     };
 
-    let saved = false;
-
     if (modalMode === 'create') {
-      saved = await createItem({ ...nextData, editor_id: '' });
-    } else if (selectedItem) {
-      const editorChanged = selectedItem.editor_id !== nextData.editor_id;
-      const contentChanged = hasContentFieldChanges(selectedItem, nextData);
-
-      if (editorChanged && contentChanged) {
-        setFormError('Vui lòng lưu nội dung trước, rồi phân công editor.');
-        return;
+      const createdId = await createItem({ ...nextData, editor_id: '' });
+      if (!createdId) return;
+      if (nextData.editor_id && typeof createdId === 'string') {
+        const created = { id: createdId, ...nextData, editor_id: '', hasLinkedTask: false } as ContentPlanItem;
+        if (!await assignEditor(created, nextData.editor_id)) return;
       }
-
-      if (editorChanged) {
-        saved = await assignEditor(selectedItem, nextData.editor_id);
-      } else if (contentChanged) {
-        saved = await updateItem(selectedItem, nextData);
-      } else {
-        closeModal();
-        return;
-      }
+      closeModal();
+      showToast({ type: 'success', message: 'Đã tạo task.' });
+      return;
     }
 
-    if (saved) {
-      closeModal();
+    if (!selectedItem) {
+      setFormError('Không tìm thấy task cần lưu.');
+      return;
+    }
+
+    const editorChanged = selectedItem.editor_id !== nextData.editor_id;
+    const contentChanged = hasContentFieldChanges(selectedItem, nextData);
+
+    if (contentChanged && !await updateItem(selectedItem, { ...nextData, editor_id: selectedItem.editor_id })) return;
+    if (editorChanged && !await assignEditor(selectedItem, nextData.editor_id)) return;
+
+    closeModal();
+    if (editorChanged || contentChanged) {
       showToast({
         type: 'success',
-        message: selectedItem && selectedItem.editor_id !== nextData.editor_id ? 'Đã phân công editor.' : 'Đã lưu lịch air.',
+        message: link && link !== selectedItem.link ? 'Đã lưu link, task hoàn thành.' : 'Đã lưu task.',
       });
     }
   };
-
   const handleCancel = () => {
     if (isSaving || isDeleting) return;
     closeModal();
@@ -305,9 +297,9 @@ export default function ContentPlan() {
     if (!canDelete) return;
     if (isSaving || isDeleting) return;
     const confirmed = await requestConfirm({
-      title: 'Xóa kế hoạch content?',
-      description: 'Thao tác này không thể hoàn tác. Nếu dòng đã sinh Video Task, task liên kết cũng sẽ bị xóa.',
-      confirmLabel: 'Xóa dòng',
+      title: 'Xóa task?',
+      description: 'Thao tác này không thể hoàn tác.',
+      confirmLabel: 'Xóa task',
       variant: 'danger',
     });
 
@@ -317,13 +309,13 @@ export default function ContentPlan() {
 
     if (deleted) {
       if (selectedItem?.id === item.id) closeModal();
-      showToast({ type: 'success', message: 'Đã xóa dòng lịch air.' });
+      showToast({ type: 'success', message: 'Đã xóa task.' });
     }
   };
 
   const renderTableContent = () => {
     if (isMobile) {
-      if (isLoading) return <LoadingState variant="block" shape="list" message="Đang tải Content Plan..." className="m-loading-list" />;
+      if (isLoading) return <LoadingState variant="block" shape="list" message="Đang tải task..." className="m-loading-list" />;
       return (
         <ContentPlanCardList
           items={filteredItems}
@@ -339,9 +331,9 @@ export default function ContentPlan() {
       return (
         <LoadingState
           variant="table"
-          message="Đang tải Content Plan..."
-          colSpan={7}
-          minWidthClass="min-w-[1120px]"
+          message="Đang tải task..."
+          colSpan={8}
+          minWidthClass="min-w-[1240px]"
           rows={8}
         />
       );
@@ -364,14 +356,14 @@ export default function ContentPlan() {
         <MobileToolbar<ContentPlanCategory | 'all'>
           search={search}
           onSearchChange={setSearch}
-          searchPlaceholder="Tìm tên video..."
+          searchPlaceholder="Tìm task..."
           chips={[{ value: 'all', label: 'Tất cả' }, ...CONTENT_PLAN_CATEGORIES.map((category) => ({ value: category, label: category }))]}
           chipValue={categoryFilter}
           onChipChange={setCategoryFilter}
           chipsLabel="Lọc theo thể loại"
           activeFilterCount={editorFilter !== 'all' ? 1 : 0}
           onResetFilters={() => setEditorFilter('all')}
-          resultLabel={`${filteredItems.length} dòng${filteredItems.length !== monthItems.length ? ` (trên tổng ${monthItems.length})` : ''}`}
+          resultLabel={`${filteredItems.length} task${filteredItems.length !== monthItems.length ? ` (trên tổng ${monthItems.length})` : ''}`}
           filters={(
             <FilterGroup
               label="Editor"
@@ -398,18 +390,18 @@ export default function ContentPlan() {
       )}
 
       {loadError ? (
-        <ErrorState title="Không thể tải Content Plan" message={loadError} onRetry={() => void refetch()} />
+        <ErrorState title="Không thể tải danh sách task" message={loadError} onRetry={() => void refetch()} />
       ) : null}
 
       {saveError && !draft ? (
-        <ErrorState title="Không thể lưu lịch air" message={saveError} />
+        <ErrorState title="Không thể lưu task" message={saveError} />
       ) : null}
 
       {!isLoading && !loadError && (items.length === 0 || monthItems.length === 0) ? (
         <EmptyState
-          title="Chưa có kế hoạch content"
-          message="Thêm dòng lịch air cho tháng đã chọn."
-          actionLabel={canCreate ? 'Thêm dòng' : undefined}
+          title="Chưa có task"
+          message="Tạo task video cho tháng đã chọn, editor tự nhận để làm."
+          actionLabel={canCreate ? 'Tạo task' : undefined}
           onAction={canCreate ? handleAddRow : undefined}
         />
       ) : null}
@@ -429,10 +421,10 @@ export default function ContentPlan() {
         canEditVideoName={canEditVideoName && modalMode !== 'assign'}
         canEditNote={canEditNote && modalMode !== 'assign'}
         canEditCategory={canEditCategory && modalMode !== 'assign'}
-        canEditEditor={canEditEditor && modalMode !== 'create'}
-        canEditLink={canEditLink && modalMode !== 'assign' && !selectedItem?.hasLinkedTask}
-        isLinkSynced={Boolean(selectedItem?.hasLinkedTask)}
-        canDelete={Boolean(selectedItem) && canDelete && modalMode === 'edit' && !isDeleting}
+        canEditEditor
+        canEditLink
+        isLinkSynced={false}
+        canDelete={Boolean(selectedItem) && !isDeleting}
         isSaving={isSaving}
         errorMessage={formError ?? saveError}
         onClose={handleCancel}

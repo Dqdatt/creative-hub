@@ -3,6 +3,7 @@ import type { ContentPlanEditorOption, ContentPlanItem } from '../../types/conte
 import { Avatar } from '../common/Avatar';
 import { StatusBadge } from '../tasks/TaskBadges';
 import { isSafeHttpUrl } from '../../utils/url';
+import { getTodayIso } from '../../utils/month';
 
 const WEEKDAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
@@ -25,12 +26,13 @@ export function ContentPlanCardList({ items, editorOptions, canEdit, onEdit, hig
   if (items.length === 0) {
     return (
       <div className="m-card m-empty" data-tour="content-plan-table">
-        <b>Không có lịch air phù hợp</b>
+        <b>Không có task phù hợp</b>
         <span>Thử đổi tháng, editor hoặc thể loại.</span>
       </div>
     );
   }
 
+  const todayIso = getTodayIso();
   const groups = new Map<string, ContentPlanItem[]>();
   items.forEach((item) => groups.set(item.air_date, [...(groups.get(item.air_date) ?? []), item]));
 
@@ -47,7 +49,7 @@ export function ContentPlanCardList({ items, editorOptions, canEdit, onEdit, hig
               return (
                 <article
                   key={item.id}
-                  className={`m-plan ${hasLink ? 'is-done' : ''} ${highlighted ? 'route-highlight' : ''}`}
+                  className={`m-plan ${hasLink ? 'is-done' : ''} ${item.air_date === todayIso ? 'is-today' : ''} ${highlighted ? 'route-highlight' : ''}`}
                   data-content-plan-id={item.id}
                   aria-current={highlighted ? 'true' : undefined}
                 >
@@ -62,15 +64,16 @@ export function ContentPlanCardList({ items, editorOptions, canEdit, onEdit, hig
                   </div>
                   {item.note ? <p className="m-task-note">{item.note}</p> : null}
                   <div className="m-plan-foot">
+                    <span className="m-tag">{item.order_team}</span>
                     <span className="m-tag">{item.category}</span>
-                    {item.linkedTaskStatus ? <StatusBadge status={item.linkedTaskStatus} /> : <span className="m-muted">Chưa giao</span>}
+                    {hasLink ? <StatusBadge status="Đã xong" /> : item.linkedTaskStatus ? <StatusBadge status={item.linkedTaskStatus === 'Chờ' ? 'Đang làm' : item.linkedTaskStatus} /> : <span className="m-muted">Chưa nhận</span>}
                     <span className="m-flex" />
                     {editor ? (
                       <span className="m-task-editor" data-tour="content-plan-editor">
                         <Avatar src={editor.avatarUrl} name={editor.short} color={editor.color} size="xs" />
                         {editor.short}
                       </span>
-                    ) : <span className="m-pill-warn">Chưa phân công</span>}
+                    ) : <span className="m-pill-warn">Chưa có người nhận</span>}
                   </div>
                 </article>
               );

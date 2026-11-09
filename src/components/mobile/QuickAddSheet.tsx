@@ -6,7 +6,7 @@ import type { CreateKind } from './mobileChrome';
 const OPTIONS: Record<CreateKind, { icon: LucideIcon; title: string; hint: string; tone: string }> = {
   task: { icon: Clapperboard, title: 'Video task', hint: 'Task thủ công trong Video tháng', tone: 'blue' },
   shoot: { icon: Camera, title: 'Lịch quay', hint: 'Lịch quay, livestream, on set', tone: 'violet' },
-  content: { icon: ClipboardList, title: 'Dòng Content Plan', hint: 'Lịch air, có thể phân công editor', tone: 'green' },
+  content: { icon: ClipboardList, title: 'Task video', hint: 'Tạo task mới, ai cũng có thể nhận làm', tone: 'green' },
   user: { icon: UserPlus, title: 'Thành viên', hint: 'Tạo tài khoản cho team', tone: 'blue' },
 };
 

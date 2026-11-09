@@ -5,6 +5,10 @@ import { EmptyState } from '../components/common/EmptyState';
 import { ErrorState } from '../components/common/ErrorState';
 import { LoadingState } from '../components/common/LoadingState';
 import { DashboardView } from '../components/dashboard/DashboardView';
+import { TaskKpiView } from '../components/dashboard/TaskKpiView';
+import { BrandKpiCard } from '../components/dashboard/BrandKpiCard';
+import { useContentPlan } from '../hooks/useContentPlan';
+import { useTaskKpi } from '../hooks/useTaskKpi';
 import { SectionCard } from '../components/dashboard/SectionCard';
 import { ReportModal } from '../components/dashboard/ReportModal';
 import { BrandKpiModal } from '../components/dashboard/BrandKpiModal';
@@ -28,19 +32,24 @@ export default function Dashboard() {
     shoots,
     editors,
     metrics,
+    isLoading: isAdminLoading,
+    loadError: adminLoadError,
+    refetch: refetchAdmin,
+  } = useDashboard(selectedMonth);
+  // v2.0.0: KPI tính từ danh sách Task (content_plan) theo ngày Air trong tháng.
+  const {
+    items: taskItems,
+    editorOptions,
     isLoading,
     loadError,
-    isEmpty,
     refetch,
-  } = useDashboard(selectedMonth);
+  } = useContentPlan(selectedMonth);
+  const kpi = useTaskKpi(taskItems, editorOptions, selectedMonth);
+  const isEmpty = !isLoading && !loadError && kpi.summary.total === 0;
   const isAdmin = role === 'admin';
   const canCreateReport = can('dashboard:report');
   // Chỉ admin thấy card KPI nên cũng chỉ admin cần tải chỉ tiêu.
   const brandKpi = useBrandKpiTarget(selectedMonth, isAdmin);
-  const taskListPath = (params: Record<string, string>) => {
-    const query = new URLSearchParams(params).toString();
-    return isAdmin ? `/calendar?source=task&${query}` : `/tasks?${query}`;
-  };
 
   const brandKpiModal = (
     <BrandKpiModal
@@ -99,7 +108,7 @@ export default function Dashboard() {
       <div className="dashboard" data-view="dashboard">
         <SectionCard
           title="Tổng quan"
-          subtitle="Tháng này chưa có video task hay lịch quay nào."
+          subtitle="Tháng này chưa có task nào có ngày Air."
           action={canCreateReport ? (
             <button type="button" className="btn btn-sm" onClick={() => setReportOpen(true)}>
               <FileText /> Tạo báo cáo
@@ -108,7 +117,9 @@ export default function Dashboard() {
         >
           <EmptyState
             title="Chưa có dữ liệu tổng quan"
-            message="Thêm video task hoặc lịch quay để bắt đầu theo dõi."
+            message="Tạo task trong trang Task để bắt đầu theo dõi KPI."
+            actionLabel="Mở trang Task"
+            onAction={() => navigate('/content-plan')}
           />
         </SectionCard>
         {reportModal}
@@ -116,24 +127,65 @@ export default function Dashboard() {
     );
   }
 
+  // Admin giữ nguyên giao diện dashboard cũ, dữ liệu đã áp luật v2 (xem dashboardService).
+  if (isAdmin) {
+    if (isAdminLoading) {
+      return (
+        <div className="dashboard" data-view="dashboard" aria-busy="true">
+          <LoadingState variant="block" shape="dashboard" message="Đang tải dữ liệu tổng quan..." className="" />
+        </div>
+      );
+    }
+    if (adminLoadError) {
+      return (
+        <div className="dashboard" data-view="dashboard">
+          <ErrorState title="Không thể tải tổng quan" message={adminLoadError} onRetry={() => void refetchAdmin()} />
+        </div>
+      );
+    }
+    const adminTasksPath = (params: Record<string, string>) =>
+      `/calendar?source=task&${new URLSearchParams(params).toString()}`;
+    return (
+      <>
+        <DashboardView
+          monthValue={selectedMonth}
+          metrics={metrics}
+          editors={editors}
+          tasks={tasks}
+          shoots={shoots}
+          canCreateReport={canCreateReport}
+          isAdmin
+          showLateDeadline={showLateDeadline}
+          onToggleLateDeadline={() => setShowLateDeadline((value) => !value)}
+          brandKpiTarget={brandKpi.target}
+          onEditBrandKpi={() => setBrandKpiOpen(true)}
+          onOpenReport={() => setReportOpen(true)}
+          onOpenWaiting={() => navigate(adminTasksPath({ status: 'Chờ' }))}
+          onOpenOverdue={() => navigate(adminTasksPath({ attention: 'overdue' }))}
+          onOpenMissingLinks={() => navigate(adminTasksPath({ status: 'Đã xong', attention: 'missing-link' }))}
+        />
+        {reportModal}
+        {brandKpiModal}
+      </>
+    );
+  }
+
   return (
     <>
-      <DashboardView
+      <TaskKpiView
         monthValue={selectedMonth}
-        metrics={metrics}
-        editors={editors}
-        tasks={tasks}
-        shoots={shoots}
+        kpi={kpi}
         canCreateReport={canCreateReport}
-        isAdmin={isAdmin}
-        showLateDeadline={showLateDeadline}
-        onToggleLateDeadline={() => setShowLateDeadline((value) => !value)}
-        brandKpiTarget={brandKpi.target}
-        onEditBrandKpi={() => setBrandKpiOpen(true)}
         onOpenReport={() => setReportOpen(true)}
-        onOpenWaiting={() => navigate(taskListPath({ status: 'Chờ' }))}
-        onOpenOverdue={() => navigate(taskListPath({ attention: 'overdue' }))}
-        onOpenMissingLinks={() => navigate(taskListPath({ status: 'Đã xong', attention: 'missing-link' }))}
+        onOpenTasks={() => navigate('/content-plan')}
+        brandKpiCard={isAdmin ? (
+          <BrandKpiCard
+            brandKpi={kpi.brandKpi}
+            monthValue={selectedMonth}
+            target={brandKpi.target}
+            onEditTarget={() => setBrandKpiOpen(true)}
+          />
+        ) : null}
       />
       {reportModal}
       {isAdmin ? brandKpiModal : null}
