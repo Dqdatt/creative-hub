@@ -1,12 +1,14 @@
 import { Plus, Search } from 'lucide-react';
 import { StyledSelect } from '../common/StyledSelect';
 import { CONTENT_PLAN_CATEGORIES } from '../../data/contentPlan';
+import { ORDER_TEAMS } from '../../data/tasks';
 import type { ContentPlanCategory, ContentPlanEditorOption } from '../../types/contentPlan';
 
 interface ContentPlanFiltersProps {
   search: string;
   editorFilter: string | 'all';
   categoryFilter: ContentPlanCategory | 'all';
+  orderFilter: string | 'all';
   editorOptions: ContentPlanEditorOption[];
   totalCount: number;
   filteredCount: number;
@@ -14,6 +16,7 @@ interface ContentPlanFiltersProps {
   onSearchChange: (value: string) => void;
   onEditorChange: (value: string | 'all') => void;
   onCategoryChange: (value: ContentPlanCategory | 'all') => void;
+  onOrderChange: (value: string | 'all') => void;
   onCreate: () => void;
 }
 
@@ -21,6 +24,7 @@ export function ContentPlanFilters({
   search,
   editorFilter,
   categoryFilter,
+  orderFilter,
   editorOptions,
   totalCount,
   filteredCount,
@@ -28,6 +32,7 @@ export function ContentPlanFilters({
   onSearchChange,
   onEditorChange,
   onCategoryChange,
+  onOrderChange,
   onCreate,
 }: ContentPlanFiltersProps) {
   return (
@@ -63,6 +68,18 @@ export function ContentPlanFilters({
           <option value="all">Tất cả thể loại</option>
           {CONTENT_PLAN_CATEGORIES.map((category) => (
             <option key={category} value={category}>{category}</option>
+          ))}
+        </StyledSelect>
+
+        <StyledSelect
+          style={{ width: 'auto', minWidth: '150px' }}
+          value={orderFilter}
+          onChange={(event) => onOrderChange(event.target.value)}
+          aria-label="Lọc theo order"
+        >
+          <option value="all">Tất cả order</option>
+          {ORDER_TEAMS.map((team) => (
+            <option key={team} value={team}>{team}</option>
           ))}
         </StyledSelect>
 

@@ -18,6 +18,7 @@ import { useMonth } from '../context/monthContext';
 import { isUuid } from '../utils/id';
 import { isSafeHttpUrl } from '../utils/url';
 import { CONTENT_PLAN_CATEGORIES } from '../data/contentPlan';
+import { ORDER_TEAMS } from '../data/tasks';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useCreateParam } from '../hooks/useCreateParam';
 import { MobileToolbar, FilterGroup } from '../components/mobile/MobileToolbar';
@@ -78,6 +79,7 @@ export default function ContentPlan() {
   const [search, setSearch] = useState('');
   const [editorFilter, setEditorFilter] = useState<string | 'all'>('all');
   const [categoryFilter, setCategoryFilter] = useState<ContentPlanCategory | 'all'>('all');
+  const [orderFilter, setOrderFilter] = useState<string | 'all'>('all');
   const [modalMode, setModalMode] = useState<ContentPlanModalMode>('create');
   const [selectedItem, setSelectedItem] = useState<ContentPlanItem | null>(null);
   const [draft, setDraft] = useState<ContentPlanFormData | null>(null);
@@ -107,6 +109,7 @@ export default function ContentPlan() {
       .filter((item) => {
         if (editorFilter !== 'all' && item.editor_id !== editorFilter) return false;
         if (categoryFilter !== 'all' && item.category !== categoryFilter) return false;
+        if (orderFilter !== 'all' && item.order_team !== orderFilter) return false;
         const searchValue = search.trim().toLowerCase();
         if (!searchValue) return true;
         return item.video_name.toLowerCase().includes(searchValue);
@@ -117,7 +120,7 @@ export default function ContentPlan() {
         if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
         return a.air_date.localeCompare(b.air_date) || a.id.localeCompare(b.id);
       }),
-    [categoryFilter, editorFilter, monthItems, search]
+    [categoryFilter, editorFilter, monthItems, orderFilter, search]
   );
 
   const clearHighlightParams = useCallback(() => {
@@ -178,10 +181,11 @@ export default function ContentPlan() {
     if (visibleItem) {
       const targetMonth = visibleItem.air_date.slice(0, 7);
       if (targetMonth !== selectedMonth) setSelectedMonth(targetMonth);
-      if (search || editorFilter !== 'all' || categoryFilter !== 'all') {
+      if (search || editorFilter !== 'all' || categoryFilter !== 'all' || orderFilter !== 'all') {
         setSearch('');
         setEditorFilter('all');
         setCategoryFilter('all');
+        setOrderFilter('all');
       }
       return;
     }
@@ -211,7 +215,7 @@ export default function ContentPlan() {
     return () => {
       cancelled = true;
     };
-  }, [categoryFilter, clearHighlightParams, editorFilter, isLoading, items, search, selectedMonth, setSelectedMonth, showToast, targetContentPlanId]);
+  }, [categoryFilter, clearHighlightParams, editorFilter, isLoading, items, orderFilter, search, selectedMonth, setSelectedMonth, showToast, targetContentPlanId]);
 
   const handleHighlightMissing = useCallback(() => {
     showToast({ type: 'warning', message: 'Không tìm thấy Content Plan liên quan.' });
@@ -361,16 +365,27 @@ export default function ContentPlan() {
           chipValue={categoryFilter}
           onChipChange={setCategoryFilter}
           chipsLabel="Lọc theo thể loại"
-          activeFilterCount={editorFilter !== 'all' ? 1 : 0}
-          onResetFilters={() => setEditorFilter('all')}
+          activeFilterCount={(editorFilter !== 'all' ? 1 : 0) + (orderFilter !== 'all' ? 1 : 0)}
+          onResetFilters={() => {
+            setEditorFilter('all');
+            setOrderFilter('all');
+          }}
           resultLabel={`${filteredItems.length} task${filteredItems.length !== monthItems.length ? ` (trên tổng ${monthItems.length})` : ''}`}
           filters={(
-            <FilterGroup
-              label="Editor"
-              value={editorFilter}
-              onChange={setEditorFilter}
-              options={[{ value: 'all', label: 'Tất cả editor' }, ...editorOptions.map((editor) => ({ value: editor.id, label: editor.short }))]}
-            />
+            <>
+              <FilterGroup
+                label="Editor"
+                value={editorFilter}
+                onChange={setEditorFilter}
+                options={[{ value: 'all', label: 'Tất cả editor' }, ...editorOptions.map((editor) => ({ value: editor.id, label: editor.short }))]}
+              />
+              <FilterGroup
+                label="Order"
+                value={orderFilter}
+                onChange={setOrderFilter}
+                options={[{ value: 'all', label: 'Tất cả order' }, ...ORDER_TEAMS.map((team) => ({ value: team, label: team }))]}
+              />
+            </>
           )}
         />
       ) : (
@@ -378,6 +393,7 @@ export default function ContentPlan() {
         search={search}
         editorFilter={editorFilter}
         categoryFilter={categoryFilter}
+        orderFilter={orderFilter}
         editorOptions={editorOptions}
         totalCount={monthItems.length}
         filteredCount={filteredItems.length}
@@ -385,6 +401,7 @@ export default function ContentPlan() {
         onSearchChange={setSearch}
         onEditorChange={setEditorFilter}
         onCategoryChange={setCategoryFilter}
+        onOrderChange={setOrderFilter}
         onCreate={handleAddRow}
       />
       )}
