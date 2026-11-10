@@ -9,9 +9,7 @@ export type WorkloadKind = 'shoot' | 'task' | 'plan';
 
 export const UNASSIGNED_EDITOR_ID = '__unassigned__';
 
-// Dòng Content Plan chưa sinh task thì chưa có phòng ban order trong database.
-// Lấy đúng mặc định mà trigger dưới database sẽ gán khi task được tạo, để bộ lọc order
-// không bỏ sót những dòng chưa phân công.
+// Task cũ chưa có cột order_team thì coi như BRAND (mặc định của database).
 const CONTENT_PLAN_DEFAULT_ORDER_TEAM = 'BRAND';
 
 export interface WorkloadItem {
@@ -146,7 +144,10 @@ export function useWorkload({
       });
     });
 
+    // v2.0.0: Task (content_plan) là nguồn chính. Video task sinh từ Task không hiện riêng
+    // để tránh trùng; chỉ video task cũ tạo tay (không gắn Task) mới hiện thêm.
     tasks.forEach((task) => {
+      if (task.contentPlanId) return;
       const airDate = displayDateToIso(task.airDate, monthValue);
       const returnDate = displayDateToIso(task.returnDate, monthValue);
       const sourceId = task.dbId ?? String(task.id);
@@ -172,9 +173,13 @@ export function useWorkload({
       }
     });
 
+    // Luật v2: có link thành phẩm = Đã xong, đã chọn Editor = Đang làm, chưa có Editor = chưa nhận.
     contentItems.forEach((item) => {
-      if (item.hasLinkedTask) return;
       const editorIds = item.editor_id ? [item.editor_id] : [];
+      const status: TaskStatus | undefined = item.link.trim()
+        ? 'Đã xong'
+        : editorIds.length ? 'Đang làm' : undefined;
+      const orderTeam = item.order_team || CONTENT_PLAN_DEFAULT_ORDER_TEAM;
       pushItem(itemsByDate, {
         id: `plan:${item.id}`,
         sourceId: item.id,
@@ -182,11 +187,12 @@ export function useWorkload({
         date: item.air_date,
         editorIds,
         title: item.video_name,
-        subtitle: [item.category, editorIds.length ? 'chưa có task' : 'chưa phân công'].filter(Boolean).join(' · '),
+        subtitle: [status ?? 'Chưa có editor', item.category, orderTeam].filter(Boolean).join(' · '),
         detail: item.note,
         accent: '',
+        status,
         category: item.category,
-        orderTeam: CONTENT_PLAN_DEFAULT_ORDER_TEAM,
+        orderTeam,
         needsAssign: editorIds.length === 0,
       });
     });

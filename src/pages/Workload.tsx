@@ -10,7 +10,6 @@ import { TaskModal } from '../components/tasks/TaskModal';
 import { WorkloadCalendar } from '../components/workload/WorkloadCalendar';
 import { useConfirmDialog } from '../components/common/confirmDialogContext';
 import { useToast } from '../components/common/toastContext';
-import { canEditContentPlanField } from '../config/permissions';
 import { ORDER_TEAMS, TASK_CATEGORIES, TASK_STATUSES } from '../data/tasks';
 import { useAuth } from '../context/authContext';
 import { useMonth } from '../context/monthContext';
@@ -24,6 +23,7 @@ import type { ShootFormData, ShootSchedule } from '../types/shoot';
 import type { LinkedVideoTaskExecutionData, TaskFormData, VideoTask } from '../types/task';
 import { getDefaultContentDate, hasContentFieldChanges, toContentPlanFormData } from '../utils/contentPlanForm';
 import { monthValueToDate } from '../utils/month';
+import { isSafeHttpUrl } from '../utils/url';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useCreateParam } from '../hooks/useCreateParam';
 import { MobileToolbar } from '../components/mobile/MobileToolbar';
@@ -61,7 +61,7 @@ function matchesKind(item: WorkloadItem, kind: KindFilter) {
 }
 
 export default function Workload() {
-  const { profile, role, permissions, can } = useAuth();
+  const { profile, can } = useAuth();
   const { requestConfirm } = useConfirmDialog();
   const { showToast } = useToast();
   const { selectedMonth } = useMonth();
@@ -96,19 +96,12 @@ export default function Workload() {
   const canCreateShoot = can('shoots:create');
   const canUpdateShoot = can('shoots:update');
   const canDeleteShoot = can('shoots:delete');
-  const canCreateTask = can('video_tasks:create');
   const canUpdateTask = can('video_tasks:update');
   const canDeleteTask = can('video_tasks:delete');
   const canCreateContent = can('content_plan:create');
   const canUpdateContent = can('content_plan:update');
   const canAssignContent = can('content_plan:assign');
   const canDeleteContent = can('content_plan:delete');
-  const canEditAirDate = canEditContentPlanField(role, 'air_date', permissions);
-  const canEditVideoName = canEditContentPlanField(role, 'video_name', permissions);
-  const canEditNote = canEditContentPlanField(role, 'note', permissions);
-  const canEditCategory = canEditContentPlanField(role, 'category', permissions);
-  const canEditEditor = canEditContentPlanField(role, 'editor_id', permissions);
-  const canEditLink = canEditContentPlanField(role, 'link', permissions);
 
   const workload = useWorkload({
     monthValue: selectedMonth,
@@ -184,14 +177,6 @@ export default function Workload() {
     setContentFormError(null);
   };
 
-  const openTaskCreate = () => {
-    if (!canCreateTask) return;
-    tasksData.clearSaveError();
-    setSelectedTask(null);
-    setDefaultDateForTask(defaultDate);
-    setIsTaskModalOpen(true);
-  };
-
   const openContentCreate = () => {
     if (!canCreateContent) return;
     contentData.clearSaveError();
@@ -237,7 +222,7 @@ export default function Workload() {
     if (!canUpdateContent && !canAssignContent) return;
     contentData.clearSaveError();
     setSelectedContentItem(item);
-    setContentModalMode(canUpdateContent ? 'edit' : 'assign');
+    setContentModalMode('edit');
     setContentDraft(toContentPlanFormData(item));
     setContentFormError(null);
   };
@@ -251,18 +236,7 @@ export default function Workload() {
 
     if (item.kind === 'plan') {
       const contentItem = contentData.items.find((entry) => entry.id === item.sourceId);
-      if (!contentItem) return;
-
-      // Dòng đã phân công editor thì mở modal Video tháng, dòng chưa phân công mở modal Content Plan.
-      if (contentItem.editor_id && contentItem.linkedTaskId) {
-        const linkedTask = tasksData.tasks.find((entry) => entry.dbId === contentItem.linkedTaskId);
-        if (linkedTask) {
-          openTaskEdit(linkedTask);
-          return;
-        }
-      }
-
-      openContentEdit(contentItem);
+      if (contentItem) openContentEdit(contentItem);
       return;
     }
 
@@ -299,15 +273,13 @@ export default function Workload() {
   };
 
   const handleTaskSave = async (data: TaskFormData) => {
-    if (selectedTask && !canUpdateTask) return;
-    if (!selectedTask && !canCreateTask) return;
-    const saved = selectedTask
-      ? await tasksData.updateTask(selectedTask, data)
-      : await tasksData.createTask(data);
+    // v2.0.0: Workload không tạo video task tay nữa, chỉ sửa video task cũ còn lại.
+    if (!selectedTask || !canUpdateTask) return;
+    const saved = await tasksData.updateTask(selectedTask, data);
     if (saved) {
       closeTaskModal();
       void contentData.refetch();
-      showToast({ type: 'success', message: selectedTask ? 'Đã lưu thay đổi video task.' : 'Đã thêm video task.' });
+      showToast({ type: 'success', message: 'Đã lưu thay đổi video task.' });
     }
   };
 
@@ -366,11 +338,12 @@ export default function Workload() {
     contentData.clearSaveError();
   };
 
+  // v2.0.0: giống trang Task - mọi tài khoản sửa mọi trường, chọn Editor = nhận Task,
+  // có link thành phẩm = Task hoàn thành.
   const handleContentSave = async () => {
     if (!contentDraft) return;
     if (contentModalMode === 'create' && !canCreateContent) return;
-    if (contentModalMode === 'edit' && !canUpdateContent) return;
-    if (contentModalMode === 'assign' && !canAssignContent) return;
+    if (contentModalMode !== 'create' && !canUpdateContent) return;
     if (!contentDraft.air_date) {
       setContentFormError('Vui lòng chọn ngày Air.');
       return;
@@ -379,55 +352,49 @@ export default function Workload() {
       setContentFormError('Vui lòng nhập tên video.');
       return;
     }
-    if (contentModalMode === 'assign' && !contentDraft.editor_id) {
-      setContentFormError('Vui lòng chọn editor.');
-      return;
-    }
-    if (contentModalMode !== 'create' && !selectedContentItem) {
-      setContentFormError('Không tìm thấy dòng lịch air cần lưu.');
+    const link = contentDraft.link.trim();
+    if (link && !isSafeHttpUrl(link)) {
+      setContentFormError('Link thành phẩm không hợp lệ.');
       return;
     }
 
-    const sourceItem = selectedContentItem ? toContentPlanFormData(selectedContentItem) : null;
     const nextData: ContentPlanFormData = {
-      air_date: canEditAirDate ? contentDraft.air_date : sourceItem?.air_date ?? contentDraft.air_date,
-      video_name: canEditVideoName ? contentDraft.video_name.trim() : sourceItem?.video_name ?? contentDraft.video_name.trim(),
-      note: canEditNote ? contentDraft.note.trim() : sourceItem?.note ?? contentDraft.note.trim(),
-      category: canEditCategory ? contentDraft.category : sourceItem?.category ?? contentDraft.category,
-      order_team: contentDraft.order_team,
-      editor_id: canEditEditor ? contentDraft.editor_id : sourceItem?.editor_id ?? '',
-      link: canEditLink && !selectedContentItem?.hasLinkedTask ? contentDraft.link.trim() : sourceItem?.link ?? contentDraft.link.trim(),
+      ...contentDraft,
+      video_name: contentDraft.video_name.trim(),
+      note: contentDraft.note.trim(),
+      link,
     };
 
-    let saved = false;
     if (contentModalMode === 'create') {
-      saved = Boolean(await contentData.createItem({ ...nextData, editor_id: "" }));
-    } else if (selectedContentItem) {
-      const editorChanged = selectedContentItem.editor_id !== nextData.editor_id;
-      const contentChanged = hasContentFieldChanges(selectedContentItem, nextData);
-      if (editorChanged && contentChanged) {
-        setContentFormError('Vui lòng lưu nội dung trước, rồi phân công editor.');
-        return;
+      const createdId = await contentData.createItem({ ...nextData, editor_id: '' });
+      if (!createdId) return;
+      if (nextData.editor_id && typeof createdId === 'string') {
+        const created = { id: createdId, ...nextData, editor_id: '', hasLinkedTask: false } as ContentPlanItem;
+        if (!await contentData.assignEditor(created, nextData.editor_id)) return;
       }
-      if (editorChanged) {
-        saved = await contentData.assignEditor(selectedContentItem, nextData.editor_id);
-      } else if (contentChanged) {
-        saved = await contentData.updateItem(selectedContentItem, nextData);
-      } else {
-        closeContentModal();
-        return;
-      }
+      closeContentModal();
+      void tasksData.refetch();
+      showToast({ type: 'success', message: 'Đã tạo task.' });
+      return;
     }
 
-    if (saved) {
-      closeContentModal();
-      // Phân công editor sẽ sinh Video Task, nên phải tải lại task để nó hiện ngay.
+    if (!selectedContentItem) {
+      setContentFormError('Không tìm thấy task cần lưu.');
+      return;
+    }
+
+    const editorChanged = selectedContentItem.editor_id !== nextData.editor_id;
+    const contentChanged = hasContentFieldChanges(selectedContentItem, nextData);
+
+    if (contentChanged && !await contentData.updateItem(selectedContentItem, { ...nextData, editor_id: selectedContentItem.editor_id })) return;
+    if (editorChanged && !await contentData.assignEditor(selectedContentItem, nextData.editor_id)) return;
+
+    closeContentModal();
+    if (editorChanged || contentChanged) {
       void tasksData.refetch();
       showToast({
         type: 'success',
-        message: selectedContentItem && selectedContentItem.editor_id !== nextData.editor_id
-          ? 'Đã phân công editor.'
-          : 'Đã lưu lịch air.',
+        message: link && link !== selectedContentItem.link ? 'Đã lưu link, task hoàn thành.' : 'Đã lưu task.',
       });
     }
   };
@@ -435,9 +402,9 @@ export default function Workload() {
   const handleContentDelete = async (item: ContentPlanItem) => {
     if (!canDeleteContent || contentData.isSaving || contentData.isDeleting) return;
     const confirmed = await requestConfirm({
-      title: 'Xóa kế hoạch content?',
-      description: 'Thao tác này không thể hoàn tác. Nếu dòng đã sinh Video Task, task liên kết cũng sẽ bị xóa.',
-      confirmLabel: 'Xóa dòng',
+      title: 'Xóa task?',
+      description: 'Thao tác này không thể hoàn tác.',
+      confirmLabel: 'Xóa task',
       variant: 'danger',
     });
     if (!confirmed) return;
@@ -445,7 +412,7 @@ export default function Workload() {
     if (deleted) {
       if (selectedContentItem?.id === item.id) closeContentModal();
       void tasksData.refetch();
-      showToast({ type: 'success', message: 'Đã xóa dòng lịch air.' });
+      showToast({ type: 'success', message: 'Đã xóa task.' });
     }
   };
 
@@ -488,7 +455,7 @@ export default function Workload() {
 
   const isMobile = useIsMobile();
   useCreateParam({
-    task: openTaskCreate,
+    task: openContentCreate,
     content: openContentCreate,
     shoot: () => openShootCreate(defaultDate),
   }, !isLoading);
@@ -639,14 +606,9 @@ export default function Workload() {
 
           <div className="wl-actions">
             <span className="wl-total">{visibleCount} việc</span>
-            {canCreateTask ? (
-              <button type="button" className="btn btn-sm wl-btn" onClick={openTaskCreate} title="Thêm video task">
-                <Plus style={{ width: '15px', height: '15px' }} /><span className="wl-btn-text">Thêm </span>task
-              </button>
-            ) : null}
             {canCreateContent ? (
-              <button type="button" className="btn-ghost wl-btn" onClick={openContentCreate} title="Thêm dòng Content Plan">
-                <Plus style={{ width: '15px', height: '15px' }} /><span className="wl-btn-text">Thêm </span>content
+              <button type="button" className="btn btn-sm wl-btn" onClick={openContentCreate} title="Tạo task">
+                <Plus style={{ width: '15px', height: '15px' }} /><span className="wl-btn-text">Thêm </span>task
               </button>
             ) : null}
             {canCreateShoot ? (
@@ -738,14 +700,14 @@ export default function Workload() {
         mode={contentModalMode}
         draft={contentDraft}
         editorOptions={contentData.editorOptions}
-        canEditAirDate={canEditAirDate && contentModalMode !== 'assign'}
-        canEditVideoName={canEditVideoName && contentModalMode !== 'assign'}
-        canEditNote={canEditNote && contentModalMode !== 'assign'}
-        canEditCategory={canEditCategory && contentModalMode !== 'assign'}
-        canEditEditor={canEditEditor && contentModalMode !== 'create'}
-        canEditLink={canEditLink && contentModalMode !== 'assign' && !selectedContentItem?.hasLinkedTask}
-        isLinkSynced={Boolean(selectedContentItem?.hasLinkedTask)}
-        canDelete={Boolean(selectedContentItem) && canDeleteContent && contentModalMode === 'edit' && !contentData.isDeleting}
+        canEditAirDate
+        canEditVideoName
+        canEditNote
+        canEditCategory
+        canEditEditor
+        canEditLink
+        isLinkSynced={false}
+        canDelete={Boolean(selectedContentItem) && canDeleteContent && !contentData.isDeleting}
         isSaving={contentData.isSaving}
         errorMessage={contentFormError ?? contentData.saveError}
         onClose={closeContentModal}
