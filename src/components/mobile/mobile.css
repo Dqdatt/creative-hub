@@ -129,7 +129,7 @@ html[data-mobile] .native-create-screen .native-modal-close{
   flex:1; min-width:0; height:34px; border-radius:10px; border:0; background:transparent; color:var(--text-2);
   display:inline-flex; align-items:center; justify-content:center; gap:6px;
   font-size:13px; font-weight:500; text-decoration:none; cursor:pointer;
-  transition:color var(--m-dur) var(--m-ease-out);
+  transition:color var(--m-dur) var(--m-ease-out), transform var(--m-dur-fast) var(--m-ease-spring);
 }
 .m-segment-item svg{ width:15px; height:15px; }
 .m-segment-item.is-active{ color:var(--text); font-weight:600; }
@@ -341,7 +341,7 @@ html.dark .m-toolbar{ background:linear-gradient(to bottom,var(--m-bg),color-mix
 .m-day-head h2{ margin:0; flex:1; font-size:15px; font-weight:600; }
 
 .m-wl-item{ width:100%; padding:12px 14px; display:flex; flex-direction:column; gap:6px; text-align:left; color:inherit; cursor:pointer; font:inherit; }
-.m-wl-item.is-done{ opacity:.78; }
+.m-wl-item.is-done{ --m-rise-opacity:.78; opacity:.78; }
 .m-wl-top{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .m-wl-title{ font-size:14px; font-weight:600; line-height:1.35; }
 .m-wl-sub{ font-size:12px; color:var(--text-2); line-height:1.45; }
@@ -476,6 +476,12 @@ html.dark .m-sheet-grabber{ background:rgba(255,255,255,.2); }
 .skeleton-list-pill--short{ width:48px; }
 .skeleton-list-meta{ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px; }
 .skeleton-list-meta .skel-box{ height:42px;border-radius:10px; }
+html[data-mobile] .skel-box,
+html[data-mobile] .skeleton-list-card .skel-line{
+  background:linear-gradient(90deg,var(--m-fill) 0%,var(--m-fill-2) 45%,var(--m-fill) 90%);
+  background-size:200% 100%;
+  animation:m-shimmer 1.4s linear infinite;
+}
 
 .m-spin{ animation:spin 1s linear infinite; }
 
@@ -545,14 +551,49 @@ html[data-mobile] .toast-stack{ top:max(12px,env(safe-area-inset-top)); }
 /* ---------- motion ---------- */
 @keyframes m-fade{ from{opacity:0} to{opacity:1} }
 @keyframes m-fade-out{ from{opacity:1} to{opacity:0} }
-@keyframes m-page{ from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+@keyframes m-page{ from{opacity:0;transform:translateY(10px) scale(.995)} to{opacity:1;transform:none} }
+@keyframes m-rise{ from{opacity:0;transform:translateY(8px)} to{opacity:var(--m-rise-opacity,1);transform:none} }
+@keyframes m-shimmer{ from{background-position:200% 0} to{background-position:0 0} }
 @keyframes m-sheet-in{ from{opacity:0;transform:translateY(48px) scale(.98)} to{opacity:1;transform:none} }
 @keyframes m-sheet-out{ from{opacity:1;transform:none} to{opacity:0;transform:translateY(56px) scale(.98)} }
 @keyframes m-toast{ from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:none} }
-.m-glass-control,.m-plus,.m-sheet-close{ transition:transform var(--m-dur-fast) var(--m-ease-spring); }
-.m-shell button:active,.m-shell a:active,.m-sheet button:active{ transform:scale(.97); }
+
+:is(.m-cards,.m-list,.m-loading-list) > *{ animation:m-rise var(--m-dur) var(--m-ease-out) var(--m-rise-delay,0ms) both; }
+:is(.m-cards,.m-list,.m-loading-list) > .route-highlight{
+  animation:m-rise var(--m-dur) var(--m-ease-out) var(--m-rise-delay,0ms) both, route-highlight-fade .85s ease-out both;
+}
+:is(.m-cards,.m-list,.m-loading-list) > :nth-child(1){ --m-rise-delay:0ms; }
+:is(.m-cards,.m-list,.m-loading-list) > :nth-child(2){ --m-rise-delay:30ms; }
+:is(.m-cards,.m-list,.m-loading-list) > :nth-child(3){ --m-rise-delay:60ms; }
+:is(.m-cards,.m-list,.m-loading-list) > :nth-child(4){ --m-rise-delay:90ms; }
+:is(.m-cards,.m-list,.m-loading-list) > :nth-child(5){ --m-rise-delay:120ms; }
+:is(.m-cards,.m-list,.m-loading-list) > :nth-child(6){ --m-rise-delay:150ms; }
+:is(.m-cards,.m-list,.m-loading-list) > :nth-child(7){ --m-rise-delay:180ms; }
+:is(.m-cards,.m-list,.m-loading-list) > :nth-child(8){ --m-rise-delay:210ms; }
+
+.m-glass-control,.m-circle,.m-avatar-btn,.m-sheet-close,.m-month button,.m-plus,.m-btn,.m-option{
+  transition:transform var(--m-dur-fast) var(--m-ease-spring);
+}
+.m-task,.m-plan{ transition:scale var(--m-dur-fast) var(--m-ease-spring); }
+.m-circle:active,.m-avatar-btn:active,.m-sheet-close:active,.m-month button:active{ transform:scale(.92); }
+.m-plus:active{ transform:scale(.9); }
+.m-nav-item:active,.m-segment-item:active,.m-chip:active,.m-btn:active,.m-option:active{ transform:scale(.96); }
+.m-task:has(.m-task-open:not(:disabled):active),
+.m-plan:has(.m-task-open:not(:disabled):active){ scale:.985; }
+
 @media (prefers-reduced-motion:reduce){
-  .m-shell *,.m-sheet-backdrop,.m-sheet-backdrop *{ animation:none!important; transition:none!important; }
+  .m-shell *,.m-sheet-backdrop,.m-sheet-backdrop *,
+  html[data-mobile] .skel-box,html[data-mobile] .skeleton-list-card,html[data-mobile] .skeleton-list-card *{
+    animation:none!important; transition:none!important;
+  }
+  .m-circle:active,.m-avatar-btn:active,.m-sheet-close:active,.m-month button:active,
+  .m-plus:active,.m-nav-item:active,.m-segment-item:active,.m-chip:active,.m-btn:active,.m-option:active{
+    transform:none!important;
+  }
+  .m-task:has(.m-task-open:not(:disabled):active),
+  .m-plan:has(.m-task-open:not(:disabled):active){
+    scale:none!important;
+  }
 }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .m-glass-control,.m-nav,.m-plus,.m-sheet,.m-notification-button.is-active,
