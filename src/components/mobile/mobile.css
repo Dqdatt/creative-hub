@@ -90,7 +90,8 @@ html[data-mobile] body{ letter-spacing:-.005em; }
 }
 .m-topbar-space{ flex:1; }
 .m-topbar-actions{ display:flex;align-items:center;gap:7px; }
-.m-glass-control,.m-nav,.m-plus,.m-sheet{
+.m-glass-control,.m-nav,.m-plus,.m-sheet,
+html[data-mobile] .native-create-screen .native-modal-close{
   --m-glass-bg:var(--m-glass-tint);
   --m-glass-shadow:var(--m-shadow);
   background:var(--m-glass-sheen),var(--m-glass-bg);
@@ -528,11 +529,13 @@ html[data-mobile] .toast-stack{ top:max(12px,env(safe-area-inset-top)); }
   .m-shell *,.m-sheet-backdrop,.m-sheet-backdrop *{ animation:none!important; transition:none!important; }
 }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .m-glass-control,.m-nav,.m-plus,.m-sheet,.m-notification-button.is-active{ background:var(--m-surface-solid); }
+  .m-glass-control,.m-nav,.m-plus,.m-sheet,.m-notification-button.is-active,
+  html[data-mobile] .native-create-screen .native-modal-close{ background:var(--m-surface-solid); }
   .m-plus svg{ stroke:var(--m-accent); }
 }
 @media (prefers-reduced-transparency:reduce){
-  .m-glass-control,.m-nav,.m-plus,.m-sheet,.m-notification-button.is-active{ background:var(--m-surface-solid);backdrop-filter:none;-webkit-backdrop-filter:none; }
+  .m-glass-control,.m-nav,.m-plus,.m-sheet,.m-notification-button.is-active,
+  html[data-mobile] .native-create-screen .native-modal-close{ background:var(--m-surface-solid);backdrop-filter:none;-webkit-backdrop-filter:none; }
   .m-plus svg{ stroke:var(--m-accent); }
 }
 
@@ -688,12 +691,6 @@ html[data-mobile] .native-create-screen .native-modal-head{
 }
 html[data-mobile] .native-create-screen .native-modal-close{
   order:-1;width:42px!important;height:42px!important;
-  background:
-    linear-gradient(145deg,rgba(255,255,255,.18), rgba(255,255,255,.03)),
-    var(--m-glass);
-  border-color:var(--m-glass-border);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.56),var(--m-shadow);
-  backdrop-filter:var(--m-blur);-webkit-backdrop-filter:var(--m-blur);
 }
 html[data-mobile] .native-create-screen .native-modal-title-wrap{ min-width:0;align-items:flex-end; }
 html[data-mobile] .native-create-screen .native-modal-icon{ display:none; }
