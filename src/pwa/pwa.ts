@@ -21,6 +21,8 @@ export interface PwaState {
 
 const DISMISS_KEY = 'ch-install-dismissed-at';
 const DISMISS_DAYS = 7;
+const CHUNK_RELOAD_KEY = 'ch-chunk-reload';
+const CHUNK_RELOAD_WINDOW_MS = 10_000;
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
 const listeners = new Set<() => void>();
@@ -124,6 +126,20 @@ export function initPwa() {
   window.addEventListener('offline', () => setState({ isOnline: false }));
 
   document.documentElement.toggleAttribute('data-standalone', state.isStandalone);
+
+  // Tự tải lại một lần khi chunk cũ bị xoá sau deploy; bỏ qua nếu vừa tải lại để tránh vòng lặp.
+  window.addEventListener('vite:preloadError', (event) => {
+    try {
+      const raw = window.sessionStorage.getItem(CHUNK_RELOAD_KEY);
+      const last = raw ? Number(raw) : NaN;
+      if (Number.isFinite(last) && Date.now() - last < CHUNK_RELOAD_WINDOW_MS) return;
+      window.sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+    } catch {
+      return;
+    }
+    event.preventDefault();
+    window.location.reload();
+  });
 
   // Chỉ đăng ký service worker ở bản build; khi dev, Vite cần nạp file trực tiếp.
   if ('serviceWorker' in navigator && import.meta.env.PROD) {

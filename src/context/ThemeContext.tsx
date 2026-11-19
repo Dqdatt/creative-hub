@@ -18,7 +18,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       themeColor?.setAttribute('content', '#0F141D');
     } else {
       root.classList.remove('dark');
-      themeColor?.setAttribute('content', '#F3F5F8');
+      themeColor?.setAttribute('content', '#EDF1F7');
     }
     localStorage.setItem('vo-theme', theme);
   }, [theme]);
