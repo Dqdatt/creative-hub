@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { useDocumentScrollLock } from '../common/useDocumentScrollLock';
@@ -138,7 +139,8 @@ export function BottomSheet({ open, title, onClose, children, footer }: BottomSh
     }
 
     sheet.classList.remove('is-dragging');
-    if (dy > DRAG_CLOSE_DISTANCE || velocity > DRAG_CLOSE_VELOCITY) {
+    // Vuốt nhanh vẫn phải đi đủ 16px, tránh chạm header có rung tay là đóng sheet.
+    if (dy > DRAG_CLOSE_DISTANCE || (dy > 16 && velocity > DRAG_CLOSE_VELOCITY)) {
       sheet.setAttribute('data-dragged', '');
       onClose();
       return;
@@ -148,7 +150,8 @@ export function BottomSheet({ open, title, onClose, children, footer }: BottomSh
 
   if (!mounted) return null;
 
-  return (
+  // Portal ra body: nằm trong trang thì bị transform/sticky của trang giữ lại, dock đè lên sheet.
+  return createPortal(
     <div className={`m-sheet-backdrop ${closing ? 'is-closing' : ''}`} onClick={onClose}>
       <section
         ref={sheetRef}
@@ -172,6 +175,7 @@ export function BottomSheet({ open, title, onClose, children, footer }: BottomSh
         <div className="m-sheet-body">{children}</div>
         {footer ? <footer className="m-sheet-foot">{footer}</footer> : null}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }

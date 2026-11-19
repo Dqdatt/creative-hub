@@ -159,7 +159,7 @@ html[data-mobile] .native-create-screen .native-modal-close{
   flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
   padding:5px 16px calc(116px + env(safe-area-inset-bottom));
 }
-.m-page{ animation:m-page var(--m-dur-slow) var(--m-ease-out) both; }
+.m-page{ animation:m-page var(--m-dur-slow) var(--m-ease-out) backwards; }
 .m-page > *{ min-width:0; }
 
 /* ---------- floating dock ---------- */
@@ -406,6 +406,7 @@ div.m-row{ cursor:default; }
 /* ---------- bottom sheet ---------- */
 .m-sheet-backdrop{
   position:fixed; inset:0; z-index:var(--z-modal-backdrop); background:rgba(15,23,42,.45);
+  font-size:14px; color:var(--text);
   display:flex; flex-direction:column; justify-content:flex-end; padding:0 8px calc(8px + env(safe-area-inset-bottom));
   animation:m-fade var(--m-dur) var(--m-ease-out) both;
 }
@@ -558,9 +559,9 @@ html[data-mobile] .toast-stack{ top:max(12px,env(safe-area-inset-top)); }
 @keyframes m-sheet-out{ from{opacity:1;transform:none} to{opacity:0;transform:translateY(56px) scale(.98)} }
 @keyframes m-toast{ from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:none} }
 
-:is(.m-cards,.m-list,.m-loading-list) > *{ animation:m-rise var(--m-dur) var(--m-ease-out) var(--m-rise-delay,0ms) both; }
+:is(.m-cards,.m-list,.m-loading-list) > *{ animation:m-rise var(--m-dur) var(--m-ease-out) var(--m-rise-delay,0ms) backwards; }
 :is(.m-cards,.m-list,.m-loading-list) > .route-highlight{
-  animation:m-rise var(--m-dur) var(--m-ease-out) var(--m-rise-delay,0ms) both, route-highlight-fade .85s ease-out both;
+  animation:m-rise var(--m-dur) var(--m-ease-out) var(--m-rise-delay,0ms) backwards, route-highlight-fade .85s ease-out both;
 }
 :is(.m-cards,.m-list,.m-loading-list) > :nth-child(1){ --m-rise-delay:0ms; }
 :is(.m-cards,.m-list,.m-loading-list) > :nth-child(2){ --m-rise-delay:30ms; }
