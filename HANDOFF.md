@@ -1,26 +1,15 @@
-# HANDOFF – Redesign PWA Liquid Glass
+# HANDOFF
 
-Nhánh: `pwa-liquid-glass` (tách từ `main` @ 42c34ca). Đã commit c7012ed: AGENTS.md mới + CLAUDE.md (`@AGENTS.md`).
+Trạng thái: không có việc dở. Bản mới nhất v2.2.0 đã push lên `origin/main` (afb39b7).
 
-## Việc trong `giao` (dự án video-task-project)
-- 001 Sửa cấu hình PWA: màu splash `#EDF1F7`, bỏ first-paint theo prefers-color-scheme, SW v3, `vite:preloadError` → reload 1 lần.
-- 002 Token Liquid Glass + easing trong `src/components/mobile/mobile.css`.
-- 003 (sau 002) Dock + segment có viên kính trượt (CSS var `--m-tab-index`), kéo sheet xuống để đóng.
-- 004 (sau 003) Chuyển trang, list so le, phản hồi chạm, skeleton shimmer.
-Kiểm tra mỗi việc: symlink node_modules vào worktree rồi `npm run build && npm run lint`.
+## v2.2.0 – PWA Liquid Glass (xong 2026-11-20)
+- Token kính + easing lò xo trong `src/components/mobile/mobile.css`, có fallback giảm trong suốt/chuyển động.
+- Dock và nút chọn chế độ lịch có viên kính trượt (`--m-tab-index`, `--m-seg-index`).
+- `BottomSheet.tsx`: kéo xuống để đóng, render qua `createPortal(document.body)`.
+- PWA: màu splash/theme-color `#EDF1F7`, service worker v3, tự reload 1 lần khi lỗi tải chunk sau deploy (`src/pwa/pwa.ts`).
+- Animation `.m-page` và `m-rise` dùng fill `backwards` để không giữ transform (transform giữ lại làm sheet/fixed bị kẹt dưới dock).
 
-## Quyết định
-- Chỉ làm mobile/PWA (< 768px). Modal giữ nền đặc (v2.0.0). Không đổi status bar iOS (`black-translucent` làm chữ trắng trên nền sáng).
-- Chưa có mẫu "Kavor" từ người dùng – đặc tả theo phong cách Liquid Glass iOS.
-
-## Trạng thái (2026-11-20)
-- 001–004: Claude đã duyệt diff, `giao xong` – đã merge vào `pwa-liquid-glass`. Build/lint đạt.
-- Claude tự sửa thêm (CHƯA commit):
-  - `BottomSheet.tsx`: vuốt nhanh phải đi đủ 16px mới đóng; render qua `createPortal(document.body)` vì trong trang bị dock đè (transform `.m-page` + sticky toolbar z-index 6).
-  - `mobile.css`: `.m-sheet-backdrop` thêm font-size/color (ra ngoài `.m-shell`); `.m-page` và `m-rise` đổi fill `both` → `backwards` để không giữ transform sau animation.
-- Đã soát preview 375px sáng/tối: dock trượt, segment, sheet kéo đóng/nảy về, theme-color. Console sạch.
-- Lỗi cũ chưa sửa (ngoài phạm vi): `.m-toolbar` margin -16px tràn `.calendar-page` (overflow hidden) 16px – scrollIntoView có thể kéo lệch nội dung.
-
-## Tiếp theo
-1. Thử trên iPhone thật (kéo sheet, kính mờ Safari).
-2. Bump v2.2.0 (package.json, AppLayout footer, Account `APP_VERSION`), commit khi người dùng bảo.
+## Còn để ý
+- Chưa thử trên iPhone thật: kéo sheet, kính mờ Safari.
+- Lỗi cũ chưa sửa: `.m-toolbar` margin -16px tràn `.calendar-page` (overflow hidden) 16px, scrollIntoView có thể kéo lệch nội dung.
+- Redesign PWA v3 (UI mobile riêng) đã tạm dừng theo quyết định người dùng.
