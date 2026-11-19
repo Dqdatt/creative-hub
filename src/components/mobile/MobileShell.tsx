@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { UIEvent } from 'react';
+import type { CSSProperties, UIEvent } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell,
@@ -161,6 +161,10 @@ export function MobileShell({ notifications }: MobileShellProps) {
     { to: '/calendar', label: 'Lịch quay', visible: access('/calendar') },
   ].filter((tab) => tab.visible);
 
+  const isTabActive = (tab: (typeof tabs)[number]) => (tab.group ? tab.group.has(pathname) : pathname === tab.to);
+  const activeTabIndex = tabs.findIndex(isTabActive);
+  const activeSegmentIndex = calendarTabs.findIndex((tab) => tab.to === pathname);
+
   const outletContext: AppOutletContext = {
     notifications,
     openInstall: () => setInstallOpen(true),
@@ -210,7 +214,13 @@ export function MobileShell({ notifications }: MobileShellProps) {
         {MONTH_ROUTES.has(pathname) ? (
           <div className="m-subbar">
             {CALENDAR_ROUTES.has(pathname) && calendarTabs.length > 1 ? (
-              <nav className="m-segment" aria-label="Chế độ lịch">
+              <nav
+                className="m-segment"
+                aria-label="Chế độ lịch"
+                style={{ '--m-seg-count': calendarTabs.length, '--m-seg-index': Math.max(activeSegmentIndex, 0) } as CSSProperties}
+                data-has-active={activeSegmentIndex >= 0 ? '' : undefined}
+              >
+                <span className="m-segment-indicator" aria-hidden="true" />
                 {calendarTabs.map((tab) => (
                   <NavLink key={tab.to} to={tab.to} className={({ isActive }) => `m-segment-item ${isActive ? 'is-active' : ''}`}>
                     {tab.label}
@@ -241,10 +251,16 @@ export function MobileShell({ notifications }: MobileShellProps) {
         </main>
 
         <div className="m-dock">
-          <nav className="m-nav" aria-label="Điều hướng chính">
+          <nav
+            className="m-nav"
+            aria-label="Điều hướng chính"
+            style={{ '--m-tab-count': tabs.length, '--m-tab-index': Math.max(activeTabIndex, 0) } as CSSProperties}
+            data-has-active={activeTabIndex >= 0 ? '' : undefined}
+          >
+            <span className="m-nav-indicator" aria-hidden="true" />
             {tabs.map((tab) => {
               const Icon = tab.icon;
-              const active = tab.group ? tab.group.has(pathname) : pathname === tab.to;
+              const active = isTabActive(tab);
               return (
                 <Link
                   key={tab.label}

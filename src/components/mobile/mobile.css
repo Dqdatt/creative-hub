@@ -121,17 +121,30 @@ html[data-mobile] .native-create-screen .native-modal-close{
 
 .m-subbar{ flex:none; display:flex; flex-direction:column; gap:8px; padding:0 16px 9px; }
 .m-segment{
-  display:flex; gap:4px; padding:4px; border-radius:14px;
+  position:relative; display:flex; gap:0; padding:4px; border-radius:14px;
   background:rgba(120,130,160,.16);
 }
 .m-segment-item{
-  flex:1; height:34px; border-radius:10px; border:0; background:transparent; color:var(--text-2);
+  position:relative; z-index:1;
+  flex:1; min-width:0; height:34px; border-radius:10px; border:0; background:transparent; color:var(--text-2);
   display:inline-flex; align-items:center; justify-content:center; gap:6px;
   font-size:13px; font-weight:500; text-decoration:none; cursor:pointer;
+  transition:color var(--m-dur) var(--m-ease-out);
 }
 .m-segment-item svg{ width:15px; height:15px; }
-.m-segment-item.is-active{ background:var(--m-glass-strong); color:var(--text); font-weight:600; box-shadow:0 1px 3px rgba(15,16,24,.12); }
-.m-segment--inline{ margin-top:10px; }
+.m-segment-item.is-active{ color:var(--text); font-weight:600; }
+.m-segment-indicator{
+  position:absolute; top:4px; bottom:4px; left:4px;
+  width:calc((100% - 8px) / var(--m-seg-count, 1));
+  border-radius:10px;
+  background:var(--m-glass-strong); box-shadow:0 1px 3px rgba(15,16,24,.12);
+  transform:translateX(calc(var(--m-seg-index, 0) * 100%));
+  transition:transform var(--m-dur-slow) var(--m-ease-spring), opacity var(--m-dur) var(--m-ease-out);
+  pointer-events:none;
+}
+.m-segment:not([data-has-active]) .m-segment-indicator{ opacity:0; }
+.m-segment--inline{ margin-top:10px; gap:4px; }
+.m-segment--inline .m-segment-item.is-active{ background:var(--m-glass-strong); box-shadow:0 1px 3px rgba(15,16,24,.12); }
 
 .m-month{
   align-self:center; display:inline-flex; align-items:center; gap:2px; padding:2px; border-radius:13px;
@@ -155,26 +168,34 @@ html[data-mobile] .native-create-screen .native-modal-close{
   display:flex; align-items:center; gap:9px; pointer-events:none;
 }
 .m-nav{
-  pointer-events:auto; flex:1; height:68px; border-radius:24px; padding:5px;
+  position:relative; pointer-events:auto; flex:1; height:68px; border-radius:24px; padding:5px;
   display:flex; align-items:center;
   --m-glass-shadow:var(--m-shadow-float);
 }
+.m-nav-indicator{
+  position:absolute; top:5px; bottom:5px; left:5px;
+  width:calc((100% - 10px) / var(--m-tab-count, 1));
+  border-radius:19px;
+  background:color-mix(in srgb,var(--m-accent) 14%,var(--m-glass-strong));
+  box-shadow:var(--m-glass-inner);
+  transform:translateX(calc(var(--m-tab-index, 0) * 100%));
+  transition:transform var(--m-dur-slow) var(--m-ease-spring), opacity var(--m-dur) var(--m-ease-out);
+  pointer-events:none;
+}
+.m-nav:not([data-has-active]) .m-nav-indicator{ opacity:0; }
 .m-nav-item{
-  position:relative; min-width:42px; height:56px; flex:1; border-radius:19px;
-  display:flex; align-items:center; justify-content:center; gap:0;
+  position:relative; z-index:1; min-width:0; height:56px; flex:1; border-radius:19px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
   color:var(--text-2); text-decoration:none;
-  transition:background-color var(--m-dur) var(--m-ease-out),color var(--m-dur) var(--m-ease-out),
-    box-shadow var(--m-dur) var(--m-ease-out),transform var(--m-dur-fast) var(--m-ease-spring),flex var(--m-dur) var(--m-ease-out);
+  transition:color var(--m-dur) var(--m-ease-out), transform var(--m-dur-fast) var(--m-ease-spring);
 }
 .m-nav-item svg{ width:20px; height:20px; flex:none; }
 .m-nav-label{
-  max-width:0;overflow:hidden;opacity:0;margin-left:0;font-size:10px;font-weight:680;white-space:nowrap;
-  transition:max-width var(--m-dur) var(--m-ease-out),opacity var(--m-dur-fast) var(--m-ease-out),margin var(--m-dur) var(--m-ease-out);
+  font-size:10px; line-height:1.2; font-weight:600; white-space:nowrap;
 }
-.m-nav-item.is-active{ flex:1.55;background:color-mix(in srgb,var(--m-accent) 14%,var(--m-glass-strong));color:var(--m-accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.28); }
-.m-nav-item.is-active .m-nav-label{ max-width:76px;opacity:1;margin-left:6px; }
+.m-nav-item.is-active{ color:var(--m-accent); }
 .m-nav-badge{
-  position:absolute; top:4px; right:3px; min-width:17px; height:17px; padding:0 4px; border-radius:999px;
+  position:absolute; z-index:2; top:4px; left:calc(50% + 2px); min-width:17px; height:17px; padding:0 4px; border-radius:999px;
   background:#E5484D; color:#fff; font-size:10px; font-weight:700; display:grid; place-items:center;
   border:2px solid var(--m-glass-strong); box-sizing:content-box;
 }
@@ -392,13 +413,18 @@ div.m-row{ cursor:default; }
   max-height:88dvh; display:flex; flex-direction:column; border-radius:22px;
   --m-glass-bg:var(--m-glass-strong);
   --m-glass-shadow:0 20px 50px rgba(15,23,42,.24);
-  animation:m-sheet-in var(--m-dur) var(--m-ease-out) both;
+  animation:m-sheet-in var(--m-dur) var(--m-ease-spring) both;
+  transition:transform var(--m-dur) var(--m-ease-spring);
 }
+.m-sheet.is-settled,.m-sheet[data-dragged]{ animation:none; }
+.m-sheet.is-dragging{ transition:none; animation:none; user-select:none; }
 .m-sheet-backdrop.is-closing{ animation:m-fade-out var(--m-dur-fast) var(--m-ease-out) forwards; }
 .m-sheet-backdrop.is-closing .m-sheet{ animation:m-sheet-out var(--m-dur-fast) var(--m-ease-out) forwards; }
+.m-sheet-backdrop.is-closing .m-sheet[data-dragged]{ animation:none; transform:translateY(110%)!important; transition:transform var(--m-dur) var(--m-ease-out); }
 .m-sheet-grabber{ width:36px; height:5px; border-radius:999px; background:rgba(15,23,42,.15); margin:8px auto 0; flex:none; }
 html.dark .m-sheet-grabber{ background:rgba(255,255,255,.2); }
 .m-sheet-head{ display:flex; align-items:center; gap:8px; padding:8px 10px 4px 18px; flex:none; }
+.m-sheet-grabber,.m-sheet-head{ touch-action:none; }
 .m-sheet-head h2{ flex:1; margin:0; font-size:16px; font-weight:600; }
 .m-sheet-close{ width:38px; height:38px; border-radius:999px; border:0; background:var(--m-fill); color:var(--text-2); display:grid; place-items:center; cursor:pointer; }
 .m-sheet-close svg{ width:19px; height:19px; }
