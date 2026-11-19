@@ -23,7 +23,6 @@ interface DragState {
 const EXIT_MS = 220;
 const DRAG_CLOSE_DISTANCE = 96;
 const DRAG_CLOSE_VELOCITY = 0.6;
-const DRAG_VELOCITY_MIN_DISTANCE = 12;
 const DRAG_IDLE_TIMEOUT_MS = 100;
 
 // Sheet trượt từ dưới lên kiểu kính mờ. Giữ lại một nhịp khi đóng để chạy hiệu ứng ẩn.
@@ -73,6 +72,7 @@ export function BottomSheet({ open, title, onClose, children, footer }: BottomSh
   useDocumentScrollLock(mounted);
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    if (dragRef.current) return;
     if (closing || !open) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     const target = event.target instanceof Element ? event.target : null;
@@ -138,7 +138,7 @@ export function BottomSheet({ open, title, onClose, children, footer }: BottomSh
     }
 
     sheet.classList.remove('is-dragging');
-    if (dy > DRAG_CLOSE_DISTANCE || (dy > DRAG_VELOCITY_MIN_DISTANCE && velocity > DRAG_CLOSE_VELOCITY)) {
+    if (dy > DRAG_CLOSE_DISTANCE || velocity > DRAG_CLOSE_VELOCITY) {
       sheet.setAttribute('data-dragged', '');
       onClose();
       return;
