@@ -5,7 +5,7 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="application-name" content="CreativeHub" />
-    <meta id="app-theme-color" name="theme-color" content="#F3F5F8" />
+    <meta id="app-theme-color" name="theme-color" content="#EDF1F7" />
     <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -19,11 +19,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <script>
       try {
-        if (localStorage.getItem('vo-theme') === 'dark') document.documentElement.classList.add('dark');
+        if (localStorage.getItem('vo-theme') === 'dark') {
+          document.documentElement.classList.add('dark');
+          var tc = document.getElementById('app-theme-color');
+          if (tc) tc.setAttribute('content', '#0F141D');
+        }
       } catch (_) {}
     </script>
     <style>
-      .app-first-paint{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden;background:#F3F5F8;color:#172033;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      .app-first-paint{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden;background:#EDF1F7;color:#172033;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
       .app-first-paint::before{content:"";position:absolute;inset:-20%;background:radial-gradient(circle at 50% 34%,rgba(37,99,235,.18),transparent 38%);pointer-events:none}
       .app-first-paint__brand{position:relative;display:grid;justify-items:center;gap:0}
       .app-first-paint__mark{width:88px;height:88px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.82);border-radius:26px;background:rgba(255,255,255,.58);box-shadow:inset 0 1px 0 rgba(255,255,255,.92),0 18px 50px rgba(37,99,235,.16);backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);animation:first-mark .55s cubic-bezier(.2,.8,.2,1) both}
@@ -40,7 +44,6 @@
       html.dark .app-first-paint__team{color:#A8B2C2}
       html.dark .app-first-paint__track{background:rgba(116,129,152,.25)}
       html.dark .app-first-paint__bar{background:#4C82F7}
-      @media (prefers-color-scheme:dark){.app-first-paint{background:#0F141D;color:#F2F5F9}.app-first-paint::before{background:radial-gradient(circle at 50% 34%,rgba(76,130,247,.22),transparent 38%)}.app-first-paint__mark{border-color:rgba(255,255,255,.1);background:rgba(25,33,46,.64);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 54px rgba(0,0,0,.34)}.app-first-paint__team{color:#A8B2C2}.app-first-paint__track{background:rgba(116,129,152,.25)}.app-first-paint__bar{background:#4C82F7}}
       @media (prefers-reduced-motion:reduce){.app-first-paint__bar{width:100%;animation:none;opacity:.7}}
     </style>
   </head>
