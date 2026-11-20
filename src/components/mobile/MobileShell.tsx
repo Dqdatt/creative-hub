@@ -170,6 +170,22 @@ export function MobileShell({ notifications }: MobileShellProps) {
     openInstall: () => setInstallOpen(true),
   };
 
+  const monthPicker = (
+    <div className="m-month">
+      <button type="button" aria-label="Tháng trước" onClick={goToPreviousMonth}><ChevronLeft /></button>
+      <label className="m-month-label">
+        <span>{formatVietnameseMonth(selectedMonth)}</span>
+        <input
+          type="month"
+          value={selectedMonth}
+          aria-label="Chọn tháng"
+          onChange={(event) => { if (event.target.value) setSelectedMonth(event.target.value); }}
+        />
+      </label>
+      <button type="button" aria-label="Tháng sau" onClick={goToNextMonth}><ChevronRight /></button>
+    </div>
+  );
+
   return (
     <MobileChromeContext.Provider value={{ toolbarHidden }}>
       <div className="m-shell">
@@ -190,7 +206,13 @@ export function MobileShell({ notifications }: MobileShellProps) {
               <ChevronLeft />
             </button>
           )}
-          {!isPrimaryRoute ? <h1 className="m-title">{title}</h1> : <span className="m-topbar-space" aria-hidden="true" />}
+          {!isPrimaryRoute ? (
+            <h1 className="m-title">{title}</h1>
+          ) : MONTH_ROUTES.has(pathname) ? (
+            monthPicker
+          ) : (
+            <span className="m-topbar-space" aria-hidden="true" />
+          )}
           <div className="m-topbar-actions">
             <button
               type="button"
@@ -211,36 +233,21 @@ export function MobileShell({ notifications }: MobileShellProps) {
           </div>
         </header>
 
-        {MONTH_ROUTES.has(pathname) ? (
+        {CALENDAR_ROUTES.has(pathname) && calendarTabs.length > 1 ? (
           <div className="m-subbar">
-            {CALENDAR_ROUTES.has(pathname) && calendarTabs.length > 1 ? (
-              <nav
-                className="m-segment"
-                aria-label="Chế độ lịch"
-                style={{ '--m-seg-count': calendarTabs.length, '--m-seg-index': Math.max(activeSegmentIndex, 0) } as CSSProperties}
-                data-has-active={activeSegmentIndex >= 0 ? '' : undefined}
-              >
-                <span className="m-segment-indicator" aria-hidden="true" />
-                {calendarTabs.map((tab) => (
-                  <NavLink key={tab.to} to={tab.to} className={({ isActive }) => `m-segment-item ${isActive ? 'is-active' : ''}`}>
-                    {tab.label}
-                  </NavLink>
-                ))}
-              </nav>
-            ) : null}
-            <div className="m-month">
-              <button type="button" aria-label="Tháng trước" onClick={goToPreviousMonth}><ChevronLeft /></button>
-              <label className="m-month-label">
-                <span>{formatVietnameseMonth(selectedMonth)}</span>
-                <input
-                  type="month"
-                  value={selectedMonth}
-                  aria-label="Chọn tháng"
-                  onChange={(event) => { if (event.target.value) setSelectedMonth(event.target.value); }}
-                />
-              </label>
-              <button type="button" aria-label="Tháng sau" onClick={goToNextMonth}><ChevronRight /></button>
-            </div>
+            <nav
+              className="m-segment"
+              aria-label="Chế độ lịch"
+              style={{ '--m-seg-count': calendarTabs.length, '--m-seg-index': Math.max(activeSegmentIndex, 0) } as CSSProperties}
+              data-has-active={activeSegmentIndex >= 0 ? '' : undefined}
+            >
+              <span className="m-segment-indicator" aria-hidden="true" />
+              {calendarTabs.map((tab) => (
+                <NavLink key={tab.to} to={tab.to} className={({ isActive }) => `m-segment-item ${isActive ? 'is-active' : ''}`}>
+                  {tab.label}
+                </NavLink>
+              ))}
+            </nav>
           </div>
         ) : null}
 

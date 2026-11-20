@@ -61,12 +61,6 @@ html.dark[data-mobile]{
     --m-ease-spring:linear(0,.009,.035 2.1%,.141,.281 6.7%,.723 12.9%,.938 16.7%,1.017 20.4%,1.051 24.5%,1.042 28.8%,1.003 39.3%,.995 46.4%,1);
   }
 }
-html.dark[data-mobile] .m-shell{
-  background:
-    radial-gradient(circle at 82% -2%,color-mix(in srgb,var(--m-accent) 17%,transparent),transparent 34%),
-    linear-gradient(180deg,color-mix(in srgb,var(--m-bg) 88%,transparent),var(--m-bg) 34%),
-    var(--m-bg);
-}
 
 html[data-mobile],html[data-mobile] body{ background:var(--m-bg); }
 html[data-mobile] body{ letter-spacing:-.005em; }
@@ -74,11 +68,7 @@ html[data-mobile] body{ letter-spacing:-.005em; }
 /* ---------- shell ---------- */
 .m-shell{
   position:fixed; inset:0; display:flex; flex-direction:column; overflow:hidden;
-  background:
-    radial-gradient(circle at 82% -2%,color-mix(in srgb,var(--m-accent) 22%,transparent),transparent 34%),
-    radial-gradient(circle at 12% 4%,rgba(255,255,255,.72),transparent 24%),
-    linear-gradient(180deg,color-mix(in srgb,var(--m-bg) 86%,transparent),var(--m-bg) 34%),
-    var(--m-bg);
+  background:var(--m-bg);
   color:var(--text);
   font-size:14px;
 }
@@ -88,6 +78,14 @@ html[data-mobile] body{ letter-spacing:-.005em; }
   background:transparent;
   animation:m-fade var(--m-dur) var(--m-ease-out) both;
 }
+.m-topbar.is-primary{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  gap:6px;
+}
+.m-topbar.is-primary .m-avatar-btn{ justify-self:start; }
+.m-topbar.is-primary .m-month{ justify-self:center; }
+.m-topbar.is-primary .m-topbar-actions{ justify-self:end; }
 .m-topbar-space{ flex:1; }
 .m-topbar-actions{ display:flex;align-items:center;gap:7px; }
 .m-glass-control,.m-nav,.m-plus,.m-sheet,
@@ -147,12 +145,12 @@ html[data-mobile] .native-create-screen .native-modal-close{
 .m-segment--inline .m-segment-item.is-active{ background:var(--m-glass-strong); box-shadow:0 1px 3px rgba(15,16,24,.12); }
 
 .m-month{
-  align-self:center; display:inline-flex; align-items:center; gap:2px; padding:2px; border-radius:13px;
+  display:inline-flex; align-items:center; gap:2px; padding:2px; border-radius:13px;
   background:var(--m-surface); border:1px solid var(--m-hairline); box-shadow:0 4px 16px rgba(58,75,105,.045);
 }
-.m-month button{ width:32px; height:32px; border-radius:999px; border:0; background:transparent; color:var(--text-2); display:grid; place-items:center; cursor:pointer; }
-.m-month button svg{ width:18px; height:18px; }
-.m-month-label{ position:relative; padding:0 6px; font-size:13.5px; font-weight:600; white-space:nowrap; }
+.m-month button{ width:28px; height:28px; border-radius:999px; border:0; background:transparent; color:var(--text-2); display:grid; place-items:center; cursor:pointer; }
+.m-month button svg{ width:16px; height:16px; }
+.m-month-label{ position:relative; padding:0 3px; font-size:13px; font-weight:600; white-space:nowrap; }
 .m-month-label input{ position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; }
 
 .m-content{
@@ -725,9 +723,7 @@ html[data-mobile] .modal-overlay.native-create-overlay,
 html[data-mobile] .shoot-modal-overlay.native-create-overlay{
   align-items:stretch!important;
   padding:0!important;
-  background:
-    radial-gradient(circle at 88% 2%,color-mix(in srgb,var(--m-accent) 16%,transparent),transparent 34%),
-    var(--m-bg);
+  background:var(--m-bg);
   backdrop-filter:none;
   -webkit-backdrop-filter:none;
 }
