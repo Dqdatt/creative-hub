@@ -2754,6 +2754,9 @@ footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
 .calendar-page[data-view="workload"]{ gap:6px; --cal-wd-h:22px; }
 /* Màn hình thấp quá thì cho cuộn cả lưới thay vì cắt mất hàng cuối. */
 .calendar-page[data-view="workload"] .calendar-grid-shell{ overflow-y:auto; }
+.calendar-page[data-view="workload"] .calendar-grid-shell:has(.wl-add button + button){
+  grid-template-columns:repeat(7,minmax(136px,1fr));overflow-x:auto;
+}
 
 .wl-toolbar{
   flex:0 0 auto;
@@ -2807,14 +2810,32 @@ footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
 .wl-ava--none{ background:transparent;border:1px dashed var(--border-strong);color:var(--muted); }
 
 .wl-cell{ padding:3px 3px 2px; }
-/* Vùng trống của ô ngày là chỗ bấm để thêm lịch quay. */
-.wl-cell--addable{ cursor:pointer; }
-.wl-cell--addable:hover{ background:color-mix(in srgb,var(--accent) 6%,transparent); }
 /* Ô hôm nay viền đỏ: dùng inset shadow để không đẩy lệch lưới lịch. */
 .wl-cell--today{ box-shadow:inset 0 0 0 1.5px var(--danger); }
 .wl-cell--today .cal-daynum{ color:var(--danger); }
-.wl-day-head{ margin-bottom:2px; }
-.wl-day-head .cal-daynum{ padding:0 2px;font-size:10.5px; }
+.wl-day-head{ display:flex;align-items:center;gap:2px;height:13px;margin-bottom:0; }
+.wl-day-head .cal-daynum{ align-self:center;padding:0 2px;font-size:10.5px;cursor:inherit; }
+.wl-add{
+  margin-left:auto;display:flex;gap:3px;
+  opacity:0;pointer-events:none;transition:opacity .12s;
+}
+.wl-cell:hover .wl-add,
+.wl-cell:focus-within .wl-add{ opacity:1;pointer-events:auto; }
+.wl-add button{
+  display:inline-flex;align-items:center;gap:2px;
+  height:13px;padding:0 6px;border:1px solid var(--border);border-radius:5px;
+  background:var(--surface);color:var(--text-2);cursor:pointer;
+  font-family:inherit;font-size:10.5px;font-weight:600;line-height:1;white-space:nowrap;
+}
+.wl-add button svg{ width:11px;height:11px; }
+.wl-add button:hover{ color:var(--accent);border-color:var(--accent); }
+.wl-add button:focus-visible{ outline:1px solid var(--accent);outline-offset:-1px; }
+@media (hover:none){
+  .wl-add{ opacity:1;pointer-events:auto; }
+}
+@media (prefers-reduced-motion:reduce){
+  .wl-add{ transition:none; }
+}
 .wl-list{ gap:2px;padding-right:1px; }
 
 .wl-chip{
