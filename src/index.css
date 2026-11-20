@@ -2112,6 +2112,12 @@ html.dark .task-date-field::-webkit-calendar-picker-indicator{
   background:var(--chip-2);color:var(--accent);transition:transform .2s ease,background .2s ease,color .2s ease; }
 .link-btn:hover{ background:var(--grad);color:#fff;transform:translateY(-2px); }
 .link-btn svg{ width:16px;height:16px; }
+.link-actions{ display:inline-flex; gap:4px; align-items:center; justify-content:center; }
+.link-btn--copy{ width:28px; height:28px; }
+.link-btn--copy svg{ width:14px; height:14px; }
+@media (prefers-reduced-motion: reduce){
+  .link-btn--copy:hover,.cpm-link-open:hover{ transform:none; }
+}
 
 /* ---------- profile/settings ---------- */
 .profile-page{ max-width:1180px; }

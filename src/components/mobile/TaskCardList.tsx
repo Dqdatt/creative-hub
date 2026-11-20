@@ -4,6 +4,7 @@ import { Avatar } from '../common/Avatar';
 import { StatusBadge } from '../tasks/TaskBadges';
 import { getTaskDeadlineState, getTaskLinkDeadline } from '../../utils/taskDeadline';
 import { isSafeHttpUrl } from '../../utils/url';
+import { CopyLinkButton } from '../common/CopyLinkButton';
 
 const WEEKDAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
@@ -72,15 +73,22 @@ export function TaskCardList({ tasks, editors, monthValue, canOpen, onOpen, high
               {task.priority === 'Gấp' ? <span className="m-urgent"><Zap aria-hidden="true" />Gấp</span> : null}
               <span className="m-flex" />
               {hasLink ? (
-                <a
-                  href={task.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="m-link-btn"
-                  aria-label={`Mở link thành phẩm của ${task.name}`}
-                >
-                  <Link2 aria-hidden="true" />
-                </a>
+                <>
+                  <a
+                    href={task.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="m-link-btn"
+                    aria-label={`Mở link thành phẩm của ${task.name}`}
+                  >
+                    <Link2 aria-hidden="true" />
+                  </a>
+                  <CopyLinkButton
+                    link={task.link}
+                    className="m-link-btn"
+                    label={`Copy link thành phẩm của ${task.name}`}
+                  />
+                </>
               ) : null}
             </div>
             <h3 className="m-task-name">{task.name}</h3>
