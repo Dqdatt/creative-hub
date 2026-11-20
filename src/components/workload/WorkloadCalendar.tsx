@@ -198,34 +198,6 @@ export function WorkloadCalendar({
             >
               <div className="cal-day-head wl-day-head">
                 <span className="cal-daynum">{cell.label}</span>
-                {addTask || addShoot ? (
-                  <div className="wl-add">
-                    {addTask ? (
-                      <button
-                        type="button"
-                        aria-label={`Thêm task ngày ${dateLabel}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          addTask(iso);
-                        }}
-                      >
-                        <Plus size={11} aria-hidden="true" /> Task
-                      </button>
-                    ) : null}
-                    {addShoot ? (
-                      <button
-                        type="button"
-                        aria-label={`Thêm lịch quay ngày ${dateLabel}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          addShoot(iso);
-                        }}
-                      >
-                        <Plus size={11} aria-hidden="true" /> Quay
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
               </div>
 
               <div className="cal-event-list wl-list">
@@ -290,6 +262,37 @@ export function WorkloadCalendar({
                   );
                 })}
               </div>
+
+              {addTask || addShoot ? (
+                <div className="wl-add">
+                  {addTask ? (
+                    <button
+                      type="button"
+                      className="btn btn-sm wl-add-btn"
+                      aria-label={`Thêm task ngày ${dateLabel}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        addTask(iso);
+                      }}
+                    >
+                      <Plus aria-hidden="true" /> Task
+                    </button>
+                  ) : null}
+                  {addShoot ? (
+                    <button
+                      type="button"
+                      className="btn-ghost wl-add-btn"
+                      aria-label={`Thêm lịch quay ngày ${dateLabel}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        addShoot(iso);
+                      }}
+                    >
+                      <Plus aria-hidden="true" /> Quay
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           );
         })}

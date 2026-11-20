@@ -2760,9 +2760,6 @@ footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
 .calendar-page[data-view="workload"]{ gap:6px; --cal-wd-h:22px; }
 /* Màn hình thấp quá thì cho cuộn cả lưới thay vì cắt mất hàng cuối. */
 .calendar-page[data-view="workload"] .calendar-grid-shell{ overflow-y:auto; }
-.calendar-page[data-view="workload"] .calendar-grid-shell:has(.wl-add button + button){
-  grid-template-columns:repeat(7,minmax(136px,1fr));overflow-x:auto;
-}
 
 .wl-toolbar{
   flex:0 0 auto;
@@ -2822,26 +2819,36 @@ footer{ color:var(--text-2)!important;border-color:var(--border)!important; }
 .cal-cell.wl-cell.wl-cell--drop{ background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 0 0 0 1.5px var(--accent); }
 .wl-day-head{ display:flex;align-items:center;gap:2px;height:13px;margin-bottom:0; }
 .wl-day-head .cal-daynum{ align-self:center;padding:0 2px;font-size:10.5px;cursor:inherit; }
+/* Rê vào ô (chỗ không có chip): nội dung mờ, 2 nút thêm hiện giữa ô. Rê lên chip thì chip rõ lại để đọc/bấm.
+   Lúc ẩn trễ visibility .2s để kịp đưa chuột băng qua chip tới nút. */
+.wl-cell{ position:relative; }
 .wl-add{
-  margin-left:auto;display:flex;gap:3px;
-  opacity:0;pointer-events:none;transition:opacity .12s;
+  position:absolute;inset:0;z-index:3;
+  display:flex;flex-wrap:wrap;align-items:center;align-content:center;justify-content:center;gap:4px 6px;
+  background:color-mix(in srgb,var(--surface) 30%,transparent);
+  pointer-events:none;opacity:0;visibility:hidden;
+  transition:opacity .12s ease,visibility 0s linear .2s;
 }
-.wl-cell:hover .wl-add,
-.wl-cell:focus-within .wl-add{ opacity:1;pointer-events:auto; }
-.wl-add button{
-  display:inline-flex;align-items:center;gap:2px;
-  height:13px;padding:0 6px;border:1px solid var(--border);border-radius:5px;
-  background:var(--surface);color:var(--text-2);cursor:pointer;
-  font-family:inherit;font-size:10.5px;font-weight:600;line-height:1;white-space:nowrap;
-}
-.wl-add button svg{ width:11px;height:11px; }
-.wl-add button:hover{ color:var(--accent);border-color:var(--accent); }
-.wl-add button:focus-visible{ outline:1px solid var(--accent);outline-offset:-1px; }
+.wl-cell:hover:not(:has(.wl-chip:hover)) .wl-add{ opacity:1;visibility:visible;transition:opacity .12s ease; }
+.wl-list{ transition:filter .12s ease,opacity .12s ease; }
+.wl-cell:hover:not(:has(.wl-chip:hover)) .wl-list{ filter:blur(1.5px);opacity:.75; }
+.wl-add .wl-add-btn{ pointer-events:auto;height:24px;padding:0 10px;gap:4px;border-radius:8px;font-size:12px;white-space:nowrap; }
+.wl-add .wl-add-btn.btn-ghost{ background:var(--surface);color:var(--text); }
+.wl-add .wl-add-btn svg{ width:12px;height:12px; }
 @media (hover:none){
-  .wl-add{ opacity:1;pointer-events:auto; }
+  /* Không có chuột: để 2 nút nhỏ ở đáy ô, không che chip. */
+  .wl-add{ position:static;opacity:1;visibility:visible;background:none;justify-content:flex-end;padding-top:2px; }
+  .wl-add .wl-add-btn{ height:20px;padding:0 6px;font-size:10.5px; }
+}
+@media (prefers-reduced-transparency:reduce){
+  .wl-cell:hover:not(:has(.wl-chip:hover)) .wl-list{ filter:none;opacity:.35; }
+  .wl-add{ background:none; }
 }
 @media (prefers-reduced-motion:reduce){
-  .wl-add{ transition:none; }
+  .wl-add{ transition:visibility 0s linear .2s; }
+  .wl-cell:hover:not(:has(.wl-chip:hover)) .wl-add{ transition:none; }
+  .wl-list{ transition:none; }
+  .wl-add .wl-add-btn:hover{ transform:none; }
 }
 .wl-list{ gap:2px;padding-right:1px; }
 

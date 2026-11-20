@@ -47,7 +47,7 @@ export default function AppLayout() {
           className="app-footer"
           style={{ borderTop: "1px solid var(--border)" }}
         >
-          CreativeHub | Developed by Doan Quoc Dat | v2.3.0
+          CreativeHub | Developed by Doan Quoc Dat | v2.4.0
         </footer>
       </div>
       <div

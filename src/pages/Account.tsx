@@ -9,7 +9,7 @@ import { useAuth } from '../context/authContext';
 import { useTheme } from '../context/themeContext';
 import { usePwa } from '../hooks/usePwa';
 
-const APP_VERSION = 'v2.3.0';
+const APP_VERSION = 'v2.4.0';
 
 function Row({ icon: Icon, label, right, to, onClick, danger = false }: {
   icon: LucideIcon;

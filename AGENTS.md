@@ -27,7 +27,20 @@ App nội bộ quản lý video/task cho team marketing. Web desktop + PWA mobil
 - Modal dùng nền đặc (quyết định v2.0.0), không làm kính mờ cho modal.
 - Luôn tôn trọng `prefers-reduced-motion` và `prefers-reduced-transparency`.
 - Sửa xong: chạy `npm run build`, không để lỗi TypeScript.
-- Phiên bản hiển thị ở 3 chỗ: `package.json` "version", footer `src/components/layout/AppLayout.tsx`, `APP_VERSION` trong `src/pages/Account.tsx` – chỉ đổi khi được bảo.
+- Phiên bản hiển thị ở 3 chỗ: `package.json` "version", footer `src/components/layout/AppLayout.tsx`, `APP_VERSION` trong `src/pages/Account.tsx`. Nhân viên `giao` không đổi version; Claude nâng cả 3 chỗ khi commit (trừ commit chỉ đổi tài liệu).
+
+## Vùng nhạy cảm (phiên Claude tự làm, effort xhigh; `giao` dùng `--chi-claude`)
+- `supabase/*.sql`: RLS, RPC, trigger đồng bộ `content_plan` ↔ `video_tasks`, hàng đợi push.
+- Push: `supabase/functions/send-push`, `src/pwa/push.ts`; khoá VAPID/secret ở `.env.push.local` (không commit).
+- Quyền: `src/config/permissions.ts` (route chỉ admin như `/workload`), `src/context/AuthContext.tsx`.
+- KPI/hạn chót: `src/utils/taskDeadline.ts`, `src/services/dashboardService.ts`.
+
+## Lưu ý
+- Env (`.env.example`): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+- Không có test tự động: kiểm bằng `npm run build` + chạy app. Dev nối Supabase thật, phải đăng nhập mới xem được trang.
+- Menu "Task" = bảng `content_plan` (nguồn chính từ v2.0.0). `video_tasks` gắn Task do trigger DB đồng bộ; video task tạo tay là dữ liệu cũ.
+- Lưu Task/lịch quay luôn đi qua hook có sẵn (`useContentPlan().updateItem`, `useShoots().updateShoot`…), không gọi Supabase thẳng từ component.
+- `HANDOFF.md` được commit, cập nhật sau mỗi bước lớn.
 
 ## Hướng thiết kế
 - Dashboard SaaS nội bộ cao cấp: sạch, nghiêm túc, hiện đại.

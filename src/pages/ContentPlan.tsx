@@ -17,6 +17,8 @@ import { useToast } from '../components/common/toastContext';
 import { useMonth } from '../context/monthContext';
 import { isUuid } from '../utils/id';
 import { isSafeHttpUrl } from '../utils/url';
+import { getDefaultContentDate } from '../utils/contentPlanForm';
+import { toIsoDate } from '../hooks/useWorkload';
 import { CONTENT_PLAN_CATEGORIES } from '../data/contentPlan';
 import { ORDER_TEAMS } from '../data/tasks';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -34,10 +36,6 @@ function toFormData(item: ContentPlanItem): ContentPlanFormData {
     editor_id: item.editor_id,
     link: item.link,
   };
-}
-
-function getDefaultDate(monthValue: string) {
-  return `${monthValue}-01`;
 }
 
 function hasValidContentPlanLink(value: string) {
@@ -145,7 +143,7 @@ export default function ContentPlan() {
     setSelectedItem(null);
     setModalMode('create');
     setDraft({
-      air_date: getDefaultDate(selectedMonth),
+      air_date: getDefaultContentDate(selectedMonth, toIsoDate(new Date())),
       video_name: '',
       note: '',
       category: 'Video dài',
