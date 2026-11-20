@@ -42,20 +42,25 @@ export async function getPushStatus(): Promise<PushStatus> {
 
 export async function enablePush(): Promise<PushStatus> {
   if (!supabase || !supportsPush()) return 'unsupported';
-  const permission = await Notification.requestPermission();
-  if (permission === 'denied') return 'denied';
-  if (permission !== 'granted') return 'off';
-
-  const registration = await navigator.serviceWorker.getRegistration();
-  if (!registration) return 'unsupported';
-  const sub = await registration.pushManager.getSubscription() ?? await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: decodeBase64Url(VAPID_PUBLIC_KEY),
-  });
+  let sub: PushSubscription | null = null;
   try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'denied') return 'denied';
+    if (permission !== 'granted') return 'off';
+
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) return 'unsupported';
+    sub = await registration.pushManager.getSubscription() ?? await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: decodeBase64Url(VAPID_PUBLIC_KEY),
+    });
     await registerSubscription(sub);
   } catch {
-    await sub.unsubscribe().catch((error) => console.warn('Không thể hủy đăng ký thông báo đẩy.', error));
+    try {
+      await sub?.unsubscribe();
+    } catch (error) {
+      console.warn('Không thể hủy đăng ký thông báo đẩy.', error);
+    }
     throw new Error('Không thể bật thông báo đẩy.');
   }
   return 'on';
@@ -71,9 +76,15 @@ export async function disablePush(): Promise<void> {
   try {
     const { error } = await supabase.rpc('delete_web_push_subscription', { p_endpoint: sub.endpoint });
     if (error) throw error;
-  } finally {
-    await sub.unsubscribe();
+  } catch (error) {
+    try {
+      await sub.unsubscribe();
+    } catch (unsubscribeError) {
+      console.warn('Không thể hủy đăng ký thông báo đẩy.', unsubscribeError);
+    }
+    throw error;
   }
+  await sub.unsubscribe();
 }
 
 export async function syncPushSubscription(): Promise<void> {
