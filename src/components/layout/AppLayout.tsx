@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
+import { syncPushSubscription } from "../../pwa/push";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { useAuth } from "../../context/authContext";
@@ -14,6 +15,11 @@ export default function AppLayout() {
   const notifications = useNotifications(profile?.id);
   const isMobile = useIsMobile();
   useMobileDocumentFlag(isMobile);
+
+  // Gắn lại thiết bị đã bật push cho người đang đăng nhập (endpoint có thể đổi theo thời gian).
+  useEffect(() => {
+    if (profile?.id) void syncPushSubscription();
+  }, [profile?.id]);
 
   if (isMobile) {
     return (
@@ -41,7 +47,7 @@ export default function AppLayout() {
           className="app-footer"
           style={{ borderTop: "1px solid var(--border)" }}
         >
-          CreativeHub | Developed by Doan Quoc Dat | v2.2.0
+          CreativeHub | Developed by Doan Quoc Dat | v2.3.0
         </footer>
       </div>
       <div

@@ -10,6 +10,7 @@ import {
 } from '../config/permissions';
 import type { AppRole, Permission, UserPermissionOverride } from '../config/permissions';
 import { supabase, supabaseConfigError } from '../lib/supabase';
+import { disablePush } from '../pwa/push';
 import { AuthContext } from './authContext';
 import type { AuthContextValue, AuthProfile } from './authContext';
 
@@ -364,6 +365,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       applySession(null);
       return { error: null };
     }
+
+    // Gỡ push của thiết bị khi còn phiên, để người đăng nhập sau không nhận thông báo của người trước.
+    await disablePush().catch((pushError) => console.warn('Không thể tắt thông báo đẩy khi đăng xuất.', pushError));
 
     const { error } = await supabase.auth.signOut();
     if (error) {

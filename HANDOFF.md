@@ -1,38 +1,34 @@
 # HANDOFF
 
-## Mục tiêu phiên vừa rồi
-Thử quy trình `giao` (Antigravity/Codex làm, Claude duyệt) bằng đợt redesign PWA Liquid Glass, chốt thành v2.2.0.
+## Mục tiêu phiên này
+Sửa topbar PWA (vệt gradient dưới status bar, tốn 2 hàng) và làm Web Push cho PWA.
 
-## Đã xong
-- v2.2.0 đã push lên `origin/main` (afb39b7), HANDOFF dọn ở 27f8663. Không còn nhánh/worktree thừa.
-- Token kính + easing lò xo, fallback giảm trong suốt/chuyển động (`src/components/mobile/mobile.css`).
-- Dock và nút chọn chế độ lịch có viên kính trượt (`--m-tab-index`, `--m-seg-index`) trong `MobileShell.tsx`.
-- `BottomSheet.tsx`: kéo xuống để đóng (vuốt nhanh phải đi đủ 16px), render qua `createPortal(document.body)`.
-- PWA: màu splash/theme-color `#EDF1F7`, service worker v3, tự reload 1 lần khi lỗi tải chunk sau deploy (`src/pwa/pwa.ts`).
-- `.m-page`, `m-rise` dùng fill `backwards`: transform bị giữ lại từng làm sheet kẹt dưới dock.
-- AGENTS.md viết lại theo stack thật (React/Vite/TS), `CLAUDE.md` chỉ còn `@AGENTS.md`; dự án đã `giao init`.
+## Đã xong (v2.3.0, đã gộp `pwa-push` vào main và push)
+- giao 005 (đã merge): `.m-shell` nền phẳng `--m-bg`, chọn tháng gộp lên hàng avatar (grid `1fr auto 1fr`). Claude chỉnh nút tháng 34px.
+- giao 006 (đã merge): `public/sw.js` nhận `push` + `notificationclick`; `src/pwa/push.ts`; thẻ bật/tắt push ở trang Thông báo (mobile).
+- Claude: `AuthContext.signOut` gọi `disablePush()` trước khi đăng xuất; `AppLayout` gọi `syncPushSubscription()` khi có profile.
+- Server (Claude, ĐÃ DEPLOY lên project `qyybwwyoicsnvfbqqkaq`):
+  - `supabase/web_push_subscriptions.sql`: bảng `web_push_subscriptions` (RLS, không grant client), RPC `register_/delete_web_push_subscription`, trigger `notifications_enqueue_web_push` → pg_net → `send-push`. Đã chạy.
+  - `supabase/functions/send-push` (deploy `--no-verify-jwt`), secrets VAPID_* + PUSH_WEBHOOK_SECRET đã set; Vault có `project_url`, `push_webhook_secret`.
+  - Đã thử: sai secret 401, id rác 400, id không có 404; đường pg_net + Vault → function chạy (404 với id giả).
+- Khoá VAPID và secret nằm trong `.env.push.local` (gitignore). Khoá công khai đã hardcode trong `src/pwa/push.ts`.
 
-## Đang dở
-- Không có. Chưa thử v2.2 trên iPhone thật (kéo sheet, kính mờ Safari).
+## Chưa kiểm
+- Chưa gửi push thật lần nào: `npm:web-push` trên Edge Runtime mới chứng minh boot được, chưa chứng minh mã hoá/gửi được. Kiểm bằng iPhone sau khi deploy Vercel; lỗi thì xem log function `send-push`.
+- Thẻ push chưa thấy trên UI thật (dev không có SW; trình duyệt trong app chặn quyền thông báo).
+- `VAPID_SUBJECT` tạm là URL Supabase; có domain Vercel thì `supabase secrets set VAPID_SUBJECT=https://<domain>`.
 
 ## Quyết định đã chốt
-- Chỉ làm mobile/PWA (< 768px); desktop giữ nguyên. Modal dùng nền đặc, không kính.
-- Không đổi status bar iOS sang `black-translucent` (chữ trắng trên nền sáng).
-- Redesign PWA v3 (UI mobile riêng, prototype timeline tuần) đã DỪNG theo người dùng; prototype đã xoá khỏi repo.
-- Duyệt việc `giao`: tự đọc diff + chạy app thật trước `giao xong`; nhãn review tự động chỉ để tham khảo.
+- Chỉ làm mobile/PWA (< 768px); desktop giữ nguyên. Modal dùng nền đặc.
+- Không đổi status bar iOS sang `black-translucent`; vì vậy nền đỉnh app phải phẳng, trùng theme-color.
+- Push gửi cho mọi dòng mới trong `notifications`. Endpoint chỉ nhận host push thật (chặn SSRF).
+- Duyệt việc `giao`: tự đọc diff + chạy app thật trước `giao xong`.
 - Mỗi commit nâng version ở 3 chỗ (package.json, footer AppLayout, `APP_VERSION` Account) – trừ commit chỉ đổi tài liệu.
 
 ## Nợ Ponytail
-- Không có `shortcut:` mới.
-- Lỗi cũ: `.m-toolbar` margin -16px tràn `.calendar-page` (overflow hidden) 16px, scrollIntoView có thể kéo lệch nội dung.
+- Lỗi cũ: `.m-toolbar` margin -16px tràn `.calendar-page` (overflow hidden) 16px.
+- Chưa có: badge số trên icon app, tắt push theo loại thông báo, nút push trên desktop.
 
 ## Việc tiếp theo
-1. [haiku] Sau khi Vercel deploy: mở PWA trên iPhone, thử kéo sheet Bộ lọc, chuyển tab, chế độ tối; báo lỗi nếu có.
-2. [sonnet] Sửa tràn 16px của `.m-toolbar` trong `.calendar-page` (Workload/Lịch quay) – giao qua `giao` kèm `--kiem-tra "npm run build && npm run lint"`.
-
-## File cần đọc đầu tiên
-- `AGENTS.md`
-- `src/components/mobile/MobileShell.tsx`
-- `src/components/mobile/mobile.css`
-- `src/components/mobile/BottomSheet.tsx`
-- `src/pwa/pwa.ts`
+1. iPhone (sau khi Vercel deploy v2.3.0): mở PWA từ Màn hình chính → Thông báo → Bật thông báo đẩy → nhờ người khác giao task cho mình → kiểm push đến, bấm mở đúng trang.
+2. Sửa tràn 16px `.m-toolbar` trong `.calendar-page` (giao qua `giao`).

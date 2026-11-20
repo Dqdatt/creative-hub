@@ -1,0 +1,3 @@
+# Gọi từ trigger DB bằng header x-push-secret, không có JWT người dùng.
+# Deploy: supabase functions deploy send-push --no-verify-jwt
+verify_jwt = false
