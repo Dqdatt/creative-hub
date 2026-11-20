@@ -243,6 +243,60 @@ export default function Workload() {
     if (task) openTaskEdit(task);
   };
 
+  const canDragItem = (item: WorkloadItem) =>
+    (item.kind === 'plan' && canUpdateContent && item.status !== 'Đã xong') ||
+    (item.kind === 'shoot' && canUpdateShoot);
+
+  const handleMoveItem = async (item: WorkloadItem, date: string) => {
+    if (item.date === date || contentData.isSaving || shootsData.isSaving) return;
+    const label = `${date.slice(8, 10)}/${date.slice(5, 7)}`;
+
+    try {
+      let ok = false;
+      let successMessage = '';
+
+      if (item.kind === 'plan') {
+        const contentItem = contentData.items.find((entry) => entry.id === item.sourceId);
+        if (!contentItem || !canUpdateContent || contentItem.link.trim()) return;
+        ok = await contentData.updateItem(contentItem, {
+          ...toContentPlanFormData(contentItem),
+          air_date: date,
+        });
+        if (ok) {
+          void tasksData.refetch();
+          successMessage = `Đã chuyển task sang ngày ${label}.`;
+        }
+      } else if (item.kind === 'shoot') {
+        const shoot = shootsData.shoots.find((entry) => entry.id === item.sourceId);
+        if (!shoot || !canUpdateShoot) return;
+        const data: ShootFormData = {
+          date,
+          type: shoot.type,
+          crew: shoot.crew,
+          editorIds: shoot.editorIds,
+          place: shoot.place,
+          content: shoot.content,
+          time: shoot.time,
+          note: shoot.note,
+        };
+        ok = await shootsData.updateShoot(shoot.id, data);
+        if (ok) {
+          successMessage = `Đã chuyển lịch quay sang ngày ${label}.`;
+        }
+      } else {
+        return;
+      }
+
+      showToast(
+        ok
+          ? { type: 'success', message: successMessage }
+          : { type: 'error', message: 'Không đổi được ngày. Vui lòng thử lại.' }
+      );
+    } catch {
+      showToast({ type: 'error', message: 'Không đổi được ngày. Vui lòng thử lại.' });
+    }
+  };
+
   const handleShootSave = async (data: ShootFormData) => {
     if (selectedShoot && !canUpdateShoot) return;
     if (!selectedShoot && !canCreateShoot) return;
@@ -658,6 +712,8 @@ export default function Workload() {
           onAddTask={openContentCreate}
           canCreateShoot={canCreateShoot}
           onAddShoot={openShootCreate}
+          canDragItem={canDragItem}
+          onMoveItem={(item, date) => void handleMoveItem(item, date)}
         />
         )
       )}

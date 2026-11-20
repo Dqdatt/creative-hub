@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { EditorBadge, WorkloadDay, WorkloadItem } from '../../hooks/useWorkload';
 import { toIsoDate } from '../../hooks/useWorkload';
@@ -68,15 +69,19 @@ interface WorkloadCalendarProps {
   canCreateShoot?: boolean;
   onAddTask?: (date: string) => void;
   onAddShoot?: (date: string) => void;
+  canDragItem?: (item: WorkloadItem) => boolean;
+  onMoveItem?: (item: WorkloadItem, date: string) => void;
 }
 
-function chipClassName(item: WorkloadItem) {
+function chipClassName(item: WorkloadItem, isDraggable: boolean, isDragging: boolean) {
   const classes = ['wl-chip'];
   if (item.kind === 'shoot') classes.push('wl-chip--shoot');
   if (item.kind === 'plan') classes.push('wl-chip--plan');
   if (item.needsAssign) classes.push('wl-chip--unassigned');
   if (item.status === 'Đã xong') classes.push('wl-chip--done');
   if (item.urgent && item.status !== 'Đã xong') classes.push('wl-chip--urgent');
+  if (isDraggable) classes.push('wl-chip--draggable');
+  if (isDragging) classes.push('wl-chip--dragging');
   return classes.join(' ');
 }
 
@@ -90,7 +95,11 @@ export function WorkloadCalendar({
   canCreateShoot = false,
   onAddTask,
   onAddShoot,
+  canDragItem,
+  onMoveItem,
 }: WorkloadCalendarProps) {
+  const [dragItem, setDragItem] = useState<WorkloadItem | null>(null);
+  const [dropDate, setDropDate] = useState<string | null>(null);
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const first = new Date(year, month, 1);
@@ -148,9 +157,10 @@ export function WorkloadCalendar({
           const iso = toIsoDate(cellDate);
           const weekend = index % 7 >= 5;
           // Ngày của tháng sau lọt vào lưới thì vẫn xem được việc, ngày của tháng trước thì bỏ qua.
-          const items = index < startDow ? [] : days.get(iso)?.items ?? [];
-          const addTask = index >= startDow && canCreateTask ? onAddTask : undefined;
-          const addShoot = index >= startDow && canCreateShoot ? onAddShoot : undefined;
+          const canDrop = index >= startDow;
+          const items = canDrop ? days.get(iso)?.items ?? [] : [];
+          const addTask = canDrop && canCreateTask ? onAddTask : undefined;
+          const addShoot = canDrop && canCreateShoot ? onAddShoot : undefined;
           const [, monthLabel, dayLabel] = iso.split('-');
           const dateLabel = `${dayLabel}/${monthLabel}`;
 
@@ -162,8 +172,29 @@ export function WorkloadCalendar({
                 cell.out ? 'out' : '',
                 weekend ? 'wknd' : '',
                 iso === todayIso ? 'wl-cell--today' : '',
+                canDrop && dropDate === iso ? 'wl-cell--drop' : '',
               ].filter(Boolean).join(' ')}
               data-calendar-date={iso}
+              onDragOver={canDrop ? (event) => {
+                if (!dragItem) return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                if (dropDate !== iso) setDropDate(iso);
+              } : undefined}
+              onDragLeave={canDrop ? (event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                  setDropDate((current) => current === iso ? null : current);
+                }
+              } : undefined}
+              onDrop={canDrop ? (event) => {
+                event.preventDefault();
+                const item = dragItem;
+                setDragItem(null);
+                setDropDate(null);
+                if (item && item.date !== iso) {
+                  onMoveItem?.(item, iso);
+                }
+              } : undefined}
             >
               <div className="cal-day-head wl-day-head">
                 <span className="cal-daynum">{cell.label}</span>
@@ -203,14 +234,31 @@ export function WorkloadCalendar({
                     .map((editorId) => badges.get(editorId))
                     .filter((badge): badge is EditorBadge => Boolean(badge));
                   const tag = chipTag(item);
+                  const isDraggable = Boolean(onMoveItem && canDragItem?.(item));
+                  const isDragging = dragItem?.id === item.id;
 
                   return (
                     <button
                       key={item.id}
                       type="button"
-                      className={chipClassName(item)}
+                      draggable={isDraggable}
+                      className={chipClassName(item, isDraggable, isDragging)}
                       style={{ ['--wl-kind' as string]: item.accent || 'var(--border-strong)' }}
-                      title={[item.title, item.subtitle, item.detail].filter(Boolean).join(' · ')}
+                      title={[
+                        item.title,
+                        item.subtitle,
+                        item.detail,
+                        isDraggable ? 'Kéo để đổi ngày' : '',
+                      ].filter(Boolean).join(' · ')}
+                      onDragStart={isDraggable ? (event) => {
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', item.id);
+                        setDragItem(item);
+                      } : undefined}
+                      onDragEnd={() => {
+                        setDragItem(null);
+                        setDropDate(null);
+                      }}
                       onClick={(event) => {
                         event.stopPropagation();
                         onOpenItem(item);
