@@ -2115,6 +2115,9 @@ html.dark .task-date-field::-webkit-calendar-picker-indicator{
 .link-actions{ display:inline-flex; gap:4px; align-items:center; justify-content:center; }
 .link-btn--copy{ width:28px; height:28px; }
 .link-btn--copy svg{ width:14px; height:14px; }
+@media (prefers-reduced-motion: reduce){
+  .link-btn--copy:hover,.cpm-link-open:hover{ transform:none; }
+}
 
 /* ---------- profile/settings ---------- */
 .profile-page{ max-width:1180px; }
