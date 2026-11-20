@@ -90,3 +90,48 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(staleWhileRevalidate(request, RUNTIME_CACHE));
   }
 });
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data.json() ?? {};
+  } catch {
+    // Push không có payload hợp lệ vẫn phải hiện thông báo.
+  }
+
+  const { title, body, tag, url } = payload;
+  event.waitUntil(self.registration.showNotification(
+    typeof title === 'string' && title ? title : 'CreativeHub',
+    {
+      body: typeof body === 'string' ? body : '',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: typeof tag === 'string' ? tag : undefined,
+      data: { url: typeof url === 'string' ? url : undefined },
+    },
+  ));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const fallback = new URL('/notifications', self.location.origin);
+  let target = fallback;
+  try {
+    const url = event.notification.data?.url;
+    const candidate = new URL(typeof url === 'string' && url ? url : '/notifications', self.location.origin);
+    if (candidate.origin === fallback.origin && candidate.protocol === fallback.protocol) target = candidate;
+  } catch {
+    // Đường dẫn không hợp lệ sẽ mở trang Thông báo.
+  }
+
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const client = windows.find((window) => new URL(window.url).origin === self.location.origin);
+    if (client) {
+      await client.focus();
+      if (typeof client.navigate === 'function') await client.navigate(target.href);
+    } else {
+      await self.clients.openWindow(target.href);
+    }
+  })());
+});

@@ -371,6 +371,13 @@ html.dark .m-kind--lichquay{ color:#C4B5FD; } html.dark .m-kind--livestream{ col
 .m-month-day.is-active .m-dots i{ background:#fff!important; }
 
 /* thông báo */
+.m-push-card{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 14px; background:var(--m-surface-solid); }
+.m-push-card > svg{ width:18px; height:18px; flex:none; color:var(--muted); }
+.m-push-card .m-muted{ flex:1; }
+.m-push-card .m-chip{ height:44px; min-width:44px; justify-content:center; }
+.m-push-card .m-btn{ flex-basis:100%; }
+.m-push-card .m-btn:disabled{ opacity:.65; }
+
 .m-noti{ display:flex; align-items:stretch; }
 .m-noti.is-unread{ background:color-mix(in srgb,var(--m-accent) 7%,transparent); }
 .m-noti-main{ flex:1; min-width:0; display:flex; gap:12px; padding:13px 6px 13px 14px; border:0; background:transparent; color:inherit; text-align:left; cursor:pointer; font:inherit; }

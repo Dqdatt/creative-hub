@@ -1,17 +1,25 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BellOff, CheckCheck, Loader2, Trash2 } from 'lucide-react';
+import { BellOff, BellRing, CheckCheck, Loader2, Trash2 } from 'lucide-react';
 import { canAccessRoute, getDefaultAuthenticatedRoute } from '../config/permissions';
 import { getNotificationPresentation } from '../config/notificationPresentation';
 import { useAuth } from '../context/authContext';
 import { useConfirmDialog } from '../components/common/confirmDialogContext';
 import { useToast } from '../components/common/toastContext';
 import { useAppOutlet } from '../components/mobile/outletContext';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { disablePush, enablePush, getPushStatus, type PushStatus } from '../pwa/push';
 import type { InternalNotification } from '../types/notification';
 import { formatVietnameseRelativeTime } from '../utils/dateTime';
 import { resolveNotificationActionUrl } from '../utils/notificationAction';
 
 const DAY_MS = 86_400_000;
+const PUSH_MESSAGES = {
+  'needs-install': 'Thêm CreativeHub vào Màn hình chính để nhận thông báo đẩy.',
+  denied: 'Thông báo đang bị chặn. Bật lại trong Cài đặt › CreativeHub › Thông báo.',
+  off: 'Nhận thông báo ngay cả khi không mở app.',
+  on: 'Thông báo đẩy đang bật',
+};
 
 function groupLabel(createdAt: string) {
   const created = new Date(createdAt);
@@ -29,8 +37,11 @@ export default function Notifications() {
   const { role, permissions } = useAuth();
   const { requestConfirm } = useConfirmDialog();
   const { showToast } = useToast();
-  const { notifications: data } = useAppOutlet();
+  const { notifications: data, openInstall } = useAppOutlet();
+  const isMobile = useIsMobile();
   const [isMarkingAll, setIsMarkingAll] = useState(false);
+  const [pushStatus, setPushStatus] = useState<PushStatus | null>(null);
+  const [isUpdatingPush, setIsUpdatingPush] = useState(false);
   const {
     notifications,
     unreadCount,
@@ -45,6 +56,15 @@ export default function Notifications() {
     deletingIds,
     isDeletingOlder,
   } = data;
+
+  useEffect(() => {
+    if (!isMobile) return;
+    let active = true;
+    void getPushStatus().then((status) => {
+      if (active) setPushStatus(status);
+    }).catch((error) => console.warn('Không thể kiểm tra thông báo đẩy.', error));
+    return () => { active = false; };
+  }, [isMobile]);
 
   const groups = useMemo(() => {
     const map = new Map<string, InternalNotification[]>();
@@ -111,8 +131,49 @@ export default function Notifications() {
     });
   };
 
+  const handleTogglePush = async () => {
+    if (isUpdatingPush || (pushStatus !== 'on' && pushStatus !== 'off')) return;
+    setIsUpdatingPush(true);
+    try {
+      if (pushStatus === 'on') {
+        await disablePush();
+        setPushStatus(await getPushStatus());
+      } else {
+        setPushStatus(await enablePush());
+      }
+    } catch {
+      showToast({
+        type: 'error',
+        message: pushStatus === 'on' ? 'Không thể tắt thông báo đẩy.' : 'Không thể bật thông báo đẩy.',
+      });
+      setPushStatus(await getPushStatus().catch(() => pushStatus));
+    } finally {
+      setIsUpdatingPush(false);
+    }
+  };
+
   return (
     <div className="m-stack" data-view="notifications">
+      {isMobile && pushStatus && pushStatus !== 'unsupported' ? (
+        <div className="m-card m-push-card">
+          {pushStatus === 'denied' ? <BellOff aria-hidden="true" /> : <BellRing aria-hidden="true" />}
+          <span className="m-muted">{PUSH_MESSAGES[pushStatus]}</span>
+          {pushStatus === 'needs-install' ? (
+            <button type="button" className="m-chip" onClick={openInstall}>Cách cài</button>
+          ) : null}
+          {pushStatus === 'on' || pushStatus === 'off' ? (
+            <button
+              type="button"
+              className={pushStatus === 'on' ? 'm-chip' : 'm-btn'}
+              onClick={() => void handleTogglePush()}
+              disabled={isUpdatingPush}
+            >
+              {isUpdatingPush ? <Loader2 className="m-spin" aria-hidden="true" /> : null}
+              {pushStatus === 'on' ? 'Tắt' : 'Bật thông báo đẩy'}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <div className="m-row-actions">
         <span className="m-muted">{unreadCount > 0 ? `${unreadCount} chưa đọc` : 'Đã đọc hết'}</span>
         <button type="button" className="m-chip" onClick={() => void handleMarkAll()} disabled={unreadCount === 0 || isMarkingAll}>
