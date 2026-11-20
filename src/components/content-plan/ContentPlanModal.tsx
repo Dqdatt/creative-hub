@@ -2,6 +2,7 @@ import { CalendarDays, ChevronLeft, ExternalLink, Link2, PencilLine, Trash2, Use
 import { createPortal } from 'react-dom';
 import { StyledSelect } from '../common/StyledSelect';
 import { Avatar } from '../common/Avatar';
+import { CopyLinkButton } from '../common/CopyLinkButton';
 import { isSafeHttpUrl } from '../../utils/url';
 import { ORDER_TEAMS } from '../../data/tasks';
 import { CONTENT_PLAN_CATEGORIES } from '../../data/contentPlan';
@@ -210,9 +211,16 @@ export function ContentPlanModal({
                   />
                 </div>
                 {hasLink ? (
-                  <a className="btn-ghost cpm-link-open" href={draft.link.trim()} target="_blank" rel="noopener noreferrer" aria-label="Mở link thành phẩm">
-                    <ExternalLink />
-                  </a>
+                  <>
+                    <a className="btn-ghost cpm-link-open" href={draft.link.trim()} target="_blank" rel="noopener noreferrer" aria-label="Mở link thành phẩm">
+                      <ExternalLink />
+                    </a>
+                    <CopyLinkButton
+                      link={draft.link.trim()}
+                      className="btn-ghost cpm-link-open"
+                      label="Copy link thành phẩm"
+                    />
+                  </>
                 ) : null}
               </div>
             </div>

@@ -4,6 +4,7 @@ import { Avatar } from '../common/Avatar';
 import { StatusBadge } from '../tasks/TaskBadges';
 import { isSafeHttpUrl } from '../../utils/url';
 import { getTodayIso } from '../../utils/month';
+import { CopyLinkButton } from '../common/CopyLinkButton';
 
 const WEEKDAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
@@ -57,9 +58,16 @@ export function ContentPlanCardList({ items, editorOptions, canEdit, onEdit, hig
                   <div className="m-plan-head">
                     <h3>{item.video_name}</h3>
                     {hasLink ? (
-                      <a href={item.link} target="_blank" rel="noopener noreferrer" className="m-link-btn" aria-label={`Mở link thành phẩm của ${item.video_name}`}>
-                        <Link2 aria-hidden="true" />
-                      </a>
+                      <>
+                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="m-link-btn" aria-label={`Mở link thành phẩm của ${item.video_name}`}>
+                          <Link2 aria-hidden="true" />
+                        </a>
+                        <CopyLinkButton
+                          link={item.link}
+                          className="m-link-btn"
+                          label={`Copy link thành phẩm của ${item.video_name}`}
+                        />
+                      </>
                     ) : null}
                   </div>
                   {item.note ? <p className="m-task-note">{item.note}</p> : null}

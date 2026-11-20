@@ -2,6 +2,7 @@ import { Link2, Trash2 } from 'lucide-react';
 import type { Editor, VideoTask } from '../../types/task';
 import { StatusBadge, CategoryBadge, EditorChip } from './TaskBadges';
 import { isSafeHttpUrl } from '../../utils/url';
+import { CopyLinkButton } from '../common/CopyLinkButton';
 
 interface TaskTableProps {
   tasks: VideoTask[];
@@ -128,16 +129,23 @@ export function TaskTable({
                 onClick={(e) => e.stopPropagation()}
               >
                 {isSafeHttpUrl(v.link) ? (
-                  <a
-                    href={v.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="link-btn"
-                    title="Mở link"
-                    aria-label={`Mở link thành phẩm của ${v.name}`}
-                  >
-                    <Link2 style={{ width: '16px', height: '16px' }} />
-                  </a>
+                  <span className="link-actions">
+                    <a
+                      href={v.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="link-btn"
+                      title="Mở link"
+                      aria-label={`Mở link thành phẩm của ${v.name}`}
+                    >
+                      <Link2 style={{ width: '16px', height: '16px' }} />
+                    </a>
+                    <CopyLinkButton
+                      link={v.link}
+                      className="link-btn link-btn--copy"
+                      label={`Copy link thành phẩm của ${v.name}`}
+                    />
+                  </span>
                 ) : (
                   <span className="text-sub/40">-</span>
                 )}

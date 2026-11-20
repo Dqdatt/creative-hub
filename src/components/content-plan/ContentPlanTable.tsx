@@ -4,6 +4,7 @@ import { Avatar } from '../common/Avatar';
 import { isSafeHttpUrl } from '../../utils/url';
 import { getTodayIso } from '../../utils/month';
 import { StatusBadge } from '../tasks/TaskBadges';
+import { CopyLinkButton } from '../common/CopyLinkButton';
 
 interface ContentPlanTableProps {
   items: ContentPlanItem[];
@@ -153,16 +154,23 @@ export function ContentPlanTable({
 
               <td className="text-center" onClick={(event) => event.stopPropagation()}>
                 {hasLink ? (
-                  <a
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="link-btn"
-                    title="Mở link"
-                    aria-label={`Mở link thành phẩm của ${item.video_name}`}
-                  >
-                    <Link2 />
-                  </a>
+                  <span className="link-actions">
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="link-btn"
+                      title="Mở link"
+                      aria-label={`Mở link thành phẩm của ${item.video_name}`}
+                    >
+                      <Link2 />
+                    </a>
+                    <CopyLinkButton
+                      link={item.link}
+                      className="link-btn link-btn--copy"
+                      label={`Copy link thành phẩm của ${item.video_name}`}
+                    />
+                  </span>
                 ) : (
                   <span className="text-sub/40">-</span>
                 )}
