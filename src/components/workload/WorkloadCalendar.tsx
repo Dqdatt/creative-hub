@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import type { EditorBadge, WorkloadDay, WorkloadItem } from '../../hooks/useWorkload';
 import { toIsoDate } from '../../hooks/useWorkload';
 
@@ -63,8 +64,10 @@ interface WorkloadCalendarProps {
   badges: Map<string, EditorBadge>;
   todayIso: string;
   onOpenItem: (item: WorkloadItem) => void;
+  canCreateTask?: boolean;
   canCreateShoot?: boolean;
-  onDayClick?: (date: string) => void;
+  onAddTask?: (date: string) => void;
+  onAddShoot?: (date: string) => void;
 }
 
 function chipClassName(item: WorkloadItem) {
@@ -83,8 +86,10 @@ export function WorkloadCalendar({
   badges,
   todayIso,
   onOpenItem,
+  canCreateTask = false,
   canCreateShoot = false,
-  onDayClick,
+  onAddTask,
+  onAddShoot,
 }: WorkloadCalendarProps) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -144,8 +149,10 @@ export function WorkloadCalendar({
           const weekend = index % 7 >= 5;
           // Ngày của tháng sau lọt vào lưới thì vẫn xem được việc, ngày của tháng trước thì bỏ qua.
           const items = index < startDow ? [] : days.get(iso)?.items ?? [];
-          // Ô của tháng trước luôn trống nên không cho tạo lịch quay ở đó.
-          const canAddShoot = Boolean(canCreateShoot && onDayClick && index >= startDow);
+          const addTask = index >= startDow && canCreateTask ? onAddTask : undefined;
+          const addShoot = index >= startDow && canCreateShoot ? onAddShoot : undefined;
+          const [, monthLabel, dayLabel] = iso.split('-');
+          const dateLabel = `${dayLabel}/${monthLabel}`;
 
           return (
             <div
@@ -155,14 +162,39 @@ export function WorkloadCalendar({
                 cell.out ? 'out' : '',
                 weekend ? 'wknd' : '',
                 iso === todayIso ? 'wl-cell--today' : '',
-                canAddShoot ? 'wl-cell--addable' : '',
               ].filter(Boolean).join(' ')}
               data-calendar-date={iso}
-              title={canAddShoot ? 'Bấm vùng trống để thêm lịch quay' : undefined}
-              onClick={canAddShoot ? () => onDayClick?.(iso) : undefined}
             >
               <div className="cal-day-head wl-day-head">
                 <span className="cal-daynum">{cell.label}</span>
+                {addTask || addShoot ? (
+                  <div className="wl-add">
+                    {addTask ? (
+                      <button
+                        type="button"
+                        aria-label={`Thêm task ngày ${dateLabel}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          addTask(iso);
+                        }}
+                      >
+                        <Plus size={11} aria-hidden="true" /> Task
+                      </button>
+                    ) : null}
+                    {addShoot ? (
+                      <button
+                        type="button"
+                        aria-label={`Thêm lịch quay ngày ${dateLabel}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          addShoot(iso);
+                        }}
+                      >
+                        <Plus size={11} aria-hidden="true" /> Quay
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
 
               <div className="cal-event-list wl-list">
@@ -180,7 +212,6 @@ export function WorkloadCalendar({
                       style={{ ['--wl-kind' as string]: item.accent || 'var(--border-strong)' }}
                       title={[item.title, item.subtitle, item.detail].filter(Boolean).join(' · ')}
                       onClick={(event) => {
-                        // Không để click chip lọt xuống ô ngày và mở luôn modal thêm lịch quay.
                         event.stopPropagation();
                         onOpenItem(item);
                       }}

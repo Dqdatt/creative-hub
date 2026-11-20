@@ -177,13 +177,13 @@ export default function Workload() {
     setContentFormError(null);
   };
 
-  const openContentCreate = () => {
+  const openContentCreate = (date?: string) => {
     if (!canCreateContent) return;
     contentData.clearSaveError();
     setSelectedContentItem(null);
     setContentModalMode('create');
     setContentDraft({
-      air_date: getDefaultContentDate(selectedMonth, defaultDate),
+      air_date: date ?? getDefaultContentDate(selectedMonth, defaultDate),
       video_name: '',
       note: '',
       category: 'Video dài',
@@ -194,7 +194,6 @@ export default function Workload() {
     setContentFormError(null);
   };
 
-  // Bấm vào vùng trống của một ngày thì mở modal thêm lịch quay cho đúng ngày đó.
   const openShootCreate = (date: string) => {
     if (!canCreateShoot) return;
     shootsData.clearModalError();
@@ -607,7 +606,7 @@ export default function Workload() {
           <div className="wl-actions">
             <span className="wl-total">{visibleCount} việc</span>
             {canCreateContent ? (
-              <button type="button" className="btn btn-sm wl-btn" onClick={openContentCreate} title="Tạo task">
+              <button type="button" className="btn btn-sm wl-btn" onClick={() => openContentCreate()} title="Tạo task">
                 <Plus style={{ width: '15px', height: '15px' }} /><span className="wl-btn-text">Thêm </span>task
               </button>
             ) : null}
@@ -635,7 +634,7 @@ export default function Workload() {
             className="calendar-loading px-3 py-12 text-center text-sub"
           />
         </div>
-      ) : workload.itemCount === 0 && !canCreateShoot ? (
+      ) : workload.itemCount === 0 && !canCreateShoot && (isMobile || !canCreateContent) ? (
         <EmptyState title="Tháng này chưa có việc nào" />
       ) : (
         isMobile ? (
@@ -655,8 +654,10 @@ export default function Workload() {
           badges={badges}
           todayIso={todayIso}
           onOpenItem={handleOpenItem}
+          canCreateTask={canCreateContent}
+          onAddTask={openContentCreate}
           canCreateShoot={canCreateShoot}
-          onDayClick={openShootCreate}
+          onAddShoot={openShootCreate}
         />
         )
       )}
